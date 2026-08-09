@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard MC Bengkayang - Indosat Ooredoo Hutchison</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<!-- STICKY KPI BAR -->
+<div class="sticky-kpi-bar" id="stickyKpiBar">
+    <span><b>Revenue MTD:</b> <span id="stickyRev">Rp 0</span></span>
+    <span><b>OSA:</b> <span id="stickyOsa">0%</span></span>
+    <span><b>Sell In:</b> <span id="stickySellIn">0%</span></span>
+    <span><b>Biometrik:</b> <span id="stickyBio">0%</span></span>
+    <button class="sticky-top-btn" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">↑ Top</button>
+</div>
+
+<div class="container">
+    <!-- HEADER UTAMA -->
+    <div class="header">
+        <div class="header-top-row">
+            <div class="header-left-brand">
+                <div style="display: flex; align-items: center; gap: 12px; background: #ffffff; padding: 8px 16px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                    <div style="display: flex; flex-direction: column; line-height: 1.1;">
+                        <span style="font-size: 22px; font-weight: 900; color: #374151; letter-spacing: -0.5px;">indosat</span>
+                        <span style="font-size: 7.5px; font-weight: 800; color: #6b7280; letter-spacing: 0.8px;">OOREDOO HUTCHISON</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(2, 10px); gap: 2px;">
+                        <span style="width: 10px; height: 10px; background-color: #0d9488; border-radius: 50%; display: block;"></span>
+                        <span style="width: 10px; height: 10px; background-color: #ef4444; border-radius: 50%; display: block;"></span>
+                        <span style="width: 10px; height: 10px; background-color: #c026d3; border-radius: 50%; display: block;"></span>
+                        <span style="width: 10px; height: 10px; background-color: #facc15; border-radius: 50%; display: block;"></span>
+                    </div>
+                </div>
+                <div>
+                    <h1>Dashboard MC Bengkayang</h1>
+                    <div class="sub-header-title">Executive Performance & Monitoring Portal</div>
+                </div>
+            </div>
+
+            <div class="header-right-im3">
+                <div style="background: #ffc107; padding: 8px 20px; border-radius: 14px; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 14px rgba(255, 193, 7, 0.35);">
+                    <span style="font-size: 16px; font-weight: 800; color: #000000; letter-spacing: -0.3px;">Simpel itu</span>
+                    <div style="position: relative; display: flex; align-items: center;">
+                        <span style="position: absolute; top: -3px; left: 3px; width: 6px; height: 6px; background-color: #ef4444; border-radius: 50%;"></span>
+                        <span style="font-size: 24px; font-weight: 900; color: #000000; line-height: 1; letter-spacing: -0.5px;">im3</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="header-ai-summary-bar">
+            <div class="ai-summary-badge"><i class="fa-solid fa-bolt"></i> AI Executive Summary</div>
+            <div class="ai-summary-text" id="globalAiSummaryContent">Memuat rangkuman AI real-time dari data...</div>
+            <button class="btn-refresh-ai" onclick="refreshGlobalAiSummary()"><i class="fa-solid fa-arrows-rotate"></i> Refresh AI</button>
+        </div>
+
+        <div class="header-bottom-row">
+            <div class="controls-left">
+                <div class="date-badge-box">
+                    <i class="fa-solid fa-calendar-days" style="color:#f59e0b; font-size:16px;"></i>
+                    <div>
+                        <b id="headerDayCountText">Hari ke-6 Agustus 2026</b>
+                        <small id="lastUpdateText">Last Update : 4 Agustus 2026 (H-2) | Sisa HK: 27 Hari</small>
+                    </div>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="btn-export" onclick="exportExcelCurrent()"><i class="fa-solid fa-file-excel" style="color:#10b981;"></i> Export Excel</button>
+                <button class="btn-export" onclick="takeScreenshot()"><i class="fa-solid fa-camera" style="color:#2563eb;"></i> Snapshot Dashboard</button>
+                <button class="dark-toggle-btn" onclick="toggleDarkMode()"><i class="fa-solid fa-moon" id="themeIcon"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB NAVIGASI UTAMA -->
+    <div class="top-nav-bar">
+        <div class="report-tabs">
+            <button class="tab-btn tab-summary-btn active" onclick="switchReport('all-summary-tab', this)"><i class="fa-solid fa-layer-group"></i> Executive Summary All</button>
+            <button class="tab-btn" onclick="switchReport('ms-bengkayang', this)"><i class="fa-solid fa-chart-pie"></i> PST</button>
+            <button class="tab-btn" onclick="switchReport('outlet-mc', this)"><i class="fa-solid fa-desktop"></i> Site Monitoring</button>
+            <button class="tab-btn" onclick="switchReport('detail-outlet', this)"><i class="fa-solid fa-store"></i> Detail Outlet</button>
+            <button class="tab-btn" onclick="switchReport('daily-dse', this)"><i class="fa-solid fa-calendar-days"></i> Daily Sell In DSE</button>
+            <button class="tab-btn" onclick="switchReport('partner-performance', this)"><i class="fa-solid fa-chart-line"></i> Partner Performance</button>
+        </div>
+        <div class="update">Status: <b>Live Data Active</b></div>
+    </div>
+
+    <!-- ================= TAB 1: EXECUTIVE SUMMARY ================= -->
+    <div id="all-summary-tab" class="report-content">
+        <div class="exec-summary-wrapper" id="snapshotSectionAllSummary">
+            
+            <div class="exec-summary-title-banner">
+                <div>
+                    <h2>EXECUTIVE PERFORMANCE SUMMARY</h2>
+                    <div class="exec-summary-sub">Micro Cluster Bengkayang</div>
+                </div>
+                <button class="btn-snapshot-section" onclick="takeSectionSnapshot('snapshotSectionAllSummary')"><i class="fa-solid fa-camera"></i> Snapshot All Summary</button>
+            </div>
+
+            <!-- SECTION 1: KPI GLOBAL -->
+            <div class="exec-section-block" id="snapshotSectionGlobal">
+                <div class="exec-section-header">
+                    <span><i class="fa-solid fa-globe"></i> KPI GLOBAL (MTD)</span>
+                    <button class="btn-snapshot-section" onclick="takeSectionSnapshot('snapshotSectionGlobal')"><i class="fa-solid fa-camera"></i> Snapshot KPI Global</button>
+                </div>
+                <div class="exec-kpi-global-grid">
+                    <div class="exec-kpi-box box-red">
+                        <span class="box-lbl">REVENUE MTD</span>
+                        <b class="box-val" id="exKpiRev">Rp 0</b>
+                    </div>
+                    <div class="exec-kpi-box box-yellow">
+                        <span class="box-lbl">TERTIARY B#</span>
+                        <b class="box-val" id="exKpiTertiary">Rp 0</b>
+                    </div>
+                    <div class="exec-kpi-box box-magenta">
+                        <span class="box-lbl">TRADE SUPPLY</span>
+                        <b class="box-val" id="exKpiTradeSupply">Rp 0</b>
+                    </div>
+                    <div class="exec-kpi-box box-cyan">
+                        <span class="box-lbl">SELL IN ACH %</span>
+                        <b class="box-val" id="exKpiSellIn">0.0%</b>
+                    </div>
+                    <div class="exec-kpi-box box-green">
+                        <span class="box-lbl">OSA ACH %</span>
+                        <b class="box-val" id="exKpiOsa">0.0%</b>
+                    </div>
+                    <div class="exec-kpi-box box-purple">
+                        <span class="box-lbl">BIOMETRIK ACH %</span>
+                        <b class="box-val" id="exKpiBio">0.0%</b>
+                    </div>
+                    <div class="exec-kpi-box box-orange">
+                        <span class="box-lbl">TAGGING ACH %</span>
+                        <b class="box-val" id="exKpiTag">0.0%</b>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 2: MISSION TODAY'S PANEL -->
+            <div class="exec-card-panel border-top-yellow" id="snapshotSectionMission">
+                <div class="exec-panel-header-flex">
+                    <div class="exec-panel-header"><i class="fa-solid fa-list-check color-yellow"></i> MISSION TODAY'S (GAP TARGET HARI INI)</div>
+                    <div class="exec-filter-group">
+                        <select id="execDseFilter" class="exec-select" onchange="updateExecutiveSummaryNew()">
+                            <option value="ALL">Semua DSE Code</option>
+                        </select>
+                        <select id="execHariFilter" class="exec-select" onchange="updateExecutiveSummaryNew()">
+                            <option value="ALL">Semua Hari Kunjungan</option>
+                            <option value="SENIN">Senin</option>
+                            <option value="SELASA">Selasa</option>
+                            <option value="RABU">Rabu</option>
+                            <option value="KAMIS">Kamis</option>
+                            <option value="JUMAT">Jumat</option>
+                            <option value="SABTU">Sabtu</option>
+                        </select>
+                        <button class="btn-snapshot-section" onclick="takeSectionSnapshot('snapshotSectionMission')"><i class="fa-solid fa-camera"></i> Snapshot Mission</button>
+                    </div>
+                </div>
+
+                <div class="exec-mission-stats-grid">
+                    <div class="mission-stat-card" onclick="actionGotoOutletUnach('SELL_IN')">
+                        <span class="m-lbl"><i class="fa-solid fa-cart-shopping color-cyan"></i> TARGET SP SELL IN</span>
+                        <b class="m-val color-cyan" id="exMissionSellInTgt">0 pcs</b>
+                        <span class="m-sub" id="exTotalGapSelIn">Total GAP: 0 pcs</span>
+                    </div>
+                    <div class="mission-stat-card" onclick="actionGotoOutletUnach('OSA')">
+                        <span class="m-lbl"><i class="fa-solid fa-bullseye color-green"></i> TARGET OSA</span>
+                        <b class="m-val color-green" id="exMissionOsaTgt">0</b>
+                        <span class="m-sub" id="exTotalGapOsa">Total GAP OSA</span>
+                    </div>
+                    <div class="mission-stat-card" onclick="actionGotoOutletUnach('BIO')">
+                        <span class="m-lbl"><i class="fa-solid fa-fingerprint color-purple"></i> BELUM BIOMETRIK</span>
+                        <b class="m-val color-purple" id="exMissionBioUnach">0 Outlet</b>
+                        <span class="m-sub">Total GAP Outlet</span>
+                    </div>
+                    <div class="mission-stat-card" onclick="actionGotoOutletUnach('TAG')">
+                        <span class="m-lbl"><i class="fa-solid fa-tags color-orange"></i> BELUM TAGGING 3PCS</span>
+                        <b class="m-val color-orange" id="exMissionTagUnach">0 Outlet</b>
+                        <span class="m-sub">Total GAP Outlet</span>
+                    </div>
+                </div>
+
+                <div style="margin-top:10px;">
+                    <div style="font-size:12px; font-weight:800; color:#0f172a; margin-bottom:6px;"><i class="fa-solid fa-table-list"></i> TARGET NON KPI PER DSE (FWA, TAGGING 50%, BIOMETRIK 80%)</div>
+                    <div class="mini-table-wrapper">
+                        <table class="mini-exec-table">
+                            <thead>
+                                <tr>
+                                    <th>Nama DSE</th>
+                                    <th>Target RGUGA FWA</th>
+                                    <th>Ach Tagging 3PCS (50%) & GAP</th>
+                                    <th>Ach GA Biometrik (80%) & GAP</th>
+                                </tr>
+                            </thead>
+                            <tbody id="nonKpiTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 3: DSE KPI PANEL -->
+            <div class="exec-card-panel border-top-red" id="snapshotSectionDseKpi" style="grid-column: span 2;">
+                <div class="exec-panel-header-flex">
+                    <div class="exec-panel-header"><i class="fa-solid fa-chart-line color-red"></i> DSE KPI (Target & Achievement)</div>
+                    <button class="btn-snapshot-section" onclick="takeSectionSnapshot('snapshotSectionDseKpi')"><i class="fa-solid fa-camera"></i> Snapshot DSE KPI</button>
+                </div>
+                <div class="mini-table-wrapper">
+                    <table class="mini-exec-table">
+                        <thead>
+                            <tr>
+                                <th>Nama DSE</th>
+                                <th>Ach OSA / Target</th>
+                                <th>Ach % OSA</th>
+                                <th>Ach Sell In / Target</th>
+                                <th>Ach % Sell In</th>
+                                <th>Sell In 3pcs per Outlet (Ach / Target)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dseAttentionTableBody"></tbody>
+                    </table>
+                </div>
+                <button class="btn-full-link" onclick="switchReport('detail-outlet', null)">Lihat Detail Selengkapnya di Detail Outlet →</button>
+            </div>
+
+            <!-- SECTION 4: KPI RSE PERFORMANCE SCORECARD -->
+            <div class="exec-card-panel border-top-red" id="snapshotSectionRse">
+                <div class="exec-panel-header-flex">
+                    <div class="exec-panel-header"><i class="fa-solid fa-square-poll-vertical color-red"></i> KPI RSE PERFORMANCE SCORECARD (AUG 2026)</div>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <div class="status-badge badge-success" style="font-size: 13px; font-weight: 800; padding: 6px 14px;">
+                            Total RSE Score: <span id="rseTotalScoreText">23.70%</span>
+                        </div>
+                        <button class="btn-snapshot-section" onclick="takeSectionSnapshot('snapshotSectionRse')"><i class="fa-solid fa-camera"></i> Snapshot RSE Scorecard</button>
+                    </div>
+                </div>
+                
+                <div class="mini-table-wrapper" style="margin-top: 10px;">
+                    <table class="mini-exec-table">
+                        <thead>
+                            <tr>
+                                <th rowspan="2" style="vertical-align: middle;">Metric / KPI Component</th>
+                                <th rowspan="2" style="vertical-align: middle;">Bobot</th>
+                                <th colspan="3">Target vs Achievement (MTD)</th>
+                                <th rowspan="2" style="vertical-align: middle;">Bobot x Score</th>
+                            </tr>
+                            <tr>
+                                <th>Target</th>
+                                <th>MTD Actual</th>
+                                <th>Achievement (%)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="text-align: left; font-weight: 700;">Trade Supply (BN)</td>
+                                <td><span class="badge-target">30.0%</span></td>
+                                <td>1,569,764,247</td>
+                                <td><span id="rseActTrade">103,533,333</span></td>
+                                <td><span id="rseAchTrade" style="color:#ef4444; font-weight:700;">6.60%</span></td>
+                                <td><b id="rseWScoreTrade">1.98%</b></td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: left; font-weight: 700;">Sell In SP 3GB</td>
+                                <td><span class="badge-target">17.5%</span></td>
+                                <td><span id="rseTgtSellIn">2,288</span></td>
+                                <td><span id="rseActSellIn">0</span></td>
+                                <td><span id="rseAchSellIn" style="color:#ef4444; font-weight:700;">0.00%</span></td>
+                                <td><b id="rseWScoreSellIn">0.00%</b></td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: left; font-weight: 700;">Retailer Tagging (min 3pcs)</td>
+                                <td><span class="badge-target">17.5%</span></td>
+                                <td><span id="rseTgtTag">163</span></td>
+                                <td><span id="rseActTag">0</span></td>
+                                <td><span id="rseAchTag" style="color:#ef4444; font-weight:700;">0.00%</span></td>
+                                <td><b id="rseWScoreTag">0.00%</b></td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: left; font-weight: 700;">RGU GA FWA</td>
+                                <td><span class="badge-target">15.0%</span></td>
+                                <td>10</td>
+                                <td><span id="rseActFwa">0</span></td>
+                                <td><span id="rseAchFwa" style="color:#ef4444; font-weight:700;">0.00%</span></td>
+                                <td><b id="rseWScoreFwa">0.00%</b></td>
+                            </tr>
+                            <tr>
+                                <td style="text-align: left; font-weight: 700;">DSE Productivity</td>
+                                <td><span class="badge-target">20.0%</span></td>
+                                <td>5</td>
+                                <td>0</td>
+                                <td><span style="color:#ef4444; font-weight:700;">0.00%</span></td>
+                                <td><b id="rseWScoreProd">0.00%</b></td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr style="background-color: #fff1f2; font-weight: 800;">
+                                <td style="text-align: left; color: #be123c;">TOTAL SCORE RSE</td>
+                                <td style="color: #be123c;">100.0%</td>
+                                <td colspan="3"></td>
+                                <td id="rseFooterTotal" style="color: #be123c; font-size: 14px;">1.98%</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ================= TAB 2: PST ================= -->
+    <div id="ms-bengkayang" class="report-content" style="display: none;">
+        <div class="kpi-grid">
+            <div class="card card-red">
+                <div class="icon"><i class="fa-solid fa-chart-line"></i></div>
+                <div class="card-body">
+                    <h3>TOTAL REVENUE MTD</h3>
+                    <div class="kpi-main-val" id="kpiRevenuePST">Rp 0</div>
+                    <div class="kpi-compare-row">Pembanding LMTD: <span id="kpiRevLmtdPST">0</span></div>
+                    <div class="kpi-growth-row">Growth: <span id="kpiRevGrowthPST" class="growth-badge">0%</span></div>
+                </div>
+            </div>
+            <div class="card card-yellow">
+                <div class="icon"><i class="fa-solid fa-network-wired"></i></div>
+                <div class="card-body">
+                    <h3>TOTAL PRIMARY MTD</h3>
+                    <div class="kpi-main-val" id="kpiPrimaryPST">0</div>
+                    <div class="kpi-compare-row">Pembanding LMTD: <span id="kpiPrimaryLmtdPST">0</span></div>
+                    <div class="kpi-growth-row">Growth: <span id="kpiPrimaryGrowthPST" class="growth-badge">0%</span></div>
+                </div>
+            </div>
+            <div class="card card-magenta">
+                <div class="icon"><i class="fa-solid fa-boxes-stacked"></i></div>
+                <div class="card-body">
+                    <h3>TOTAL SECONDARY MTD</h3>
+                    <div class="kpi-main-val" id="kpiSecondaryPST">0</div>
+                    <div class="kpi-compare-row">Pembanding LMTD: <span id="kpiSecondaryLmtdPST">0</span></div>
+                    <div class="kpi-growth-row">Growth: <span id="kpiSecondaryGrowthPST" class="growth-badge">0%</span></div>
+                </div>
+            </div>
+            <div class="card card-cyan">
+                <div class="icon"><i class="fa-solid fa-warehouse"></i></div>
+                <div class="card-body">
+                    <h3>TOTAL TERTIARY B# MTD</h3>
+                    <div class="kpi-main-val" id="kpiTertiaryPST">0</div>
+                    <div class="kpi-compare-row">Pembanding LMTD: <span id="kpiTertiaryLmtdPST">0</span></div>
+                    <div class="kpi-growth-row">Growth: <span id="kpiTertiaryGrowthPST" class="growth-badge">0%</span></div>
+                </div>
+            </div>
+            <div class="card card-red">
+                <div class="icon"><i class="fa-solid fa-truck-ramp-box"></i></div>
+                <div class="card-body">
+                    <h3>TOTAL TRADE SUPPLY</h3>
+                    <div class="kpi-main-val" id="kpiTradeSupplyPST">0</div>
+                    <div class="kpi-compare-row">Pembanding LMTD: <span id="kpiTradeLmtdPST">0</span></div>
+                    <div class="kpi-growth-row">Growth: <span id="kpiTradeGrowthPST" class="growth-badge">0%</span></div>
+                </div>
+            </div>
+        </div>
+        <div class="toolbar">
+            <select id="partnerFilter"><option value="ALL">Semua Partner</option></select>
+            <input type="text" id="searchInput" placeholder="🔍 Cari Kecamatan / Site / Partner...">
+            <button class="reset-btn" onclick="resetFilters('ms-bengkayang')"><i class="fa-solid fa-rotate-left"></i> Reset Filter</button>
+        </div>
+        <div class="table-container"><table id="dataTable"></table></div>
+    </div>
+
+    <!-- ================= TAB 3: SITE MONITORING ================= -->
+    <div id="outlet-mc" class="report-content" style="display: none;">
+        <div class="kpi-grid">
+            <div class="card card-red">
+                <div class="icon"><i class="fa-solid fa-chart-line"></i></div>
+                <div class="card-body">
+                    <h3>REVENUE MTD</h3>
+                    <div class="kpi-main-val" id="kpiRevMTDMC">Rp 0</div>
+                    <div class="kpi-compare-row">Pembanding LMTD: <span id="kpiRevLmtdMC">0</span></div>
+                    <div class="kpi-growth-row">Growth: <span id="kpiRevGrowthMC" class="growth-badge">0%</span></div>
+                </div>
+            </div>
+            <div class="card card-cyan">
+                <div class="icon"><i class="fa-solid fa-users"></i></div>
+                <div class="card-body">
+                    <h3>VLR MTD</h3>
+                    <div class="kpi-main-val" id="kpiVlrMTDMC">0</div>
+                    <div class="kpi-compare-row">Pembanding LMTD: <span id="kpiVlrLmtdMC">0</span></div>
+                    <div class="kpi-growth-row">Growth: <span id="kpiVlrGrowthMC" class="growth-badge">0%</span></div>
+                </div>
+            </div>
+            <div class="card card-yellow">
+                <div class="icon"><i class="fa-solid fa-user-plus"></i></div>
+                <div class="card-body">
+                    <h3>RGUGA MTD</h3>
+                    <div class="kpi-main-val" id="kpiRguGaMTDMC">0</div>
+                    <div class="kpi-compare-row">Pembanding LMTD: <span id="kpiRguGaLmtdMC">0</span></div>
+                    <div class="kpi-growth-row">Growth: <span id="kpiRguGaGrowthMC" class="growth-badge">0%</span></div>
+                </div>
+            </div>
+            <div class="card card-magenta">
+                <div class="icon"><i class="fa-solid fa-server"></i></div>
+                <div class="card-body">
+                    <h3>TOTAL SITE & OUTLET</h3>
+                    <div class="kpi-main-val" id="kpiTotalSiteMC">0 Site</div>
+                    <div class="kpi-row-info"><span>Outlet: <b id="kpiTotalOutletAgustusMC">0</b></span><span>(&lt;3: <b id="kpiSiteBelow3OutletMC">0</b>)</span></div>
+                    <div class="kpi-row-info" style="margin-top:2px;"><span>LRS: <b id="kpiSiteLrsMC">0</b></span><span>Risk: <b id="kpiSiteAtRiskMC">0</b></span><span>Prof: <b id="kpiSiteProfitMC">0</b></span></div>
+                </div>
+            </div>
+        </div>
+        <div class="leaderboard-grid">
+            <div class="leaderboard-card">
+                <div class="lb-header"><i class="fa-solid fa-server"></i> Top Sites (Highest Revenue MTD)</div>
+                <div class="lb-list" id="topSiteList"></div>
+            </div>
+            <div class="leaderboard-card">
+                <div class="lb-header alert-lb-header"><i class="fa-solid fa-circle-down"></i> Bottom Sites (Lowest Revenue MTD)</div>
+                <div class="lb-list" id="bottomSiteList"></div>
+            </div>
+        </div>
+        <div class="toolbar">
+            <select id="partnerFilterMC"><option value="ALL">Semua Partner MC</option></select>
+            <select id="dseFilterMC"><option value="ALL">Semua DSE Code</option></select>
+            <select id="categoryFilterMC"><option value="ALL">Semua Category</option></select>
+            <input type="text" id="searchInputMC" placeholder="🔍 Cari Site ID / Site Name / Kecamatan / DSE...">
+            <button class="reset-btn" onclick="resetFilters('outlet-mc')"><i class="fa-solid fa-rotate-left"></i> Reset Filter</button>
+        </div>
+        <div class="table-container"><table id="dataTableMC"></table></div>
+    </div>
+
+    <!-- ================= TAB 4: DETAIL OUTLET ================= -->
+    <div id="detail-outlet" class="report-content" style="display: none;">
+        <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));">
+            <div class="card card-cyan">
+                <div class="icon"><i class="fa-solid fa-cart-shopping"></i></div>
+                <div class="card-body">
+                    <div class="card-header-flex"><h3>SELL IN PERFORMANCE</h3><span class="status-badge" id="badgeSellInDO">-</span></div>
+                    <div class="kpi-main-val"><span id="kpiPctSellInDO">0.0%</span></div>
+                    <div class="kpi-compare-row">Target: <span id="kpiTargetSellInDO">0</span> | Ach: <span id="kpiSellInDO">0</span></div>
+                    <div class="kpi-row-info"><span class="gap-item">GAP: <span id="kpiGapSellInDO">0</span> pcs</span></div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill fill-cyan" id="progressSellInDO"></div></div>
+                </div>
+            </div>
+            <div class="card card-red">
+                <div class="icon"><i class="fa-solid fa-bullseye"></i></div>
+                <div class="card-body">
+                    <div class="card-header-flex"><h3>OSA PERFORMANCE</h3><span class="status-badge" id="badgeOsaDO">-</span></div>
+                    <div class="kpi-main-val"><span id="kpiPctOsaDO">0.0%</span></div>
+                    <div class="kpi-compare-row">Target: <span id="kpiTargetOsaDO">0</span> | Ach: <span id="kpiAchOsaDO">0</span></div>
+                    <div class="kpi-row-info"><span class="gap-item">GAP: <span id="kpiGapOsaDO">0</span></span></div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill fill-red" id="gaugeOsaFill"></div></div>
+                </div>
+            </div>
+            <div class="card card-yellow">
+                <div class="icon"><i class="fa-solid fa-fingerprint"></i></div>
+                <div class="card-body">
+                    <div class="card-header-flex"><h3>BIOMETRIX GA OUTLET</h3><span class="status-badge" id="badgeBiometrixDO">-</span></div>
+                    <div class="kpi-main-val"><span id="kpiPctBiometrixDO">0.0%</span></div>
+                    <div class="kpi-compare-row">Ach: <span id="kpiBiometrixOutletDO">0</span> / Total: <span id="kpiTotalOutletBioDO">0</span> Outlet</div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill fill-yellow" id="progressBiometrixDO"></div></div>
+                </div>
+            </div>
+            <div class="card card-magenta">
+                <div class="icon"><i class="fa-solid fa-tags"></i></div>
+                <div class="card-body">
+                    <div class="card-header-flex"><h3>TAGGING 3PCS</h3><span class="status-badge" id="badgeTaggingDO">-</span></div>
+                    <div class="kpi-main-val"><span id="kpiPctTaggingDO">0.0%</span></div>
+                    <div class="kpi-compare-row">Ach: <span id="kpiTagging3pcsDO">0</span> / Total: <span id="kpiTotalOutletTagDO">0</span> Outlet</div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill fill-magenta" id="progressTaggingDO"></div></div>
+                </div>
+            </div>
+            <div class="card card-purple" style="border-left: 5px solid #8b5cf6;">
+                <div class="icon" style="background: #ede9fe; color: #8b5cf6;"><i class="fa-solid fa-chart-pie"></i></div>
+                <div class="card-body">
+                    <div class="card-header-flex"><h3>RGUGA BIOMETRIX MTD</h3><span class="status-badge" id="badgeRgugaBioDO">-</span></div>
+                    <div class="kpi-main-val"><span id="kpiPctRgugaBioDO">0.0%</span></div>
+                    <div class="kpi-compare-row">Target: <span id="kpiTargetRgugaBioDO">0</span> | Ach: <span id="kpiAchRgugaBioDO">0</span></div>
+                    <div class="kpi-row-info"><span class="gap-item" style="color:#8b5cf6;">GAP: <span id="kpiGapRgugaBioDO">0</span> pcs</span></div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill" style="background:linear-gradient(90deg, #c4b5fd, #8b5cf6);" id="progressRgugaBioDO"></div></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="toolbar">
+            <select id="dseFilterDO"><option value="ALL">Semua DSE Code</option></select>
+            <select id="categoryFilterDO"><option value="ALL">Semua Category</option></select>
+            <select id="isimpleFilterDO"><option value="ALL">Semua ISIMPLE</option></select>
+            <select id="hariFilterDO">
+                <option value="ALL">Semua Hari Kunjungan</option>
+                <option value="SENIN">Senin</option>
+                <option value="SELASA">Selasa</option>
+                <option value="RABU">Rabu</option>
+                <option value="KAMIS">Kamis</option>
+                <option value="JUMAT">Jumat</option>
+                <option value="SABTU">Sabtu</option>
+            </select>
+            <select id="columnFilterDO" style="font-weight:700; background:#f0fdf4; border-color:#86efac; color:#166534;">
+                <option value="ALL">🔍 Pilih Kolom Filter (ID s/d Biometrix)</option>
+            </select>
+            <input type="number" id="columnFilterValDO" placeholder="Min (Pcs/Nilai)..." style="max-width:140px;" />
+            <input type="text" id="searchInputDO" placeholder="🔍 Cari Outlet ID / Nama / Site...">
+            <button class="reset-btn" onclick="resetFilters('detail-outlet')"><i class="fa-solid fa-rotate-left"></i> Reset</button>
+            <button class="btn-snapshot-table" onclick="takeTableSnapshotDO()"><i class="fa-solid fa-camera"></i> Snapshot Tabel</button>
+        </div>
+        <div class="table-container"><table id="dataTableDO"></table></div>
+    </div>
+
+    <!-- ================= TAB 5: DAILY SELL IN DSE ================= -->
+    <div id="daily-dse" class="report-content" style="display: none;">
+        
+        <!-- BAGIAN 1: TARGET OSA (TABEL & GRAFIK) -->
+        <div class="exec-card-panel border-top-green" id="snapshotSectionDailyOsa" style="margin-bottom: 25px;">
+            <div class="exec-panel-header-flex">
+                <div class="exec-panel-header" id="osaSectionTitleText"><i class="fa-solid fa-bullseye color-green"></i> 1. MONITORING TARGET OSA PER DSE (GAP / SISA HK)</div>
+                <button class="btn-snapshot-section" onclick="takeSectionSnapshot('snapshotSectionDailyOsa')"><i class="fa-solid fa-camera"></i> Snapshot Section OSA</button>
+            </div>
+            
+            <div class="card card-yellow" style="margin: 15px 0;">
+                <div class="card-body">
+                    <h3 id="dashOsaTitle">Pencapaian Mingguan OSA</h3>
+                    <div id="weeklyOsaKpiContainer" style="display:flex; flex-direction:column; gap:6px; margin-top:8px; font-size:12px;"></div>
+                </div>
+            </div>
+
+            <div style="height: 250px; position: relative; margin-bottom: 15px; background: #fff; padding: 15px; border-radius: 14px; border: 1px solid #e2e8f0;">
+                <canvas id="dailyOsaChartCanvas"></canvas>
+            </div>
+
+            <div class="mini-table-wrapper" style="margin-top: 10px;">
+                <table class="mini-exec-table" id="tableDailyOsa">
+                    <thead>
+                        <tr>
+                            <th>Nama DSE Code</th>
+                            <th>Target Tersisa OSA (Gap Monthly)</th>
+                            <th id="thOsaDailyHeader">Target Daily (Gap / Sisa HK)</th>
+                            <th>MTD Actual OSA</th>
+                            <th>Ach % OSA</th>
+                        </tr>
+                    </thead>
+                    <tbody id="execDailyOsaTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- BAGIAN 2: TARGET SP SELL IN (TABEL & GRAFIK) -->
+        <div class="exec-card-panel border-top-cyan" id="snapshotSectionDailySp" style="margin-bottom: 20px;">
+            <div class="exec-panel-header-flex">
+                <div class="exec-panel-header" id="spSectionTitleText"><i class="fa-solid fa-cart-shopping color-cyan"></i> 2. MONITORING TARGET SP SELL IN PER DSE (GAP / SISA HK)</div>
+                <button class="btn-snapshot-section" onclick="takeSectionSnapshot('snapshotSectionDailySp')"><i class="fa-solid fa-camera"></i> Snapshot Section SP Sell In</button>
+            </div>
+
+            <div class="card card-yellow" style="margin: 15px 0;">
+                <div class="card-body">
+                    <h3 id="dashSpTitle">Pencapaian Mingguan SP Sell In</h3>
+                    <div id="weeklySpKpiContainer" style="display:flex; flex-direction:column; gap:6px; margin-top:8px; font-size:12px;"></div>
+                </div>
+            </div>
+
+            <div style="height: 250px; position: relative; margin-bottom: 15px; background: #fff; padding: 15px; border-radius: 14px; border: 1px solid #e2e8f0;">
+                <canvas id="dailySpChartCanvas"></canvas>
+            </div>
+
+            <div class="mini-table-wrapper" style="margin-top: 10px;">
+                <table class="mini-exec-table" id="tableDailySp">
+                    <thead>
+                        <tr>
+                            <th>Nama DSE Code</th>
+                            <th>Target Tersisa SP Sell In (Gap Monthly)</th>
+                            <th id="thSpDailyHeader">Target Daily (Gap / Sisa HK)</th>
+                            <th>MTD Actual SP Sell In</th>
+                            <th>Ach % SP Sell In</th>
+                        </tr>
+                    </thead>
+                    <tbody id="execDailySpTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- GLOBAL TOOLBAR FOR DAILY TAB -->
+        <div class="toolbar">
+            <select id="dseFilterDaily" style="font-weight:700;"><option value="ALL">Semua DSE Code</option></select>
+            <input type="text" id="searchInputDaily" placeholder="🔍 Cari DSE Code / Micro Cluster...">
+            <button class="reset-btn" onclick="resetFilters('daily-dse')"><i class="fa-solid fa-rotate-left"></i> Reset Filter</button>
+        </div>
+    </div>
+
+    <!-- ================= TAB 6: PARTNER PERFORMANCE (DENGAN TOTAL, RATA-RATA, & GROWTH MEI VS JUNI) ================= -->
+    <div id="partner-performance" class="report-content" style="display: none;">
+        
+        <!-- GRID KARTU GRAFIK PER ITEM DENGAN TOTAL & RATA-RATA -->
+        <div class="pp-dashboard-grid">
+            <!-- 1. Total Partners -->
+            <div class="card card-red pp-card-interactive">
+                <div class="card-body">
+                    <h3>TOTAL PARTNERS</h3>
+                    <div class="kpi-main-val" id="kpiTotalPartnersPP">0</div>
+                    <div class="pp-card-sub" id="ppPartnerSubText">Distribusi Partner Aktif</div>
+                </div>
+                <div class="pp-mini-chart-container"><canvas id="chartPartnerPP"></canvas></div>
+            </div>
+
+            <!-- 2. Prepaid Rev -->
+            <div class="card card-yellow pp-card-interactive">
+                <div class="card-body">
+                    <h3>TOTAL PREPAID REV (JAN - JUN)</h3>
+                    <div class="kpi-main-val" id="kpiPrepaidRevPP">Rp 0</div>
+                    <div class="kpi-sub-avg" id="avgPrepaidRevPP">Rata-rata: Rp 0</div>
+                    <div class="kpi-growth-row">Growth (Mei vs Juni): <span id="ppRevGrowthBadge" class="growth-badge">0%</span></div>
+                </div>
+                <div class="pp-mini-chart-container"><canvas id="chartPrepaidRevPP"></canvas></div>
+            </div>
+
+            <!-- 3. Primary -->
+            <div class="card card-cyan pp-card-interactive">
+                <div class="card-body">
+                    <h3>TOTAL PRIMARY (JAN - JUN)</h3>
+                    <div class="kpi-main-val" id="kpiPrimaryPP">0</div>
+                    <div class="kpi-sub-avg" id="avgPrimaryPP">Rata-rata: 0</div>
+                    <div class="kpi-growth-row">Growth (Mei vs Juni): <span id="ppPrimaryGrowthBadge" class="growth-badge">0%</span></div>
+                </div>
+                <div class="pp-mini-chart-container"><canvas id="chartPrimaryPP"></canvas></div>
+            </div>
+
+            <!-- 4. Secondary -->
+            <div class="card card-magenta pp-card-interactive">
+                <div class="card-body">
+                    <h3>TOTAL SECONDARY (JAN - JUN)</h3>
+                    <div class="kpi-main-val" id="kpiSecondaryPP">0</div>
+                    <div class="kpi-sub-avg" id="avgSecondaryPP">Rata-rata: 0</div>
+                    <div class="kpi-growth-row">Growth (Mei vs Juni): <span id="ppSecondaryGrowthBadge" class="growth-badge">0%</span></div>
+                </div>
+                <div class="pp-mini-chart-container"><canvas id="chartSecondaryPP"></canvas></div>
+            </div>
+
+            <!-- 5. Tertiary B# -->
+            <div class="card card-red pp-card-interactive">
+                <div class="card-body">
+                    <h3>TOTAL TERTIARY B# (JAN - JUN)</h3>
+                    <div class="kpi-main-val" id="kpiTertiaryPP">0</div>
+                    <div class="kpi-sub-avg" id="avgTertiaryPP">Rata-rata: 0</div>
+                    <div class="kpi-growth-row">Growth (Mei vs Juni): <span id="ppTertiaryGrowthBadge" class="growth-badge">0%</span></div>
+                </div>
+                <div class="pp-mini-chart-container"><canvas id="chartTertiaryPP"></canvas></div>
+            </div>
+
+            <!-- 6. Trade Supply -->
+            <div class="card card-yellow pp-card-interactive">
+                <div class="card-body">
+                    <h3>TOTAL TRADE SUPPLY (JAN - JUN)</h3>
+                    <div class="kpi-main-val" id="kpiTradePP">Rp 0</div>
+                    <div class="kpi-sub-avg" id="avgTradePP">Rata-rata: Rp 0</div>
+                    <div class="kpi-growth-row">Growth (Mei vs Juni): <span id="ppTradeGrowthBadge" class="growth-badge">0%</span></div>
+                </div>
+                <div class="pp-mini-chart-container"><canvas id="chartTradePP"></canvas></div>
+            </div>
+
+            <!-- 7. RGU GA Trade -->
+            <div class="card card-cyan pp-card-interactive">
+                <div class="card-body">
+                    <h3>TOTAL RGU GA TRADE (JAN - JUN)</h3>
+                    <div class="kpi-main-val" id="kpiRguTradePP">0</div>
+                    <div class="kpi-sub-avg" id="avgRguTradePP">Rata-rata: 0</div>
+                    <div class="kpi-growth-row">Growth (Mei vs Juni): <span id="ppRguTradeGrowthBadge" class="growth-badge">0%</span></div>
+                </div>
+                <div class="pp-mini-chart-container"><canvas id="chartRguTradePP"></canvas></div>
+            </div>
+
+            <!-- 8. VLR Subs -->
+            <div class="card card-magenta pp-card-interactive">
+                <div class="card-body">
+                    <h3>TOTAL VLR SUBS (JAN - JUN)</h3>
+                    <div class="kpi-main-val" id="kpiVlrSubsPP">0</div>
+                    <div class="kpi-sub-avg" id="avgVlrSubsPP">Rata-rata: 0</div>
+                    <div class="kpi-growth-row">Growth (Mei vs Juni): <span id="ppVlrGrowthBadge" class="growth-badge">0%</span></div>
+                </div>
+                <div class="pp-mini-chart-container"><canvas id="chartVlrSubsPP"></canvas></div>
+            </div>
+        </div>
+
+        <!-- RANGKUMAN TABEL BULANAN JANUARI - JUNI -->
+        <div class="exec-card-panel border-top-yellow" style="margin-bottom: 20px;">
+            <div class="exec-panel-header"><i class="fa-solid fa-chart-column color-yellow"></i> RANGKUMAN BULANAN (JANUARI - JUNI) KESELURUHAN</div>
+            <div class="mini-table-wrapper">
+                <table class="mini-exec-table" id="tablePpSummaryMonthly">
+                    <thead>
+                        <tr>
+                            <th>Bulan</th>
+                            <th>Prepaid Rev</th>
+                            <th>Primary</th>
+                            <th>Secondary</th>
+                            <th>Tertiary B#</th>
+                            <th>Trade Supply</th>
+                            <th>RGU GA Trade</th>
+                            <th>VLR Subs</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ppMonthlySummaryBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="toolbar">
+            <select id="partnerFilterPP"><option value="ALL">Semua PT Partner</option></select>
+            <input type="text" id="searchInputPP" placeholder="🔍 Cari Data Partner...">
+            <button class="reset-btn" onclick="resetFilters('partner-performance')"><i class="fa-solid fa-rotate-left"></i> Reset Filter</button>
+        </div>
+        <div class="table-container"><table id="dataTablePP"></table></div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="dashboard-footer">
+        <div class="footer-brand">
+            <b>Dashboard MC Bengkayang</b> | Executive Performance & Monitoring Portal
+        </div>
+        <div class="footer-status">
+            <span>🟢 AI Recomendation </span>
+            <span class="footer-author-tag">Created by Hery Irwansyah</span>
+        </div>
+    </div>
+</div>
+
+<!-- LOADING SCREEN -->
+<div id="loading">
+    <div class="im3-loader-logo">
+        <span class="l-im">im</span><span class="l-3">3</span>
+    </div>
+    <div class="loader-bar"><div class="loader-fill"></div></div>
+    <p>Loading Dashboard MC Bengkayang...</p>
+    <div class="loader-subtext">Mengambil & memproses data real-time...</div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
