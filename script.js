@@ -968,7 +968,7 @@ function updateExecutiveSummaryNew() {
     let tagWeighted = tagScore * 0.175;
 
     let fwaTargetVal = 10;
-    let fwaAchCount = 0; 
+    let fwaAchCount = 1; 
     let fwaAchPct = fwaTargetVal > 0 ? (fwaAchCount / fwaTargetVal) * 100 : 0;
     let fwaScore = Math.min(fwaAchPct, 160);
     let fwaWeighted = fwaScore * 0.15;
