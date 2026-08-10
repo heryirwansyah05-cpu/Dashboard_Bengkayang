@@ -4,7 +4,6 @@ let globalHeaderDO = [], globalDataDO = [];
 let globalHeaderDailyOSA = [], globalDataDailyOSA = [];
 let globalHeaderDailySP = [], globalDataDailySP = [];
 
-// VARIABEL PARTNER PERFORMANCE & CHART INSTANCES
 let globalHeaderPP = [], globalDataPP = [];
 let chartPartnerPPInstance = null;
 let chartPrepaidRevPPInstance = null;
@@ -14,6 +13,8 @@ let chartTertiaryPPInstance = null;
 let chartTradePPInstance = null;
 let chartRguTradePPInstance = null;
 let chartVlrSubsPPInstance = null;
+
+let globalHeaderW30 = [], globalDataW30 = [];
 
 let dailyOsaChartInstance = null;
 let dailySpChartInstance = null;
@@ -138,9 +139,9 @@ function resetFilters(tabId) {
     else if (tabId === 'detail-outlet') updateDashboardDO();
     else if (tabId === 'daily-dse') updateDashboardDaily();
     else if (tabId === 'partner-performance') updateDashboardPP();
+    else if (tabId === 'ms-week-30') updateDashboardW30();
 }
 
-// Data Fetching Promisified
 const p1 = fetch("MS BENGKAYANG 19 JULI 2026.xlsx")
   .then((res) => res.arrayBuffer())
   .then((data) => {
@@ -226,7 +227,6 @@ const p4 = fetch("DAILY SELL IN DSE.xlsx")
     updateDashboardDaily();
   }).catch(e => console.log("Daily load skip"));
 
-// FETCH PARTNER PERFORMANCE (Header di Baris index 4, Data di Baris index 5 dst)
 const p5 = fetch("PARTNER PERFORMANCE.xlsx")
   .then((res) => res.arrayBuffer())
   .then((data) => {
@@ -250,7 +250,30 @@ const p5 = fetch("PARTNER PERFORMANCE.xlsx")
     updateDashboardPP();
   }).catch(e => console.log("PP load skip"));
 
-Promise.all([p1, p2, p3, p4, p5]).then(() => {
+const p6 = fetch("MS WEEK 30.xlsx")
+  .then((res) => res.arrayBuffer())
+  .then((data) => {
+    const wb = XLSX.read(data, { type: "array" });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true });
+    if (!rows || rows.length < 8) return;
+    
+    let rowSub = rows[6] || [];
+    let rowMain = rows[7] || [];
+    globalHeaderW30 = rowMain.map((val, idx) => {
+        let mainTxt = String(val || "").trim();
+        let subTxt = String(rowSub[idx] || "").trim();
+        if (subTxt && subTxt !== "nan" && !mainTxt.toUpperCase().includes(subTxt.toUpperCase())) {
+            return `${subTxt} - ${mainTxt}`;
+        }
+        return mainTxt || `Col ${idx}`;
+    });
+
+    globalDataW30 = rows.slice(8).filter(r => r.length > 0 && r[1]);
+    updateDashboardW30();
+  }).catch(e => console.log("MS Week 30 load skip"));
+
+Promise.all([p1, p2, p3, p4, p5, p6]).then(() => {
   updateAutoDateH2();
   updateGlobalAiHeaderSummary();
   updateExecutiveSummaryNew();
@@ -265,14 +288,17 @@ function populateDropdown(dataRows, selectId, colIdx, defaultText) {
   const selectElem = document.getElementById(selectId);
   if (!selectElem) return;
   const valSet = new Set();
+  
   dataRows.forEach((r) => {
-    const val = r[colIdx] ? String(r[colIdx]).trim() : "";
-    if (val && val !== "undefined" && !val.toUpperCase().includes("HEADER") && !val.toUpperCase().includes("NAME") && !val.toUpperCase().includes("BENGKAYANG")) {
+    const val = r[colIdx] !== undefined && r[colIdx] !== null ? String(r[colIdx]).trim() : "";
+    if (val && val !== "undefined" && val.toUpperCase() !== "NAN" && !val.toUpperCase().includes("HEADER") && !val.toUpperCase().includes("DSE CODE")) {
       valSet.add(val);
     }
   });
+
   selectElem.innerHTML = `<option value="ALL">${defaultText}</option>`;
-  Array.from(valSet).sort().forEach((val) => {
+  
+  Array.from(valSet).sort((a, b) => a.localeCompare(b, 'id', { numeric: true })).forEach((val) => {
     const opt = document.createElement("option");
     opt.value = val;
     opt.innerText = val;
@@ -440,7 +466,6 @@ function updateDashboardSM() {
   renderTable("dataTableMC", globalHeaderSM, filteredRows);
 }
 
-// LOGIKA PARTNER PERFORMANCE (Mapping Indeks Kolom Sesuai Baris Header ke-4)
 function updateDashboardPP() {
   const selPT = document.getElementById("partnerFilterPP")?.value || "ALL";
   const search = document.getElementById("searchInputPP")?.value.toLowerCase().trim() || "";
@@ -456,16 +481,6 @@ function updateDashboardPP() {
 
   const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni"];
   
-  // Mapping kolom dari baris header PARTNER PERFORMANCE.xlsx:
-  // [0:KECAMATAN, 1:NAMA PARTNER]
-  // Prepaid Rev: Jan=2, Feb=3, Mar=4, Apr=5, Mei=6, Juni=7
-  // Primary: Jan=8, Feb=9, Mar=10, Apr=11, Mei=12, Juni=13
-  // RGUGA FWA: Jan=14, Feb=15, Mar=16, Apr=17, Mei=18, Juni=19
-  // RGUGA-Trad: Jan=20, Feb=21, Mar=22, Apr=23, Mei=24, Juni=25
-  // Secondary: Jan=26, Feb=27, Mar=28, Apr=29, Mei=30, Juni=31
-  // Tertiary B#: Jan=32, Feb=33, Mar=34, Apr=35, Mei=36, Juni=37
-  // Trade Supply: Jan=38, Feb=39, Mar=40, Apr=41, Mei=42, Juni=43
-  // VLR_SUBS: Jan=44, Feb=45, Mar=46, Apr=47, Mei=48, Juni=49
   const colsMap = {
       rev: [2, 3, 4, 5, 6, 7],
       primary: [8, 9, 10, 11, 12, 13],
@@ -520,7 +535,6 @@ function updateDashboardPP() {
   animateCounter("kpiVlrSubsPP", totVlr);
   document.getElementById("avgVlrSubsPP").innerText = "Rata-rata: " + Math.round(avgVlr).toLocaleString('id-ID');
 
-  // Growth Pembanding Mei (index 4) vs Juni (index 5)
   updateGrowthBadge("ppRevGrowthBadge", mRev[5], mRev[4]);
   updateGrowthBadge("ppPrimaryGrowthBadge", mPrimary[5], mPrimary[4]);
   updateGrowthBadge("ppSecondaryGrowthBadge", mSecondary[5], mSecondary[4]);
@@ -551,6 +565,12 @@ function updateDashboardPP() {
 
   renderPpItemCharts(monthNames, mRev, mPrimary, mSecondary, mTertiary, mTrade, mRguTrade, mVlr, filteredRows);
   renderTable("dataTablePP", globalHeaderPP, filteredRows);
+}
+
+function updateDashboardW30() {
+    const searchKeyword = document.getElementById("searchInputW30")?.value.toLowerCase().trim() || "";
+    const filteredRows = globalDataW30.filter(r => r.join(" ").toLowerCase().includes(searchKeyword));
+    renderTable("dataTableW30", globalHeaderW30, filteredRows);
 }
 
 function renderPpItemCharts(labels, rev, primary, secondary, tertiary, trade, rguTrade, vlr, filteredRows) {
@@ -1306,37 +1326,33 @@ function renderTable(tableId, header, data) {
 
   const thead = document.createElement("thead");
   const trHead = document.createElement("tr");
-  const isFreeze2Col = (tableId === "dataTableMC" || tableId === "dataTableDO" || tableId === "dataTablePP");
+  const isFreeze5Col = (tableId === "dataTableW30" || tableId === "dataTablePP");
+  const isFreeze2Col = (tableId === "dataTableMC" || tableId === "dataTableDO");
+
+  const colWidths = ["120px", "180px", "130px", "150px", "160px"];
+  let acumulatedWidths = [0, 120, 300, 430, 580];
 
   activeHeader.forEach((judul, index) => {
     const th = document.createElement("th");
     const txt = String(judul || "").trim().toUpperCase();
     th.innerText = judul || "";
-    let baseStyle = "padding: 12px 18px !important; font-size: 12px !important; text-align: center; white-space: nowrap; min-width: 140px; border-right: 1px solid rgba(255,255,255,0.1);";
+    let baseStyle = "padding: 12px 16px !important; font-size: 12px !important; text-align: center; white-space: nowrap; border-right: 1px solid rgba(255,255,255,0.1);";
     
-    if (tableId === "dataTablePP") {
-        let bgStyle = "background-color: #1e293b !important; color: #FFFFFF !important;";
-        if (index === 0) {
-          th.style.cssText = baseStyle + " background-color: #be123c !important; color: #FFFFFF !important; position: sticky; left: 0; min-width: 150px; border-right: 2px solid #f59e0b;";
-        } else if (index === 1) {
-          th.style.cssText = baseStyle + " background-color: #be123c !important; color: #FFFFFF !important; position: sticky; left: 150px; min-width: 200px; border-right: 2px solid #f59e0b;";
-        } else {
-          if (txt.includes("IM3") || txt.includes("PREPAID")) bgStyle = "background-color: #f59e0b !important; color: #000 !important;";
-          else if (txt.includes("MTD") || txt.includes("REV")) bgStyle = "background-color: #e11d48 !important; color: #FFF !important;";
-          else if (txt.includes("LMTD") || txt.includes("PRIMARY")) bgStyle = "background-color: #0891b2 !important; color: #FFF !important;";
-          th.style.cssText = baseStyle + " " + bgStyle;
-        }
+    if (isFreeze5Col && index <= 4) {
+      let leftPx = acumulatedWidths[index] + "px";
+      let wPx = colWidths[index];
+      th.style.cssText = baseStyle + ` background-color: #be123c !important; color: #FFFFFF !important; position: sticky; left: ${leftPx}; top: 0; z-index: 1050; min-width: ${wPx}; max-width: ${wPx}; border-right: 2px solid #f59e0b;`;
     } else {
-        if (index === 0) {
-          th.style.cssText = baseStyle + " background-color: #be123c !important; color: #FFFFFF !important; position: sticky; left: 0; top: 0; z-index: 1000; min-width: 150px; border-right: 2px solid #f59e0b;";
+        if (index === 0 && !isFreeze5Col) {
+          th.style.cssText = baseStyle + " background-color: #be123c !important; color: #FFFFFF !important; position: sticky; left: 0px; top: 0; z-index: 1050; min-width: 150px; border-right: 2px solid #f59e0b;";
         } else if (isFreeze2Col && index === 1) {
-          th.style.cssText = baseStyle + " background-color: #be123c !important; color: #FFFFFF !important; position: sticky; left: 150px; top: 0; z-index: 1000; min-width: 200px; border-right: 2px solid #f59e0b;";
+          th.style.cssText = baseStyle + " background-color: #be123c !important; color: #FFFFFF !important; position: sticky; left: 150px; top: 0; z-index: 1050; min-width: 200px; border-right: 2px solid #f59e0b;";
         } else {
           let bgStyle = "background-color: #1e293b !important; color: #FFFFFF !important;";
           if (txt.includes("IM3") || txt.includes("PREPAID")) bgStyle = "background-color: #f59e0b !important; color: #000 !important;";
           else if (txt.includes("MTD") || txt.includes("REV")) bgStyle = "background-color: #e11d48 !important; color: #FFF !important;";
           else if (txt.includes("LMTD") || txt.includes("PRIMARY")) bgStyle = "background-color: #0891b2 !important; color: #FFF !important;";
-          th.style.cssText = baseStyle + " " + bgStyle + " position: sticky; top: 0; z-index: 900;";
+          th.style.cssText = baseStyle + " " + bgStyle + " position: sticky; top: 0; z-index: 900; min-width: 140px;";
         }
     }
     trHead.appendChild(th);
@@ -1360,14 +1376,15 @@ function renderTable(tableId, header, data) {
       else if (judulKolom.includes("BIOMETRIX") || judulKolom.includes("RGUGA")) {
         valDisplay = Math.floor(numVal).toLocaleString("id-ID");
       }
-      else if ((judulKolom.includes("ACH OSA") || judulKolom.includes("PREPAID REV")) && numVal >= 1000) {
+      else if ((judulKolom.includes("ACH OSA") || judulKolom.includes("PREPAID REV") || judulKolom.includes("REVENUE")) && numVal >= 1000) {
         valDisplay = "Rp " + Math.round(numVal).toLocaleString("id-ID");
       }
-      else if (judulKolom.includes("%") || judulKolom.includes("ACH %")) {
+      else if (judulKolom.includes("%") || judulKolom.includes("ACH %") || judulKolom.includes("MOM")) {
         if (rawStr !== "" && !isNaN(Number(rawStr))) {
           isPercent = true;
           pctVal = Math.abs(numVal) <= 1 && numVal !== 0 ? numVal * 100 : numVal;
-          valDisplay = pctVal.toFixed(1) + "%";
+          let sign = pctVal > 0 ? "+" : "";
+          valDisplay = sign + pctVal.toFixed(2) + "%";
         }
       } else if (rawStr !== "" && !isNaN(Number(rawStr)) && !judulKolom.includes("ID") && !judulKolom.includes("CODE") && Math.abs(numVal) >= 1000) {
         valDisplay = Math.round(numVal).toLocaleString("id-ID");
@@ -1376,14 +1393,21 @@ function renderTable(tableId, header, data) {
       td.innerHTML = valDisplay;
       let tdStyle = "padding: 10px 16px !important; font-size: 12.5px !important; text-align: center; white-space: nowrap;";
       if (isPercent) {
-        if (pctVal >= 120) tdStyle += " background-color: #dbeafe !important; color: #1e40af !important; font-weight: 800;";
-        else if (pctVal >= 100) tdStyle += " background-color: #dcfce7 !important; color: #15803d !important; font-weight: 700;";
-        else if (pctVal < 50) tdStyle += " background-color: #fee2e2 !important; color: #b91c1c !important; font-weight: 700;";
+        if (pctVal > 0) tdStyle += " background-color: #dcfce7 !important; color: #15803d !important; font-weight: 700;";
+        else if (pctVal < 0) tdStyle += " background-color: #fee2e2 !important; color: #b91c1c !important; font-weight: 700;";
       }
 
-      if (index === 0) td.style.cssText = tdStyle + " position: sticky; left: 0; font-weight: 700; z-index: 500; border-right: 2px solid #f59e0b;";
-      else if (isFreeze2Col && index === 1) td.style.cssText = tdStyle + " position: sticky; left: 150px; font-weight: 700; z-index: 500; border-right: 2px solid #f59e0b;";
-      else td.style.cssText = tdStyle;
+      if (isFreeze5Col && index <= 4) {
+          let leftPx = acumulatedWidths[index] + "px";
+          let wPx = colWidths[index];
+          td.style.cssText = tdStyle + ` position: sticky; left: ${leftPx}; font-weight: 700; z-index: 500; border-right: 2px solid #f59e0b; background-color: #f8fafc; min-width: ${wPx}; max-width: ${wPx}; overflow: hidden; text-overflow: ellipsis;`;
+      } else if (index === 0 && !isFreeze5Col) {
+          td.style.cssText = tdStyle + " position: sticky; left: 0px; font-weight: 700; z-index: 500; border-right: 2px solid #f59e0b; background-color: #f8fafc; min-width: 150px;";
+      } else if (isFreeze2Col && index === 1) {
+          td.style.cssText = tdStyle + " position: sticky; left: 150px; font-weight: 700; z-index: 500; border-right: 2px solid #f59e0b; background-color: #f8fafc; min-width: 200px;";
+      } else {
+          td.style.cssText = tdStyle + " min-width: 140px;";
+      }
 
       tr.appendChild(td);
     });
@@ -1407,6 +1431,8 @@ function switchReport(reportId, btnObj) {
       updateDashboardDaily();
   } else if (reportId === 'partner-performance') {
       updateDashboardPP();
+  } else if (reportId === 'ms-week-30') {
+      updateDashboardW30();
   }
   if (btnObj) btnObj.classList.add('active');
 }
@@ -1417,6 +1443,7 @@ document.addEventListener("input", function (e) {
   if (e.target.id.includes("DO") || e.target.id === "columnFilterValDO") updateDashboardDO();
   if (e.target.id.includes("Daily")) updateDashboardDaily();
   if (e.target.id.includes("PP")) updateDashboardPP();
+  if (e.target.id === "searchInputW30") updateDashboardW30();
 });
 
 document.addEventListener("change", function (e) {
