@@ -1,0 +1,32 @@
+const CACHE_NAME = 'bengkayang-dashboard-v1';
+const urlsToCache = [
+  'index.html',
+  'style.css',
+  'script.js',
+  'MS BENGKAYANG 19 JULI 2026.xlsx',
+  'SITE MONITORING.xlsx',
+  'DETAIL OUTLET.xlsx',
+  'DAILY SELL IN DSE.xlsx',
+  'PARTNER PERFORMANCE.xlsx',
+  'MS WEEK 30.xlsx'
+];
+
+// Install Service Worker & Cache File
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => {
+        return cache.addAll(urlsToCache);
+      })
+  );
+});
+
+// Fetch File dari Cache saat Offline
+self.addEventListener('fetch', event => {
+  event.respondWith(
+    caches.match(event.request)
+      .then(response => {
+        return response || fetch(event.request);
+      })
+  );
+});
