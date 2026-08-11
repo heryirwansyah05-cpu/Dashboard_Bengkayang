@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=1200, initial-scale=0.3, maximum-scale=3.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes">
     <title>Dashboard MC Bengkayang - Indosat Ooredoo Hutchison</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
@@ -40,7 +40,7 @@
 
             <div class="header-right-im3">
                 <div style="background: #ffc107; padding: 6px 14px; border-radius: 14px; display: flex; align-items: center; box-shadow: 0 4px 14px rgba(255, 193, 7, 0.35); height: 50px;">
-                    <img src="input_file_16.png" alt="IM3" style="height: 36px; object-fit: contain;">
+                    <img src="im3.png" alt="IM3" style="height: 36px; object-fit: contain;">
                 </div>
             </div>
         </div>
@@ -63,7 +63,7 @@
         </div>
     </div>
 
-    <!-- TAB NAVIGASI UTAMA -->
+    <!-- TOP NAV BAR (DISEMBUNYIKAN DI TAMPILAN MOBILE / APK, DIGANTIKAN BOTTOM NAV) -->
     <div class="top-nav-bar">
         <div class="report-tabs">
             <button class="tab-btn tab-summary-btn active" onclick="switchReport('all-summary-tab', this)"><i class="fa-solid fa-layer-group"></i> Executive Summary All</button>
@@ -696,12 +696,40 @@
 
 <!-- LOADING SCREEN -->
 <div id="loading">
-    <div class="im3-loader-logo" style="background: #ffc107; padding: 8px 16px; border-radius: 12px; display: inline-flex; align-items: center;">
-        <img src="im3.png" alt="Logo IM3" style="height: 36px; object-fit: contain;">
+    <div class="im3-loader-logo">
+        <img src="im3.png" alt="Logo IM3" style="width: 130px; height: auto; object-fit: contain;">
     </div>
     <div class="loader-bar"><div class="loader-fill"></div></div>
     <p>Loading Dashboard MC Bengkayang...</p>
-    <div class="loader-subtext">Lagi loading sabar ya...</div>
+    <div class="loader-subtext">Mengambil & memproses data real-time...</div>
+</div>
+
+<!-- BOTTOM NAVIGATION BAR (ALA APLIKASI NATIVE ANDROID) -->
+<div class="mobile-bottom-nav">
+    <button class="mobile-nav-btn active" onclick="switchReport('all-summary-tab', this)">
+        <i class="fa-solid fa-layer-group"></i>
+        <span>Summary</span>
+    </button>
+    <button class="mobile-nav-btn" onclick="switchReport('ms-bengkayang', this)">
+        <i class="fa-solid fa-chart-pie"></i>
+        <span>PST</span>
+    </button>
+    <button class="mobile-nav-btn" onclick="switchReport('outlet-mc', this)">
+        <i class="fa-solid fa-desktop"></i>
+        <span>Monitoring</span>
+    </button>
+    <button class="mobile-nav-btn" onclick="switchReport('detail-outlet', this)">
+        <i class="fa-solid fa-store"></i>
+        <span>Outlet</span>
+    </button>
+    <button class="mobile-nav-btn" onclick="switchReport('daily-dse', this)">
+        <i class="fa-solid fa-calendar-days"></i>
+        <span>Daily</span>
+    </button>
+    <button class="mobile-nav-btn" onclick="switchReport('partner-performance', this)">
+        <i class="fa-solid fa-chart-line"></i>
+        <span>Partner</span>
+    </button>
 </div>
 
 <script src="script.js"></script>
