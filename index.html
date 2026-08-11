@@ -29,17 +29,8 @@
     <div class="header">
         <div class="header-top-row">
             <div class="header-left-brand">
-                <div style="display: flex; align-items: center; gap: 12px; background: #ffffff; padding: 8px 16px; border-radius: 12px; border: 1px solid #e2e8f0;">
-                    <div style="display: flex; flex-direction: column; line-height: 1.1;">
-                        <span style="font-size: 22px; font-weight: 900; color: #374151; letter-spacing: -0.5px;">indosat</span>
-                        <span style="font-size: 7.5px; font-weight: 800; color: #6b7280; letter-spacing: 0.8px;">OOREDOO HUTCHISON</span>
-                    </div>
-                    <div style="display: grid; grid-template-columns: repeat(2, 10px); gap: 2px;">
-                        <span style="width: 10px; height: 10px; background-color: #0d9488; border-radius: 50%; display: block;"></span>
-                        <span style="width: 10px; height: 10px; background-color: #ef4444; border-radius: 50%; display: block;"></span>
-                        <span style="width: 10px; height: 10px; background-color: #c026d3; border-radius: 50%; display: block;"></span>
-                        <span style="width: 10px; height: 10px; background-color: #facc15; border-radius: 50%; display: block;"></span>
-                    </div>
+                <div style="display: flex; align-items: center; background: #ffffff; padding: 6px 14px; border-radius: 12px; border: 1px solid #e2e8f0; height: 50px;">
+                    <img src="input_file_14.png" alt="Indosat Ooredoo Hutchison" style="height: 32px; object-fit: contain;">
                 </div>
                 <div>
                     <h1>Dashboard MC Bengkayang</h1>
@@ -48,20 +39,10 @@
             </div>
 
             <div class="header-right-im3">
-                <div style="background: #ffc107; padding: 8px 20px; border-radius: 14px; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 14px rgba(255, 193, 7, 0.35);">
-                    <span style="font-size: 16px; font-weight: 800; color: #000000; letter-spacing: -0.3px;">Simpel itu</span>
-                    <div style="position: relative; display: flex; align-items: center;">
-                        <span style="position: absolute; top: -3px; left: 3px; width: 6px; height: 6px; background-color: #ef4444; border-radius: 50%;"></span>
-                        <span style="font-size: 24px; font-weight: 900; color: #000000; line-height: 1; letter-spacing: -0.5px;">im3</span>
-                    </div>
+                <div style="background: #ffc107; padding: 6px 14px; border-radius: 14px; display: flex; align-items: center; box-shadow: 0 4px 14px rgba(255, 193, 7, 0.35); height: 50px;">
+                    <img src="input_file_16.png" alt="IM3" style="height: 36px; object-fit: contain;">
                 </div>
             </div>
-        </div>
-
-        <div class="header-ai-summary-bar">
-            <div class="ai-summary-badge"><i class="fa-solid fa-bolt"></i> AI Executive Summary</div>
-            <div class="ai-summary-text" id="globalAiSummaryContent">Memuat rangkuman AI real-time dari data...</div>
-            <button class="btn-refresh-ai" onclick="refreshGlobalAiSummary()"><i class="fa-solid fa-arrows-rotate"></i> Refresh AI</button>
         </div>
 
         <div class="header-bottom-row">
@@ -588,12 +569,10 @@
         </div>
     </div>
 
-    <!-- ================= TAB 6: PARTNER PERFORMANCE (DENGAN TOTAL, RATA-RATA, & GROWTH MEI VS JUNI) ================= -->
+    <!-- ================= TAB 6: PARTNER PERFORMANCE ================= -->
     <div id="partner-performance" class="report-content" style="display: none;">
         
-        <!-- GRID KARTU GRAFIK PER ITEM DENGAN TOTAL & RATA-RATA -->
         <div class="pp-dashboard-grid">
-            <!-- 1. Total Partners -->
             <div class="card card-red pp-card-interactive">
                 <div class="card-body">
                     <h3>TOTAL PARTNERS</h3>
@@ -603,7 +582,6 @@
                 <div class="pp-mini-chart-container"><canvas id="chartPartnerPP"></canvas></div>
             </div>
 
-            <!-- 2. Prepaid Rev -->
             <div class="card card-yellow pp-card-interactive">
                 <div class="card-body">
                     <h3>TOTAL PREPAID REV (JAN - JUN)</h3>
@@ -614,7 +592,6 @@
                 <div class="pp-mini-chart-container"><canvas id="chartPrepaidRevPP"></canvas></div>
             </div>
 
-            <!-- 3. Primary -->
             <div class="card card-cyan pp-card-interactive">
                 <div class="card-body">
                     <h3>TOTAL PRIMARY (JAN - JUN)</h3>
@@ -625,7 +602,6 @@
                 <div class="pp-mini-chart-container"><canvas id="chartPrimaryPP"></canvas></div>
             </div>
 
-            <!-- 4. Secondary -->
             <div class="card card-magenta pp-card-interactive">
                 <div class="card-body">
                     <h3>TOTAL SECONDARY (JAN - JUN)</h3>
@@ -636,7 +612,6 @@
                 <div class="pp-mini-chart-container"><canvas id="chartSecondaryPP"></canvas></div>
             </div>
 
-            <!-- 5. Tertiary B# -->
             <div class="card card-red pp-card-interactive">
                 <div class="card-body">
                     <h3>TOTAL TERTIARY B# (JAN - JUN)</h3>
@@ -647,7 +622,6 @@
                 <div class="pp-mini-chart-container"><canvas id="chartTertiaryPP"></canvas></div>
             </div>
 
-            <!-- 6. Trade Supply -->
             <div class="card card-yellow pp-card-interactive">
                 <div class="card-body">
                     <h3>TOTAL TRADE SUPPLY (JAN - JUN)</h3>
@@ -658,7 +632,6 @@
                 <div class="pp-mini-chart-container"><canvas id="chartTradePP"></canvas></div>
             </div>
 
-            <!-- 7. RGU GA Trade -->
             <div class="card card-cyan pp-card-interactive">
                 <div class="card-body">
                     <h3>TOTAL RGU GA TRADE (JAN - JUN)</h3>
@@ -669,7 +642,6 @@
                 <div class="pp-mini-chart-container"><canvas id="chartRguTradePP"></canvas></div>
             </div>
 
-            <!-- 8. VLR Subs -->
             <div class="card card-magenta pp-card-interactive">
                 <div class="card-body">
                     <h3>TOTAL VLR SUBS (JAN - JUN)</h3>
@@ -681,7 +653,6 @@
             </div>
         </div>
 
-        <!-- RANGKUMAN TABEL BULANAN JANUARI - JUNI -->
         <div class="exec-card-panel border-top-yellow" style="margin-bottom: 20px;">
             <div class="exec-panel-header"><i class="fa-solid fa-chart-column color-yellow"></i> RANGKUMAN BULANAN (JANUARI - JUNI) KESELURUHAN</div>
             <div class="mini-table-wrapper">
