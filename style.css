@@ -96,22 +96,13 @@ body.dark-mode tr:hover td { background-color: #1e293b !important; }
 /* Default Bottom Nav (Sembunyi di Desktop) */
 .mobile-bottom-nav { display: none; }
 
-/* Jika diakses lewat HP (Layar Kecil) secara otomatis */
+/* Dipaksa selalu menggunakan tampilan dan navigasi versi Desktop di semua ukuran layar (termasuk HP) */
 @media screen and (max-width: 768px) {
-    .top-nav-bar { display: none !important; }
-    .mobile-bottom-nav {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        background: #ffffff;
-        border-top: 1px solid #e2e8f0;
-        display: flex;
-        justify-content: space-around;
-        align-items: center;
-        padding: 8px 4px;
-        z-index: 3000;
-        box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.05);
+    .top-nav-bar { 
+        display: flex !important; 
+    }
+    .mobile-bottom-nav { 
+        display: none !important; 
     }
 }
 
