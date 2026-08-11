@@ -1390,7 +1390,11 @@ function renderTable(tableId, header, data) {
         valDisplay = Math.round(numVal).toLocaleString("id-ID");
       }
 
-      td.innerHTML = valDisplay;
+      if (tableId === "dataTableDO" && numVal === 0 && rawStr !== "" && !isNaN(Number(rawStr)) && !judulKolom.includes("ID") && !judulKolom.includes("NAME") && !judulKolom.includes("CODE")) {
+        td.innerHTML = `<span class="text-red">${valDisplay}</span>`;
+      } else {
+        td.innerHTML = valDisplay;
+      }
       let tdStyle = "padding: 10px 16px !important; font-size: 12.5px !important; text-align: center; white-space: nowrap;";
       if (isPercent) {
         if (pctVal > 0) tdStyle += " background-color: #dcfce7 !important; color: #15803d !important; font-weight: 700;";

@@ -214,3 +214,12 @@ tbody tr:hover td { background-color: #fef2f2 !important; border-left: 3px solid
     0% { transform: translateX(-100%); }
     100% { transform: translateX(100%); }
 }
+
+.text-red {
+    background-color: #fee2e2 !important;
+    color: #b91c1c !important;
+    font-weight: 700 !important;
+    padding: 2px 8px !important;
+    border-radius: 6px !important;
+    display: inline-block !important;
+}
