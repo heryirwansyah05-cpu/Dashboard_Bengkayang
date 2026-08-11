@@ -145,7 +145,7 @@ body.dark-mode .mobile-bottom-nav {
    JIKA USER MEMAKSA MASUK KE "MODE DESKTOP" DI HP
    ========================================================== */
 body.forced-desktop-mode {
-    zoom: 0.42;
+    zoom: 0.60;
 }
 
 body.forced-desktop-mode .mobile-bottom-nav {
@@ -154,11 +154,6 @@ body.forced-desktop-mode .mobile-bottom-nav {
 
 body.forced-desktop-mode .top-nav-bar {
     display: flex !important;
-}
-
-/* Memperpanjang tinggi tabel agar memanfaatkan seluruh ruang kosong ke bawah */
-body.forced-desktop-mode .table-container {
-    max-height: 1800px !important;
 }
 
 /* ==========================================================
@@ -279,7 +274,7 @@ body.forced-desktop-mode .table-container {
 .btn-full-link { width: 100%; background: #f8fafc; border: 1px solid #cbd5e1; color: #0f172a; padding: 10px; border-radius: 10px; font-size: 11.5px; font-weight: 800; cursor: pointer; margin-top: 10px; text-align: center; }
 .btn-full-link:hover { background: #f1f5f9; border-color: #94a3b8; }
 
-.table-container { background: #ffffff; border-radius: 16px; overflow-x: auto; border: 1px solid #e2e8f0; max-height: 85vh; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02); }
+.table-container { background: #ffffff; border-radius: 16px; overflow-x: auto; border: 1px solid #e2e8f0; max-height: 550px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02); }
 table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; }
 th { font-weight: 800; position: sticky; top: 0; z-index: 10; background: #f8fafc; color: #334155; padding: 12px 14px; border-bottom: 1px solid #e2e8f0; text-transform: uppercase; font-size: 11px; letter-spacing: 0.02em; }
 tbody tr td { background-color: #ffffff; padding: 12px 14px; border-bottom: 1px solid #f1f5f9; color: #1e293b; }
