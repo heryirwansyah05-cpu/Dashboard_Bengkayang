@@ -52,37 +52,23 @@ body.dark-mode tr:hover td { background-color: #1e293b !important; }
 .date-badge-box b { font-size: 11.5px; color: #0f172a; display: block; }
 .date-badge-box small { font-size: 10px; color: #64748b; font-weight: 700; }
 
-/* ==========================================================
-   PENGATURAN TAMPILAN RESPONSIVE (MOBILE VS DESKTOP)
-   ========================================================== */
+/* TOP NAV BAR DIKONTROL OLEH SAKLAR MODE DESKTOP/MOBILE */
+.top-nav-bar { display: none !important; }
 
-/* Default Desktop / Layar Besar */
-.top-nav-bar { display: flex; justify-content: space-between; align-items: center; background: #ffffff; border: 1px solid #e2e8f0; padding: 10px 16px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.01); }
-.report-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
-.tab-btn { background: transparent; border: none; padding: 8px 14px; border-radius: 8px; font-size: 11.5px; font-weight: 700; color: #64748b; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
-.tab-btn:hover { background: #f8fafc; color: #0f172a; }
-.tab-btn.active { background: #ef4444; color: #ffffff; box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3); }
-
-/* Default Bottom Nav (Sembunyi di Desktop) */
-.mobile-bottom-nav { display: none; }
-
-/* Jika diakses lewat HP (Layar Kecil) secara otomatis */
-@media screen and (max-width: 768px) {
-    .top-nav-bar { display: none !important; }
-    .mobile-bottom-nav {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        background: #ffffff;
-        border-top: 1px solid #e2e8f0;
-        display: flex;
-        justify-content: space-around;
-        align-items: center;
-        padding: 8px 4px;
-        z-index: 3000;
-        box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.05);
-    }
+/* BOTTOM NAVIGATION BAR (DEFAULT MOBILE) */
+.mobile-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: #ffffff;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 8px 4px;
+    z-index: 3000;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.05);
 }
 
 body.dark-mode .mobile-bottom-nav {
@@ -111,25 +97,17 @@ body.dark-mode .mobile-bottom-nav {
 .mobile-nav-btn.active { color: #ef4444; }
 .mobile-nav-btn.active i { transform: scale(1.1); }
 
-/* ==========================================================
-   JIKA USER MEMAKSA MASUK KE "MODE DESKTOP" DI HP
-   ========================================================== */
+/* PENGATURAN MODE DESKTOP PAKSA DI HP */
 body.forced-desktop-mode {
     zoom: 0.60;
 }
-
-/* Sembunyikan menu bawah ala HP, tampilkan menu tab atas ala komputer */
 body.forced-desktop-mode .mobile-bottom-nav {
     display: none !important;
 }
-
 body.forced-desktop-mode .top-nav-bar {
     display: flex !important;
 }
 
-/* ==========================================================
-   KOMPONEN LAINNYA
-   ========================================================== */
 .exec-summary-wrapper { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 20px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02); }
 .exec-summary-title-banner { border-bottom: 2px solid #f1f5f9; padding-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
 .exec-summary-title-banner h2 { font-size: 18px; font-weight: 900; color: #0f172a; letter-spacing: -0.01em; }

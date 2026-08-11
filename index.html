@@ -58,12 +58,18 @@
             <div class="header-actions">
                 <button class="btn-export" onclick="exportExcelCurrent()"><i class="fa-solid fa-file-excel" style="color:#10b981;"></i> Export Excel</button>
                 <button class="btn-export" onclick="takeScreenshot()"><i class="fa-solid fa-camera" style="color:#2563eb;"></i> Snapshot Dashboard</button>
+                
+                <!-- TOMBOL SAKLAR MODE TAMPILAN (DESKTOP VS MOBILE) -->
+                <button class="btn-export" onclick="toggleDesktopMobileMode()" id="modeToggleBtn" style="background: #e0f2fe; color: #0369a1; border-color: #bae6fd;">
+                    <i class="fa-solid fa-desktop"></i> Mode: Mobile
+                </button>
+
                 <button class="dark-toggle-btn" onclick="toggleDarkMode()"><i class="fa-solid fa-moon" id="themeIcon"></i></button>
             </div>
         </div>
     </div>
 
-    <!-- TOP NAV BAR (DESKTOP) -->
+    <!-- TOP NAV BAR (MUNCUL SAAT MODE DESKTOP AKTIF DI HP) -->
     <div class="top-nav-bar">
         <div class="report-tabs">
             <button class="tab-btn tab-summary-btn active" onclick="switchReport('all-summary-tab', this)"><i class="fa-solid fa-layer-group"></i> Executive Summary All</button>
@@ -701,7 +707,7 @@
     <div class="loader-subtext">Mengambil & memproses data real-time...</div>
 </div>
 
-<!-- BOTTOM NAVIGATION BAR (MOBILE) -->
+<!-- BOTTOM NAVIGATION BAR (DEFAULT MOBILE) -->
 <div class="mobile-bottom-nav">
     <button class="mobile-nav-btn active" onclick="switchReport('all-summary-tab', this)">
         <i class="fa-solid fa-layer-group"></i>
