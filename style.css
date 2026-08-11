@@ -19,7 +19,7 @@ body {
     background-size: 1000px 1000px;
     background-position: right bottom;
     background-attachment: fixed;
-    padding-bottom: 75px !important; /* Ruang agar konten tidak tertutup bottom nav */
+    padding-bottom: 75px !important;
 }
 
 body::after {
@@ -57,10 +57,10 @@ body.dark-mode tr:hover td { background-color: #1e293b !important; }
 .date-badge-box b { font-size: 11px; color: #0f172a; display: block; }
 .date-badge-box small { font-size: 9px; color: #64748b; font-weight: 700; }
 
-/* SEMBUNYIKAN TAB ATAS KARENA DIGANTIKAN BOTTOM NAVIGATION */
+/* TOP NAV BAR DIKONTROL OLEH SAKLAR MODE DESKTOP/MOBILE */
 .top-nav-bar { display: none !important; }
 
-/* BOTTOM NAVIGATION BAR (GAYA APLIKASI ANDROID NATIVE) */
+/* BOTTOM NAVIGATION BAR (DEFAULT MOBILE) */
 .mobile-bottom-nav {
     position: fixed;
     bottom: 0;
@@ -98,16 +98,19 @@ body.dark-mode .mobile-bottom-nav {
     transition: all 0.2s ease;
 }
 
-.mobile-nav-btn i {
-    font-size: 16px;
-}
+.mobile-nav-btn i { font-size: 16px; }
+.mobile-nav-btn.active { color: #ef4444; }
+.mobile-nav-btn.active i { transform: scale(1.15); }
 
-.mobile-nav-btn.active {
-    color: #ef4444; /* Merah khas IM3 */
+/* PENGATURAN MODE DESKTOP PAKSA */
+body.forced-desktop-mode {
+    zoom: 0.60;
 }
-
-.mobile-nav-btn.active i {
-    transform: scale(1.15);
+body.forced-desktop-mode .mobile-bottom-nav {
+    display: none !important;
+}
+body.forced-desktop-mode .top-nav-bar {
+    display: flex !important;
 }
 
 .exec-summary-wrapper { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); }
@@ -226,7 +229,7 @@ body.dark-mode .mobile-bottom-nav {
 
 .table-container { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-radius: 12px; overflow-x: auto; border: 1px solid #e2e8f0; max-height: 550px; }
 table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 11.5px; }
-th { font-weight: 800; backdrop-filter: blur(8px); }
+th { font-weight: 800; backdrop-filter: blur(8px); position: sticky; top: 0; z-index: 10; background: #f1f5f9; }
 tbody tr td { background-color: rgba(255, 255, 255, 0.8); }
 tbody tr:nth-child(even) td { background-color: rgba(248, 250, 252, 0.8); }
 tbody tr:hover td { background-color: #fef2f2 !important; border-left: 3px solid #ef4444; }
@@ -239,7 +242,6 @@ tbody tr:hover td { background-color: #fef2f2 !important; border-left: 3px solid
 .footer-status { display: flex; gap: 12px; align-items: center; }
 .footer-author-tag { font-weight: 800; color: #0f172a; background: #e2e8f0; padding: 2px 8px; border-radius: 10px; }
 
-/* STYLING PARTNER PERFORMANCE GRID */
 .pp-dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-bottom: 16px; }
 .pp-card-interactive { display: flex; flex-direction: column; justify-content: space-between; align-items: stretch; padding: 14px; gap: 10px; }
 .pp-mini-chart-container { height: 100px; position: relative; width: 100%; background: rgba(255,255,255,0.6); border-radius: 8px; padding: 4px; border: 1px solid rgba(0,0,0,0.04); }

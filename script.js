@@ -1457,3 +1457,26 @@ document.addEventListener("change", function (e) {
   if (e.target.id.includes("Daily")) updateDashboardDaily();
   if (e.target.id.includes("PP")) updateDashboardPP();
 });
+// Fungsi untuk beralih antara Mode Mobile dan Mode Desktop
+function toggleDesktopMobileMode() {
+    let body = document.body;
+    let btn = document.getElementById('modeToggleBtn');
+    
+    if (body.classList.contains('forced-desktop-mode')) {
+        body.classList.remove('forced-desktop-mode');
+        if(btn) {
+            btn.innerHTML = '<i class="fa-solid fa-desktop"></i> Mode: Mobile';
+            btn.style.background = '#e0f2fe';
+            btn.style.color = '#0369a1';
+            btn.style.borderColor = '#bae6fd';
+        }
+    } else {
+        body.classList.add('forced-desktop-mode');
+        if(btn) {
+            btn.innerHTML = '<i class="fa-solid fa-mobile-screen"></i> Mode: Desktop';
+            btn.style.background = '#fef3c7';
+            btn.style.color = '#b45309';
+            btn.style.borderColor = '#fde68a';
+        }
+    }
+}

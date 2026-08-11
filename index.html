@@ -58,12 +58,18 @@
             <div class="header-actions">
                 <button class="btn-export" onclick="exportExcelCurrent()"><i class="fa-solid fa-file-excel" style="color:#10b981;"></i> Export Excel</button>
                 <button class="btn-export" onclick="takeScreenshot()"><i class="fa-solid fa-camera" style="color:#2563eb;"></i> Snapshot Dashboard</button>
+                
+                <!-- TOMBOL SAKLAR MODE TAMPILAN (DESKTOP VS MOBILE) -->
+                <button class="btn-export" onclick="toggleDesktopMobileMode()" id="modeToggleBtn" style="background: #e0f2fe; color: #0369a1; border-color: #bae6fd;">
+                    <i class="fa-solid fa-desktop"></i> Mode: Mobile
+                </button>
+
                 <button class="dark-toggle-btn" onclick="toggleDarkMode()"><i class="fa-solid fa-moon" id="themeIcon"></i></button>
             </div>
         </div>
     </div>
 
-    <!-- TOP NAV BAR (DISEMBUNYIKAN DI TAMPILAN MOBILE / APK, DIGANTIKAN BOTTOM NAV) -->
+    <!-- TOP NAV BAR (MUNCUL JIKA MODE DESKTOP AKTIF) -->
     <div class="top-nav-bar">
         <div class="report-tabs">
             <button class="tab-btn tab-summary-btn active" onclick="switchReport('all-summary-tab', this)"><i class="fa-solid fa-layer-group"></i> Executive Summary All</button>
@@ -493,7 +499,6 @@
     <!-- ================= TAB 5: DAILY SELL IN DSE ================= -->
     <div id="daily-dse" class="report-content" style="display: none;">
         
-        <!-- BAGIAN 1: TARGET OSA (TABEL & GRAFIK) -->
         <div class="exec-card-panel border-top-green" id="snapshotSectionDailyOsa" style="margin-bottom: 25px;">
             <div class="exec-panel-header-flex">
                 <div class="exec-panel-header" id="osaSectionTitleText"><i class="fa-solid fa-bullseye color-green"></i> 1. MONITORING TARGET OSA PER DSE (GAP / SISA HK)</div>
@@ -527,7 +532,6 @@
             </div>
         </div>
 
-        <!-- BAGIAN 2: TARGET SP SELL IN (TABEL & GRAFIK) -->
         <div class="exec-card-panel border-top-cyan" id="snapshotSectionDailySp" style="margin-bottom: 20px;">
             <div class="exec-panel-header-flex">
                 <div class="exec-panel-header" id="spSectionTitleText"><i class="fa-solid fa-cart-shopping color-cyan"></i> 2. MONITORING TARGET SP SELL IN PER DSE (GAP / SISA HK)</div>
@@ -561,7 +565,6 @@
             </div>
         </div>
 
-        <!-- GLOBAL TOOLBAR FOR DAILY TAB -->
         <div class="toolbar">
             <select id="dseFilterDaily" style="font-weight:700;"><option value="ALL">Semua DSE Code</option></select>
             <input type="text" id="searchInputDaily" placeholder="🔍 Cari DSE Code / Micro Cluster...">
@@ -704,7 +707,7 @@
     <div class="loader-subtext">Mengambil & memproses data real-time...</div>
 </div>
 
-<!-- BOTTOM NAVIGATION BAR (ALA APLIKASI NATIVE ANDROID) -->
+<!-- BOTTOM NAVIGATION BAR (DEFAULT MOBILE) -->
 <div class="mobile-bottom-nav">
     <button class="mobile-nav-btn active" onclick="switchReport('all-summary-tab', this)">
         <i class="fa-solid fa-layer-group"></i>
