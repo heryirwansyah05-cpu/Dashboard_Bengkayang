@@ -1109,25 +1109,40 @@ function renderDseAttentionTable() {
     const tbody = document.getElementById("dseAttentionTableBody");
     if (!tbody) return;
 
+    // Mapping target baru sesuai input gambar
+    const customTargets = {
+        "DSE1082": { sellIn: 744, osa: 621760720 },
+        "DSE1147": { sellIn: 398, osa: 575117071 },
+        "DSE-BENGKAYANG01": { sellIn: 74, osa: 91900861 },
+        "DSE-JAGOIBABNG01": { sellIn: 325, osa: 241784637 },
+        "DSE-JAGOIBABNG02": { sellIn: 399, osa: 451939961 }
+    };
+
     let dseMap = {};
+    let grandAchOsa = 0, grandTargetOsa = 0;
+    let grandAchSellIn = 0, grandTargetSellIn = 0;
+    let grand3PcsAch = 0, grand3PcsTgt = 0;
+
     globalDataDO.forEach(r => {
         let dName = String(r[2] || '').trim();
         if (!dName || dName === 'undefined') return;
+        
         if (!dseMap[dName]) {
+            let targetOsaVal = customTargets[dName] ? customTargets[dName].osa : parseNum(r[11]);
+            let targetSellInVal = customTargets[dName] ? customTargets[dName].sellIn : Math.ceil(parseNum(r[7]));
+
             dseMap[dName] = { 
                 name: dName, 
                 achOsa: 0, 
-                targetOsa: 0, 
+                targetOsa: targetOsaVal, 
                 achSellIn: 0, 
-                targetSellIn: 0, 
+                targetSellIn: targetSellInVal, 
                 outletSellIn3PcsAch: 0,
                 outletSellIn3PcsTgt: 25 
             };
         }
         dseMap[dName].achOsa += parseNum(r[12]);
-        dseMap[dName].targetOsa += parseNum(r[11]);
         dseMap[dName].achSellIn += parseNum(r[8]);
-        dseMap[dName].targetSellIn += Math.ceil(parseNum(r[7]));
         
         if (parseNum(r[8]) >= 3) {
             dseMap[dName].outletSellIn3PcsAch++;
@@ -1140,8 +1155,16 @@ function renderDseAttentionTable() {
         return;
     }
 
-    tbody.innerHTML = keys.map(k => {
+    let rowsHtml = keys.map(k => {
         let d = dseMap[k];
+        
+        grandAchOsa += d.achOsa;
+        grandTargetOsa += d.targetOsa;
+        grandAchSellIn += d.achSellIn;
+        grandTargetSellIn += d.targetSellIn;
+        grand3PcsAch += d.outletSellIn3PcsAch;
+        grand3PcsTgt += d.outletSellIn3PcsTgt;
+
         let osaPct = d.targetOsa > 0 ? ((d.achOsa / d.targetOsa) * 100).toFixed(1) : "0.0";
         let sellInPct = d.targetSellIn > 0 ? ((d.achSellIn / d.targetSellIn) * 100).toFixed(1) : "0.0";
         let sellIn3PcsPct = d.outletSellIn3PcsTgt > 0 ? ((d.outletSellIn3PcsAch / d.outletSellIn3PcsTgt) * 100).toFixed(1) : "0.0";
@@ -1160,6 +1183,23 @@ function renderDseAttentionTable() {
             </tr>
         `;
     }).join('');
+
+    let totalOsaPct = grandTargetOsa > 0 ? ((grandAchOsa / grandTargetOsa) * 100).toFixed(1) : "0.0";
+    let totalSellInPct = grandTargetSellIn > 0 ? ((grandAchSellIn / grandTargetSellIn) * 100).toFixed(1) : "0.0";
+    let total3PcsPct = grand3PcsTgt > 0 ? ((grand3PcsAch / grand3PcsTgt) * 100).toFixed(1) : "0.0";
+
+    let footerHtml = `
+        <tr style="background-color: #f8fafc; font-weight: 800; border-top: 2px solid #cbd5e1;">
+            <td style="text-align: left; color: #0f172a;">TOTAL KESELURUHAN</td>
+            <td>Rp ${Math.round(grandAchOsa).toLocaleString('id-ID')} / ${(grandTargetOsa / 1000000).toFixed(1)} Juta</td>
+            <td><span style="color:${parseFloat(totalOsaPct) >= 100 ? '#15803d' : '#ef4444'};">${totalOsaPct}%</span></td>
+            <td>${grandAchSellIn.toLocaleString('id-ID')} / ${grandTargetSellIn.toLocaleString('id-ID')}</td>
+            <td><span style="color:${parseFloat(totalSellInPct) >= 100 ? '#15803d' : '#ef4444'};">${totalSellInPct}%</span></td>
+            <td><b>${grand3PcsAch} / ${grand3PcsTgt} Outlet</b> <span style="color:#64748b; font-size:10px;">(${total3PcsPct}%)</span></td>
+        </tr>
+    `;
+
+    tbody.innerHTML = rowsHtml + footerHtml;
 }
 
 function actionGotoOutletUnach(filterType) {
@@ -1457,7 +1497,7 @@ document.addEventListener("change", function (e) {
   if (e.target.id.includes("Daily")) updateDashboardDaily();
   if (e.target.id.includes("PP")) updateDashboardPP();
 });
-// Fungsi untuk beralih antara Mode Mobile dan Mode Desktop di HP
+
 function toggleDesktopMobileMode() {
     let body = document.body;
     let btn = document.getElementById('modeToggleBtn');
