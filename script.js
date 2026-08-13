@@ -158,6 +158,7 @@ const p1 = fetch("MS BENGKAYANG 19 JULI 2026.xlsx")
       return firstVal !== "" && firstVal !== "KECAMATAN" && !firstVal.includes("TOTAL");
     });
     populateDropdown(globalDataMS, "partnerFilter", 1, "Semua Partner");
+    populateDropdown(globalDataMS, "kecamatanFilter", 0, "Semua Kecamatan");
     updateDashboardMS();
   }).catch(e => console.log("PST load skip"));
 
@@ -336,8 +337,10 @@ function updateGrowthBadge(elemId, currentVal, prevVal) {
 
 function updateDashboardMS() {
   const selectedPartner = document.getElementById("partnerFilter")?.value || "ALL";
+  const selectedKecamatan = document.getElementById("kecamatanFilter")?.value || "ALL";
   const searchKeyword = document.getElementById("searchInput")?.value.toLowerCase().trim() || "";
   
+  let idxKec = 0;
   let idxPartner = globalHeaderMS.findIndex(h => h.toUpperCase().includes("PARTNER"));
   let idxRevMtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("REVENUE MTD"));
   let idxRevLmtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("REVENUE LMTD"));
@@ -349,10 +352,15 @@ function updateDashboardMS() {
   let idxTertLmtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("TERTIARY B# LMTD"));
   let idxTradeMtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("TRADE SUPPLY MTD"));
   let idxTradeLmtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("TRADE SUPPLY LMTD"));
+  let idxVlrMtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("VLR SUBS MTD"));
+  let idxVlrLmtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("VLR SUBS LMTD"));
 
   const filteredRows = globalDataMS.filter((r) => {
+    const kecName = String(r[idxKec] || "").trim();
     const partnerName = String(r[idxPartner !== -1 ? idxPartner : 1] || "").trim();
-    return (selectedPartner === "ALL" || partnerName === selectedPartner) && r.join(" ").toLowerCase().includes(searchKeyword);
+    return (selectedPartner === "ALL" || partnerName === selectedPartner) &&
+           (selectedKecamatan === "ALL" || kecName === selectedKecamatan) &&
+           r.join(" ").toLowerCase().includes(searchKeyword);
   });
 
   let totalRevMtd = 0, totalRevLmtd = 0;
@@ -360,6 +368,7 @@ function updateDashboardMS() {
   let totalSecondaryMtd = 0, totalSecondaryLmtd = 0;
   let totalTertiaryMtd = 0, totalTertiaryLmtd = 0;
   let totalTradeMtd = 0, totalTradeLmtd = 0;
+  let totalVlrMtd = 0, totalVlrLmtd = 0;
 
   filteredRows.forEach((r) => {
     if (idxRevMtd !== -1) totalRevMtd += parseNum(r[idxRevMtd]);
@@ -372,6 +381,8 @@ function updateDashboardMS() {
     if (idxTertLmtd !== -1) totalTertiaryLmtd += parseNum(r[idxTertLmtd]);
     if (idxTradeMtd !== -1) totalTradeMtd += parseNum(r[idxTradeMtd]);
     if (idxTradeLmtd !== -1) totalTradeLmtd += parseNum(r[idxTradeLmtd]);
+    if (idxVlrMtd !== -1) totalVlrMtd += parseNum(r[idxVlrMtd]);
+    if (idxVlrLmtd !== -1) totalVlrLmtd += parseNum(r[idxVlrLmtd]);
   });
 
   animateCounter("kpiRevenuePST", totalRevMtd, true);
@@ -379,21 +390,120 @@ function updateDashboardMS() {
   animateCounter("kpiSecondaryPST", totalSecondaryMtd);
   animateCounter("kpiTertiaryPST", totalTertiaryMtd);
   animateCounter("kpiTradeSupplyPST", totalTradeMtd);
+  animateCounter("kpiVlrPST", totalVlrMtd);
 
   document.getElementById("kpiRevLmtdPST").innerText = Math.round(totalRevLmtd).toLocaleString("id-ID");
   document.getElementById("kpiPrimaryLmtdPST").innerText = Math.round(totalPrimaryLmtd).toLocaleString("id-ID");
   document.getElementById("kpiSecondaryLmtdPST").innerText = Math.round(totalSecondaryLmtd).toLocaleString("id-ID");
   document.getElementById("kpiTertiaryLmtdPST").innerText = Math.round(totalTertiaryLmtd).toLocaleString("id-ID");
   document.getElementById("kpiTradeLmtdPST").innerText = Math.round(totalTradeLmtd).toLocaleString("id-ID");
+  document.getElementById("kpiVlrLmtdPST").innerText = Math.round(totalVlrLmtd).toLocaleString("id-ID");
 
   updateGrowthBadge("kpiRevGrowthPST", totalRevMtd, totalRevLmtd);
   updateGrowthBadge("kpiPrimaryGrowthPST", totalPrimaryMtd, totalPrimaryLmtd);
   updateGrowthBadge("kpiSecondaryGrowthPST", totalSecondaryMtd, totalSecondaryLmtd);
   updateGrowthBadge("kpiTertiaryGrowthPST", totalTertiaryMtd, totalTertiaryLmtd);
   updateGrowthBadge("kpiTradeGrowthPST", totalTradeMtd, totalTradeLmtd);
+  updateGrowthBadge("kpiVlrGrowthPST", totalVlrMtd, totalVlrLmtd);
 
   document.getElementById("stickyRev").innerText = "Rp " + Math.round(totalRevMtd).toLocaleString("id-ID");
+  renderKecamatanTopBottomLeaderboards(filteredRows);
   renderTable("dataTable", globalHeaderMS, filteredRows);
+}
+
+function renderKecamatanTopBottomLeaderboards(rows) {
+    let idxKec = 0;
+    let idxRevGrowth = globalHeaderMS.findIndex(h => h.toUpperCase() === "GROWTH" || h.toUpperCase().includes("GROWTH"));
+    let idxRevMtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("REVENUE MTD"));
+    let idxRevLmtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("REVENUE LMTD"));
+
+    let idxVlrMtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("VLR SUBS MTD"));
+    let idxVlrLmtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("VLR SUBS LMTD"));
+    let idxVlrGrowth = globalHeaderMS.findIndex(h => h.toUpperCase().includes("VLR") && h.toUpperCase().includes("GROWTH"));
+
+    let idxTertMtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("TERTIARY B# MTD"));
+    let idxTertLmtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("TERTIARY B# LMTD"));
+    let idxTertGrowth = globalHeaderMS.findIndex(h => h.toUpperCase().includes("TERTIARY") && h.toUpperCase().includes("GROWTH"));
+
+    let dataList = rows.map(r => {
+        let revM = parseNum(r[idxRevMtd !== -1 ? idxRevMtd : 2]);
+        let revL = parseNum(r[idxRevLmtd !== -1 ? idxRevLmtd : 3]);
+        let revG = idxRevGrowth !== -1 ? parseNum(r[idxRevGrowth]) : (revL > 0 ? (revM - revL) / revL : 0);
+
+        let vlrM = parseNum(r[idxVlrMtd !== -1 ? idxVlrMtd : 17]);
+        let vlrL = parseNum(r[idxVlrLmtd !== -1 ? idxVlrLmtd : 18]);
+        let vlrG = idxVlrGrowth !== -1 ? parseNum(r[idxVlrGrowth]) : (vlrL > 0 ? (vlrM - vlrL) / vlrL : 0);
+
+        let tertM = parseNum(r[idxTertMtd !== -1 ? idxTertMtd : 11]);
+        let tertL = parseNum(r[idxTertLmtd !== -1 ? idxTertLmtd : 12]);
+        let tertG = idxTertGrowth !== -1 ? parseNum(r[idxTertGrowth]) : (tertL > 0 ? (tertM - tertL) / tertL : 0);
+
+        return {
+            kec: String(r[idxKec] || "Kecamatan").trim(),
+            revMtd: revM, revLmtd: revL, revGrowth: revG,
+            vlrMtd: vlrM, vlrLmtd: vlrL, vlrGrowth: vlrG,
+            tertMtd: tertM, tertLmtd: tertL, tertGrowth: tertG
+        };
+    });
+
+    function makeDetailedListHtml(arr, mtdKey, lmtdKey, growthKey, isCurrency = false) {
+        let sorted = [...arr].sort((a,b) => b[growthKey] - a[growthKey]);
+        let top3 = sorted.slice(0, 3);
+        let bot3 = sorted.slice(-3).reverse();
+        
+        let html = `<div style="font-size:11px; font-weight:800; color:#15803d; margin-bottom:4px;">TOP 3 KECAMATAN</div>`;
+        top3.forEach((item, idx) => {
+            let mtdStr = isCurrency ? "Rp " + Math.round(item[mtdKey]).toLocaleString('id-ID') : Math.round(item[mtdKey]).toLocaleString('id-ID');
+            let lmtdStr = isCurrency ? "Rp " + Math.round(item[lmtdKey]).toLocaleString('id-ID') : Math.round(item[lmtdKey]).toLocaleString('id-ID');
+            let gVal = item[growthKey] * 100;
+            let gStr = (gVal >= 0 ? "+" : "") + gVal.toFixed(2) + "%";
+            let gColor = gVal >= 0 ? "#15803d" : "#be123c";
+
+            html += `
+              <div style="font-size:11px; padding:4px 0; border-bottom:1px dashed #f1f5f9;">
+                <div style="display:flex; justify-content:space-between; font-weight:700;">
+                  <span>${idx+1}. ${item.kec}</span>
+                  <span style="color:${gColor};">${gStr}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:10px; color:#64748b; margin-top:2px;">
+                  <span>MTD: ${mtdStr}</span>
+                  <span>LMTD: ${lmtdStr}</span>
+                </div>
+              </div>
+            `;
+        });
+
+        html += `<div style="font-size:11px; font-weight:800; color:#be123c; margin-top:8px; margin-bottom:4px;">BOTTOM 3 KECAMATAN</div>`;
+        bot3.forEach((item, idx) => {
+            let mtdStr = isCurrency ? "Rp " + Math.round(item[mtdKey]).toLocaleString('id-ID') : Math.round(item[mtdKey]).toLocaleString('id-ID');
+            let lmtdStr = isCurrency ? "Rp " + Math.round(item[lmtdKey]).toLocaleString('id-ID') : Math.round(item[lmtdKey]).toLocaleString('id-ID');
+            let gVal = item[growthKey] * 100;
+            let gStr = (gVal >= 0 ? "+" : "") + gVal.toFixed(2) + "%";
+            let gColor = gVal >= 0 ? "#15803d" : "#be123c";
+
+            html += `
+              <div style="font-size:11px; padding:4px 0; border-bottom:1px dashed #f1f5f9;">
+                <div style="display:flex; justify-content:space-between; font-weight:700;">
+                  <span>${idx+1}. ${item.kec}</span>
+                  <span style="color:${gColor};">${gStr}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:10px; color:#64748b; margin-top:2px;">
+                  <span>MTD: ${mtdStr}</span>
+                  <span>LMTD: ${lmtdStr}</span>
+                </div>
+              </div>
+            `;
+        });
+        return html;
+    }
+
+    let elRev = document.getElementById("topBottomRevGrowthList");
+    let elVlr = document.getElementById("topBottomVlrList");
+    let elTert = document.getElementById("topBottomTertiaryList");
+
+    if (elRev) elRev.innerHTML = makeDetailedListHtml(dataList, 'revMtd', 'revLmtd', 'revGrowth', true);
+    if (elVlr) elVlr.innerHTML = makeDetailedListHtml(dataList, 'vlrMtd', 'vlrLmtd', 'vlrGrowth', false);
+    if (elTert) elTert.innerHTML = makeDetailedListHtml(dataList, 'tertMtd', 'tertLmtd', 'tertGrowth', true);
 }
 
 function updateDashboardSM() {
@@ -407,9 +517,10 @@ function updateDashboardSM() {
   let idxRevMtd = globalHeaderSM.findIndex(h => h.toUpperCase().includes("REVENUE MTD"));
   let idxVlrLmtd = globalHeaderSM.findIndex(h => h.toUpperCase().includes("VLR LMTD"));
   let idxVlrMtd = globalHeaderSM.findIndex(h => h.toUpperCase().includes("VLR MTD"));
+  let idx90DLmtd = globalHeaderSM.findIndex(h => h.toUpperCase().includes("90D LMTD") || h.toUpperCase().includes("90D"));
+  let idx90DMtd = globalHeaderSM.findIndex(h => h.toUpperCase().includes("90D MTD") || (h.toUpperCase().includes("90D") && !h.toUpperCase().includes("LMTD")));
   let idxRguLmtd = globalHeaderSM.findIndex(h => h.toUpperCase().includes("RGU GA LMTD"));
   let idxRguMtd = globalHeaderSM.findIndex(h => h.toUpperCase().includes("RGU GA MTD"));
-  let idxOutletAgustus = globalHeaderSM.findIndex(h => h.toUpperCase().includes("OUTLET AGUSTUS") || h.toUpperCase().includes("OUTLET"));
 
   const filteredRows = globalDataSM.filter((r) => {
     return (selectedPartner === "ALL" || String(r[idxPartner] || "").trim() === selectedPartner) &&
@@ -420,50 +531,141 @@ function updateDashboardSM() {
 
   let totRevLmtd = 0, totRevMtd = 0;
   let totVlrLmtd = 0, totVlrMtd = 0;
-  let totRguLmtd = 0, totRguMtd = 0;
-  let totOutletAgustus = 0, siteBelow3Outlet = 0;
-  let cntLrs = 0, cntAtRisk = 0, cntProfit = 0;
+  let tot90DLmtd = 0, tot90DMtd = 0;
+  let totRguMtd = 0;
+  let zeroRguSiteList = [];
 
   filteredRows.forEach((r) => {
     if (idxRevLmtd !== -1) totRevLmtd += parseNum(r[idxRevLmtd]);
     if (idxRevMtd !== -1) totRevMtd += parseNum(r[idxRevMtd]);
     if (idxVlrLmtd !== -1) totVlrLmtd += parseNum(r[idxVlrLmtd]);
     if (idxVlrMtd !== -1) totVlrMtd += parseNum(r[idxVlrMtd]);
-    if (idxRguLmtd !== -1) totRguLmtd += parseNum(r[idxRguLmtd]);
-    if (idxRguMtd !== -1) totRguMtd += parseNum(r[idxRguMtd]);
+    if (idx90DLmtd !== -1) tot90DLmtd += parseNum(r[idx90DLmtd]);
+    if (idx90DMtd !== -1) tot90DMtd += parseNum(r[idx90DMtd]);
     
-    if (idxOutletAgustus !== -1) {
-      let jmlOutlet = parseNum(r[idxOutletAgustus]);
-      totOutletAgustus += jmlOutlet;
-      if (jmlOutlet < 3) siteBelow3Outlet++;
+    let rguVal = idxRguMtd !== -1 ? parseNum(r[idxRguMtd]) : 0;
+    totRguMtd += rguVal;
+
+    if (rguVal === 0) {
+      let sName = String(r[1] || r[0] || "Site").trim();
+      zeroRguSiteList.push(sName);
     }
-    const catVal = String(r[idxCategory] || "").toUpperCase();
-    if (catVal.includes("LRS")) cntLrs++;
-    else if (catVal.includes("AT RISK")) cntAtRisk++;
-    else if (catVal.includes("PROFIT")) cntProfit++;
   });
 
   animateCounter("kpiRevMTDMC", totRevMtd, true);
   animateCounter("kpiVlrMTDMC", totVlrMtd, false);
+  animateCounter("kpi90DMC", tot90DMtd, false);
   animateCounter("kpiRguGaMTDMC", totRguMtd, false);
 
   document.getElementById("kpiRevLmtdMC").innerText = Math.round(totRevLmtd).toLocaleString("id-ID");
   document.getElementById("kpiVlrLmtdMC").innerText = Math.round(totVlrLmtd).toLocaleString("id-ID");
-  document.getElementById("kpiRguGaLmtdMC").innerText = Math.round(totRguLmtd).toLocaleString("id-ID");
+  document.getElementById("kpi90DLmtdMC").innerText = Math.round(tot90DLmtd).toLocaleString("id-ID");
+  document.getElementById("kpiZeroRguSiteCountMC").innerText = zeroRguSiteList.length;
 
   updateGrowthBadge("kpiRevGrowthMC", totRevMtd, totRevLmtd);
   updateGrowthBadge("kpiVlrGrowthMC", totVlrMtd, totVlrLmtd);
-  updateGrowthBadge("kpiRguGaGrowthMC", totRguMtd, totRguLmtd);
+  updateGrowthBadge("kpi90DGrowthMC", tot90DMtd, tot90DLmtd);
 
-  animateCounter("kpiTotalOutletAgustusMC", totOutletAgustus);
-  document.getElementById("kpiTotalSiteMC").innerText = filteredRows.length + " Site";
-  document.getElementById("kpiSiteBelow3OutletMC").innerText = siteBelow3Outlet.toLocaleString("id-ID");
-  document.getElementById("kpiSiteLrsMC").innerText = cntLrs.toLocaleString("id-ID");
-  document.getElementById("kpiSiteAtRiskMC").innerText = cntAtRisk.toLocaleString("id-ID");
-  document.getElementById("kpiSiteProfitMC").innerText = cntProfit.toLocaleString("id-ID");
+  const smallListElem = document.getElementById("zeroRguSiteSmallList");
+  if (smallListElem) {
+      if (zeroRguSiteList.length > 0) {
+          smallListElem.innerHTML = zeroRguSiteList.join(", ");
+      } else {
+          smallListElem.innerHTML = "<i>Tidak ada site dengan RGU GA MTD = 0</i>";
+      }
+  }
 
-  renderSiteLeaderboards(filteredRows, idxRevMtd);
+  renderSiteLeaderboards(filteredRows, idxRevMtd, idxRevLmtd, idxVlrMtd, idxVlrLmtd, idx90DMtd, idx90DLmtd);
   renderTable("dataTableMC", globalHeaderSM, filteredRows);
+}
+
+function renderSiteLeaderboards(filteredRows, idxRevMtd, idxRevLmtd, idxVlrMtd, idxVlrLmtd, idx90DMtd, idx90DLmtd) {
+    let siteArr = filteredRows.map(r => {
+        let siteName = String(r[1] || r[0] || "Site").trim();
+        let siteId = String(r[0] || '-').trim();
+        let dseName = String(r[3] || '-').trim();
+        let subText = `ID: ${siteId} | DSE: ${dseName}`;
+
+        let revM = parseNum(r[idxRevMtd]);
+        let revL = parseNum(r[idxRevLmtd]);
+        let revG = revL > 0 ? (revM - revL) / revL : (revM > 0 ? 1 : 0);
+
+        let vlrM = parseNum(r[idxVlrMtd]);
+        let vlrL = parseNum(r[idxVlrLmtd]);
+        let vlrG = vlrL > 0 ? (vlrM - vlrL) / vlrL : (vlrM > 0 ? 1 : 0);
+
+        let m90M = parseNum(r[idx90DMtd]);
+        let m90L = parseNum(r[idx90DLmtd]);
+        let m90G = m90L > 0 ? (m90M - m90L) / m90L : (m90M > 0 ? 1 : 0);
+
+        return {
+            name: siteName, subText: subText,
+            revMtd: revM, revLmtd: revL, revGrowth: revG,
+            vlrMtd: vlrM, vlrLmtd: vlrL, vlrGrowth: vlrG,
+            m90Mtd: m90M, m90Lmtd: m90L, m90Growth: m90G
+        };
+    }).filter(s => s.name !== "" && s.name.toUpperCase() !== "SITE NAME");
+
+    function makeDetailedSiteListHtml(arr, mtdKey, lmtdKey, growthKey, isCurrency = false) {
+        let sorted = [...arr].sort((a,b) => b[growthKey] - a[growthKey]);
+        let top3 = sorted.slice(0, 3);
+        let bot3 = sorted.slice(-3).reverse();
+        
+        let html = `<div style="font-size:11px; font-weight:800; color:#15803d; margin-bottom:4px;">TOP 3 SITE</div>`;
+        top3.forEach((item, idx) => {
+            let mtdStr = isCurrency ? "Rp " + Math.round(item[mtdKey]).toLocaleString('id-ID') : Math.round(item[mtdKey]).toLocaleString('id-ID');
+            let lmtdStr = isCurrency ? "Rp " + Math.round(item[lmtdKey]).toLocaleString('id-ID') : Math.round(item[lmtdKey]).toLocaleString('id-ID');
+            let gVal = item[growthKey] * 100;
+            let gStr = (gVal >= 0 ? "+" : "") + gVal.toFixed(2) + "%";
+            let gColor = gVal >= 0 ? "#15803d" : "#be123c";
+
+            html += `
+              <div style="font-size:11px; padding:4px 0; border-bottom:1px dashed #f1f5f9;">
+                <div style="display:flex; justify-content:space-between; font-weight:700;">
+                  <span>${idx+1}. ${item.name}</span>
+                  <span style="color:${gColor};">${gStr}</span>
+                </div>
+                <div style="font-size:10px; color:#64748b; margin-top:1px;">${item.subText}</div>
+                <div style="display:flex; justify-content:space-between; font-size:10px; color:#64748b; margin-top:2px;">
+                  <span>MTD: ${mtdStr}</span>
+                  <span>LMTD: ${lmtdStr}</span>
+                </div>
+              </div>
+            `;
+        });
+
+        html += `<div style="font-size:11px; font-weight:800; color:#be123c; margin-top:8px; margin-bottom:4px;">BOTTOM 3 SITE</div>`;
+        bot3.forEach((item, idx) => {
+            let mtdStr = isCurrency ? "Rp " + Math.round(item[mtdKey]).toLocaleString('id-ID') : Math.round(item[mtdKey]).toLocaleString('id-ID');
+            let lmtdStr = isCurrency ? "Rp " + Math.round(item[lmtdKey]).toLocaleString('id-ID') : Math.round(item[lmtdKey]).toLocaleString('id-ID');
+            let gVal = item[growthKey] * 100;
+            let gStr = (gVal >= 0 ? "+" : "") + gVal.toFixed(2) + "%";
+            let gColor = gVal >= 0 ? "#15803d" : "#be123c";
+
+            html += `
+              <div style="font-size:11px; padding:4px 0; border-bottom:1px dashed #f1f5f9;">
+                <div style="display:flex; justify-content:space-between; font-weight:700;">
+                  <span>${idx+1}. ${item.name}</span>
+                  <span style="color:${gColor};">${gStr}</span>
+                </div>
+                <div style="font-size:10px; color:#64748b; margin-top:1px;">${item.subText}</div>
+                <div style="display:flex; justify-content:space-between; font-size:10px; color:#64748b; margin-top:2px;">
+                  <span>MTD: ${mtdStr}</span>
+                  <span>LMTD: ${lmtdStr}</span>
+                </div>
+              </div>
+            `;
+        });
+        return html;
+    }
+
+    let elRev = document.getElementById("topBottomRevGrowthSiteList");
+    let elVlr = document.getElementById("topBottomVlrSiteList");
+    let el90D = document.getElementById("topBottom90DSiteList");
+
+    if (elRev) elRev.innerHTML = makeDetailedSiteListHtml(siteArr, 'revMtd', 'revLmtd', 'revGrowth', true);
+    if (elVlr) elVlr.innerHTML = makeDetailedSiteListHtml(siteArr, 'vlrMtd', 'vlrLmtd', 'vlrGrowth', false);
+    if (el90D) el90D.innerHTML = makeDetailedSiteListHtml(siteArr, 'm90Mtd', 'm90Lmtd', 'm90Growth', false);
 }
 
 function updateDashboardPP() {
@@ -616,20 +818,6 @@ function renderPpItemCharts(labels, rev, primary, secondary, tertiary, trade, rg
     makeLineChart('chartTradePPInstance', 'chartTradePP', trade, 'rgba(245, 158, 11, 0.1)', '#f59e0b');
     makeLineChart('chartRguTradePPInstance', 'chartRguTradePP', rguTrade, 'rgba(6, 182, 212, 0.1)', '#06b6d4');
     makeLineChart('chartVlrSubsPPInstance', 'chartVlrSubsPP', vlr, 'rgba(217, 70, 239, 0.1)', '#d946ef');
-}
-
-function renderSiteLeaderboards(filteredRows, idxRevMtd) {
-  let siteArr = filteredRows.map(r => ({
-    name: String(r[1] || r[0] || "Site").trim(),
-    subText: `Site ID: ${String(r[0] || '-').trim()} | DSE: ${String(r[3] || '-').trim()}`,
-    rev: parseNum(r[idxRevMtd !== -1 ? idxRevMtd : 6])
-  })).filter(s => s.name !== "" && s.name.toUpperCase() !== "SITE NAME");
-
-  siteArr.sort((a, b) => b.rev - a.rev);
-  renderLeaderboardList("topSiteList", siteArr.slice(0, 3).map(s => ({ name: s.name, subText: s.subText, val: "Rp " + Math.round(s.rev).toLocaleString('id-ID') })));
-
-  let bottomArr = [...siteArr].reverse();
-  renderLeaderboardList("bottomSiteList", bottomArr.slice(0, 3).map(s => ({ name: s.name, subText: s.subText, val: "Rp " + Math.round(s.rev).toLocaleString('id-ID') })), true);
 }
 
 function updateDashboardDO() {
@@ -982,7 +1170,7 @@ function updateExecutiveSummaryNew() {
     let sellInScore = Math.min(sellInAchPct, 140);
     let sellInWeighted = sellInScore * 0.175;
 
-    let tagTargetVal = totalOutlet > 0 ? totalOutlet : 163;
+    let tagTargetVal = 167;
     let tagAchPct = tagTargetVal > 0 ? (tagAchCount / tagTargetVal) * 100 : 0;
     let tagScore = Math.min(tagAchPct, 140);
     let tagWeighted = tagScore * 0.175;
@@ -1109,7 +1297,6 @@ function renderDseAttentionTable() {
     const tbody = document.getElementById("dseAttentionTableBody");
     if (!tbody) return;
 
-    // Mapping target baru sesuai input gambar
     const customTargets = {
         "DSE1082": { sellIn: 744, osa: 621760720 },
         "DSE1147": { sellIn: 398, osa: 575117071 },
@@ -1419,7 +1606,7 @@ function renderTable(tableId, header, data) {
       else if ((judulKolom.includes("ACH OSA") || judulKolom.includes("PREPAID REV") || judulKolom.includes("REVENUE")) && numVal >= 1000) {
         valDisplay = "Rp " + Math.round(numVal).toLocaleString("id-ID");
       }
-      else if (judulKolom.includes("%") || judulKolom.includes("ACH %") || judulKolom.includes("MOM")) {
+      else if (judulKolom.includes("%") || judulKolom.includes("ACH %") || judulKolom.includes("MOM") || judulKolom.includes("GROWTH")) {
         if (rawStr !== "" && !isNaN(Number(rawStr))) {
           isPercent = true;
           pctVal = Math.abs(numVal) <= 1 && numVal !== 0 ? numVal * 100 : numVal;
@@ -1482,7 +1669,7 @@ function switchReport(reportId, btnObj) {
 }
 
 document.addEventListener("input", function (e) {
-  if (e.target.id === "searchInput" || e.target.id === "partnerFilter") updateDashboardMS();
+  if (e.target.id === "searchInput" || e.target.id === "partnerFilter" || e.target.id === "kecamatanFilter") updateDashboardMS();
   if (e.target.id.includes("MC")) updateDashboardSM();
   if (e.target.id.includes("DO") || e.target.id === "columnFilterValDO") updateDashboardDO();
   if (e.target.id.includes("Daily")) updateDashboardDaily();
@@ -1491,32 +1678,9 @@ document.addEventListener("input", function (e) {
 });
 
 document.addEventListener("change", function (e) {
-  if (e.target.id === "partnerFilter") updateDashboardMS();
+  if (e.target.id === "partnerFilter" || e.target.id === "kecamatanFilter") updateDashboardMS();
   if (e.target.id.includes("MC")) updateDashboardSM();
   if (e.target.id.includes("DO" ) || e.target.id === "columnFilterDO") updateDashboardDO();
   if (e.target.id.includes("Daily")) updateDashboardDaily();
   if (e.target.id.includes("PP")) updateDashboardPP();
 });
-
-function toggleDesktopMobileMode() {
-    let body = document.body;
-    let btn = document.getElementById('modeToggleBtn');
-    
-    if (body.classList.contains('forced-desktop-mode')) {
-        body.classList.remove('forced-desktop-mode');
-        if(btn) {
-            btn.innerHTML = '<i class="fa-solid fa-desktop"></i> Mode: Mobile';
-            btn.style.background = '#e0f2fe';
-            btn.style.color = '#0369a1';
-            btn.style.borderColor = '#bae6fd';
-        }
-    } else {
-        body.classList.add('forced-desktop-mode');
-        if(btn) {
-            btn.innerHTML = '<i class="fa-solid fa-mobile-screen"></i> Mode: Desktop';
-            btn.style.background = '#fef3c7';
-            btn.style.color = '#b45309';
-            btn.style.borderColor = '#fde68a';
-        }
-    }
-}

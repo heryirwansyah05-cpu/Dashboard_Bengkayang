@@ -50,8 +50,8 @@
                 <div class="date-badge-box">
                     <i class="fa-solid fa-calendar-days" style="color:#f59e0b; font-size:15px;"></i>
                     <div>
-                        <b id="headerDayCountText">Hari ke-6 Agustus 2026</b>
-                        <small id="lastUpdateText">Last Update : 4 Agustus 2026 (H-2) | Sisa HK: 27 Hari</small>
+                        <b id="headerDayCountText">Hari ke-13 Agustus 2026</b>
+                        <small id="lastUpdateText">Last Update : 11 Agustus 2026 (H-2) | Sisa HK: 20 Hari</small>
                     </div>
                 </div>
             </div>
@@ -259,7 +259,7 @@
                             <tr>
                                 <td style="text-align: left; font-weight: 700;">Retailer Tagging (min 3pcs)</td>
                                 <td><span class="badge-target">17.5%</span></td>
-                                <td><span id="rseTgtTag">163</span></td>
+                                <td><span id="rseTgtTag">167</span></td>
                                 <td><span id="rseActTag">0</span></td>
                                 <td><span id="rseAchTag" style="color:#ef4444; font-weight:700;">0.00%</span></td>
                                 <td><b id="rseWScoreTag">0.00%</b></td>
@@ -298,13 +298,13 @@
 
     <!-- ================= TAB 2: PST ================= -->
     <div id="ms-bengkayang" class="report-content" style="display: none;">
-        <div class="kpi-grid">
+        <div class="kpi-grid" style="grid-template-columns: repeat(6, minmax(0, 1fr));">
             <div class="card card-red">
                 <div class="icon"><i class="fa-solid fa-chart-line"></i></div>
                 <div class="card-body">
                     <h3>TOTAL REVENUE MTD</h3>
-                    <div class="kpi-main-val" id="kpiRevenuePST">Rp 0</div>
-                    <div class="kpi-compare-row">Pembanding LMTD: <span id="kpiRevLmtdPST">0</span></div>
+                    <div class="kpi-main-val" id="kpiRevenuePST" style="font-size:14px;">Rp 0</div>
+                    <div class="kpi-compare-row">LMTD: <span id="kpiRevLmtdPST">0</span></div>
                     <div class="kpi-growth-row">Growth: <span id="kpiRevGrowthPST" class="growth-badge">0%</span></div>
                 </div>
             </div>
@@ -312,8 +312,8 @@
                 <div class="icon"><i class="fa-solid fa-network-wired"></i></div>
                 <div class="card-body">
                     <h3>TOTAL PRIMARY MTD</h3>
-                    <div class="kpi-main-val" id="kpiPrimaryPST">0</div>
-                    <div class="kpi-compare-row">Pembanding LMTD: <span id="kpiPrimaryLmtdPST">0</span></div>
+                    <div class="kpi-main-val" id="kpiPrimaryPST" style="font-size:14px;">0</div>
+                    <div class="kpi-compare-row">LMTD: <span id="kpiPrimaryLmtdPST">0</span></div>
                     <div class="kpi-growth-row">Growth: <span id="kpiPrimaryGrowthPST" class="growth-badge">0%</span></div>
                 </div>
             </div>
@@ -321,17 +321,17 @@
                 <div class="icon"><i class="fa-solid fa-boxes-stacked"></i></div>
                 <div class="card-body">
                     <h3>TOTAL SECONDARY MTD</h3>
-                    <div class="kpi-main-val" id="kpiSecondaryPST">0</div>
-                    <div class="kpi-compare-row">Pembanding LMTD: <span id="kpiSecondaryLmtdPST">0</span></div>
+                    <div class="kpi-main-val" id="kpiSecondaryPST" style="font-size:14px;">0</div>
+                    <div class="kpi-compare-row">LMTD: <span id="kpiSecondaryLmtdPST">0</span></div>
                     <div class="kpi-growth-row">Growth: <span id="kpiSecondaryGrowthPST" class="growth-badge">0%</span></div>
                 </div>
             </div>
             <div class="card card-cyan">
                 <div class="icon"><i class="fa-solid fa-warehouse"></i></div>
                 <div class="card-body">
-                    <h3>TOTAL TERTIARY B# MTD</h3>
-                    <div class="kpi-main-val" id="kpiTertiaryPST">0</div>
-                    <div class="kpi-compare-row">Pembanding LMTD: <span id="kpiTertiaryLmtdPST">0</span></div>
+                    <h3>TOTAL TERTIARY B#</h3>
+                    <div class="kpi-main-val" id="kpiTertiaryPST" style="font-size:14px;">0</div>
+                    <div class="kpi-compare-row">LMTD: <span id="kpiTertiaryLmtdPST">0</span></div>
                     <div class="kpi-growth-row">Growth: <span id="kpiTertiaryGrowthPST" class="growth-badge">0%</span></div>
                 </div>
             </div>
@@ -339,14 +339,41 @@
                 <div class="icon"><i class="fa-solid fa-truck-ramp-box"></i></div>
                 <div class="card-body">
                     <h3>TOTAL TRADE SUPPLY</h3>
-                    <div class="kpi-main-val" id="kpiTradeSupplyPST">0</div>
-                    <div class="kpi-compare-row">Pembanding LMTD: <span id="kpiTradeLmtdPST">0</span></div>
+                    <div class="kpi-main-val" id="kpiTradeSupplyPST" style="font-size:14px;">0</div>
+                    <div class="kpi-compare-row">LMTD: <span id="kpiTradeLmtdPST">0</span></div>
                     <div class="kpi-growth-row">Growth: <span id="kpiTradeGrowthPST" class="growth-badge">0%</span></div>
                 </div>
             </div>
+            <div class="card card-purple">
+                <div class="icon"><i class="fa-solid fa-users"></i></div>
+                <div class="card-body">
+                    <h3>TOTAL VLR SUBS</h3>
+                    <div class="kpi-main-val" id="kpiVlrPST" style="font-size:14px;">0</div>
+                    <div class="kpi-compare-row">LMTD: <span id="kpiVlrLmtdPST">0</span></div>
+                    <div class="kpi-growth-row">Growth: <span id="kpiVlrGrowthPST" class="growth-badge">0%</span></div>
+                </div>
+            </div>
         </div>
+
+        <!-- TOP / BOTTOM 3 KECAMATAN SECTION -->
+        <div class="leaderboard-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 20px;">
+            <div class="leaderboard-card">
+                <div class="lb-header"><i class="fa-solid fa-chart-line"></i> Top/Bottom Growth Revenue (3 Kec)</div>
+                <div class="lb-list" id="topBottomRevGrowthList"></div>
+            </div>
+            <div class="leaderboard-card">
+                <div class="lb-header"><i class="fa-solid fa-users"></i> Top/Bottom VLR Subs (3 Kec)</div>
+                <div class="lb-list" id="topBottomVlrList"></div>
+            </div>
+            <div class="leaderboard-card">
+                <div class="lb-header"><i class="fa-solid fa-warehouse"></i> Top/Bottom Tertiary B# (3 Kec)</div>
+                <div class="lb-list" id="topBottomTertiaryList"></div>
+            </div>
+        </div>
+
         <div class="toolbar">
             <select id="partnerFilter"><option value="ALL">Semua Partner</option></select>
+            <select id="kecamatanFilter"><option value="ALL">Semua Kecamatan</option></select>
             <input type="text" id="searchInput" placeholder="🔍 Cari Kecamatan / Site / Partner...">
             <button class="reset-btn" onclick="resetFilters('ms-bengkayang')"><i class="fa-solid fa-rotate-left"></i> Reset Filter</button>
         </div>
@@ -355,54 +382,61 @@
 
     <!-- ================= TAB 3: SITE MONITORING ================= -->
     <div id="outlet-mc" class="report-content" style="display: none;">
-        <div class="kpi-grid">
+        <div class="kpi-grid" style="grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: 20px;">
             <div class="card card-red">
                 <div class="icon"><i class="fa-solid fa-chart-line"></i></div>
                 <div class="card-body">
-                    <h3>REVENUE MTD</h3>
-                    <div class="kpi-main-val" id="kpiRevMTDMC">Rp 0</div>
-                    <div class="kpi-compare-row">Pembanding LMTD: <span id="kpiRevLmtdMC">0</span></div>
+                    <h3>TOTAL REVENUE MTD</h3>
+                    <div class="kpi-main-val" id="kpiRevMTDMC" style="font-size:14px;">Rp 0</div>
+                    <div class="kpi-compare-row">LMTD: <span id="kpiRevLmtdMC">0</span></div>
                     <div class="kpi-growth-row">Growth: <span id="kpiRevGrowthMC" class="growth-badge">0%</span></div>
                 </div>
             </div>
             <div class="card card-cyan">
                 <div class="icon"><i class="fa-solid fa-users"></i></div>
                 <div class="card-body">
-                    <h3>VLR MTD</h3>
-                    <div class="kpi-main-val" id="kpiVlrMTDMC">0</div>
-                    <div class="kpi-compare-row">Pembanding LMTD: <span id="kpiVlrLmtdMC">0</span></div>
+                    <h3>TOTAL VLR MTD</h3>
+                    <div class="kpi-main-val" id="kpiVlrMTDMC" style="font-size:14px;">0</div>
+                    <div class="kpi-compare-row">LMTD: <span id="kpiVlrLmtdMC">0</span></div>
                     <div class="kpi-growth-row">Growth: <span id="kpiVlrGrowthMC" class="growth-badge">0%</span></div>
                 </div>
             </div>
             <div class="card card-yellow">
-                <div class="icon"><i class="fa-solid fa-user-plus"></i></div>
+                <div class="icon"><i class="fa-solid fa-calendar-days"></i></div>
                 <div class="card-body">
-                    <h3>RGUGA MTD</h3>
-                    <div class="kpi-main-val" id="kpiRguGaMTDMC">0</div>
-                    <div class="kpi-compare-row">Pembanding LMTD: <span id="kpiRguGaLmtdMC">0</span></div>
-                    <div class="kpi-growth-row">Growth: <span id="kpiRguGaGrowthMC" class="growth-badge">0%</span></div>
+                    <h3>90D SUBS</h3>
+                    <div class="kpi-main-val" id="kpi90DMC" style="font-size:14px;">0</div>
+                    <div class="kpi-compare-row">LMTD: <span id="kpi90DLmtdMC">0</span></div>
+                    <div class="kpi-growth-row">Growth: <span id="kpi90DGrowthMC" class="growth-badge">0%</span></div>
                 </div>
             </div>
             <div class="card card-magenta">
-                <div class="icon"><i class="fa-solid fa-server"></i></div>
+                <div class="icon"><i class="fa-solid fa-user-plus"></i></div>
                 <div class="card-body">
-                    <h3>TOTAL SITE & OUTLET</h3>
-                    <div class="kpi-main-val" id="kpiTotalSiteMC">0 Site</div>
-                    <div class="kpi-row-info"><span>Outlet: <b id="kpiTotalOutletAgustusMC">0</b></span><span>(&lt;3: <b id="kpiSiteBelow3OutletMC">0</b>)</span></div>
-                    <div class="kpi-row-info" style="margin-top:2px;"><span>LRS: <b id="kpiSiteLrsMC">0</b></span><span>Risk: <b id="kpiSiteAtRiskMC">0</b></span><span>Prof: <b id="kpiSiteProfitMC">0</b></span></div>
+                    <h3>RGU GA MTD</h3>
+                    <div class="kpi-main-val" id="kpiRguGaMTDMC" style="font-size:14px;">0</div>
+                    <div class="kpi-compare-row">Site Nol: <span id="kpiZeroRguSiteCountMC">0</span></div>
+                    <div class="kpi-row-info" id="zeroRguSiteSmallList" style="margin-top:4px; max-height:42px; overflow-y:auto; font-size:9.5px; line-height:1.2; color:#475569;">-</div>
                 </div>
             </div>
         </div>
-        <div class="leaderboard-grid">
+
+        <!-- TOP / BOTTOM 3 SITE LEADERBOARDS -->
+        <div class="leaderboard-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 20px;">
             <div class="leaderboard-card">
-                <div class="lb-header"><i class="fa-solid fa-server"></i> Top Sites (Highest Revenue MTD)</div>
-                <div class="lb-list" id="topSiteList"></div>
+                <div class="lb-header"><i class="fa-solid fa-chart-line"></i> Top/Bottom Growth Revenue (3 Site)</div>
+                <div class="lb-list" id="topBottomRevGrowthSiteList"></div>
             </div>
             <div class="leaderboard-card">
-                <div class="lb-header alert-lb-header"><i class="fa-solid fa-circle-down"></i> Bottom Sites (Lowest Revenue MTD)</div>
-                <div class="lb-list" id="bottomSiteList"></div>
+                <div class="lb-header"><i class="fa-solid fa-users"></i> Top/Bottom VLR Subs (3 Site)</div>
+                <div class="lb-list" id="topBottomVlrSiteList"></div>
+            </div>
+            <div class="leaderboard-card">
+                <div class="lb-header"><i class="fa-solid fa-calendar-days"></i> Top/Bottom 90D Subs (3 Site)</div>
+                <div class="lb-list" id="topBottom90DSiteList"></div>
             </div>
         </div>
+
         <div class="toolbar">
             <select id="partnerFilterMC"><option value="ALL">Semua Partner MC</option></select>
             <select id="dseFilterMC"><option value="ALL">Semua DSE Code</option></select>
