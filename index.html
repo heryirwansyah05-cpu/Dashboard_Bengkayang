@@ -15,6 +15,26 @@
 
 <body>
 
+<!-- LOGIN MODAL OVERLAY -->
+<div id="loginModalOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.85); z-index: 99999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(8px);">
+    <div style="background: #ffffff; padding: 35px 40px; border-radius: 20px; width: 420px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3); text-align: center; border-top: 6px solid #e11d48;">
+        <div style="margin-bottom: 20px;">
+            <img src="im3.png" alt="IM3" style="height: 45px; object-fit: contain; margin-bottom: 10px;">
+            <h2 style="font-size: 22px; font-weight: 800; color: #0f172a; margin: 0;">Portal Dashboard Login</h2>
+            <p style="font-size: 12.5px; color: #64748b; margin-top: 5px;">Micro Cluster Bengkayang</p>
+        </div>
+        <div style="text-align: left; margin-bottom: 15px;">
+            <label style="font-size: 12px; font-weight: 700; color: #334155; display: block; margin-bottom: 6px;">MASUKKAN ID DSE / NAMA LENGKAP:</label>
+            <input type="text" id="loginUserInput" placeholder="Contoh: DSE1082 atau HERY IRWANSYAH" style="width: 100%; padding: 12px 14px; border: 2px solid #cbd5e1; border-radius: 10px; font-size: 14px; font-weight: 600; outline: none; box-sizing: border-box; text-transform: uppercase;">
+            <small id="loginErrorMsg" style="color: #ef4444; font-size: 11.5px; display: none; margin-top: 5px; font-weight: 700;">⚠️ Nama / ID DSE tidak dikenali atau salah format!</small>
+        </div>
+        <button onclick="handleUserLogin()" style="width: 100%; background: #e11d48; color: white; border: none; padding: 12px; border-radius: 10px; font-size: 14px; font-weight: 800; cursor: pointer; transition: background 0.2s;">MASUK DASHBOARD</button>
+        <div style="margin-top: 15px; font-size: 10.5px; color: #94a3b8;">
+            Protected by MC BENGKAYANG SECURITY
+        </div>
+    </div>
+</div>
+
 <!-- STICKY KPI BAR -->
 <div class="sticky-kpi-bar" id="stickyKpiBar">
     <span><b>Revenue MTD:</b> <span id="stickyRev">Rp 0</span></span>
@@ -38,7 +58,11 @@
                 </div>
             </div>
 
-            <div class="header-right-im3">
+            <div class="header-right-im3" style="display: flex; align-items: center; gap: 12px;">
+                <div id="userSessionBadge" style="background: #f1f5f9; padding: 6px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 12px; font-weight: 700; color: #334155;">
+                    User: <span id="activeUserNameDisplay">-</span>
+                </div>
+                <button onclick="handleLogout()" style="background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer;"><i class="fa-solid fa-right-from-bracket"></i> Keluar</button>
                 <div class="im3-logo-box">
                     <img src="im3.png" alt="IM3" style="height: 30px; object-fit: contain;">
                 </div>
@@ -65,13 +89,13 @@
 
     <!-- TOP NAV BAR (DESKTOP) -->
     <div class="top-nav-bar">
-        <div class="report-tabs">
-            <button class="tab-btn tab-summary-btn active" onclick="switchReport('all-summary-tab', this)"><i class="fa-solid fa-layer-group"></i> Executive Summary All</button>
-            <button class="tab-btn" onclick="switchReport('ms-bengkayang', this)"><i class="fa-solid fa-chart-pie"></i> PST</button>
-            <button class="tab-btn" onclick="switchReport('outlet-mc', this)"><i class="fa-solid fa-desktop"></i> Site Monitoring</button>
-            <button class="tab-btn" onclick="switchReport('detail-outlet', this)"><i class="fa-solid fa-store"></i> Detail Outlet</button>
-            <button class="tab-btn" onclick="switchReport('daily-dse', this)"><i class="fa-solid fa-calendar-days"></i> Daily Sell In DSE</button>
-            <button class="tab-btn" onclick="switchReport('partner-performance', this)"><i class="fa-solid fa-chart-line"></i> Partner Performance</button>
+        <div class="report-tabs" id="mainReportTabsContainer">
+            <button class="tab-btn tab-summary-btn active" id="navTabSummary" onclick="switchReport('all-summary-tab', this)"><i class="fa-solid fa-layer-group"></i> Executive Summary All</button>
+            <button class="tab-btn" id="navTabPst" onclick="switchReport('ms-bengkayang', this)"><i class="fa-solid fa-chart-pie"></i> PST</button>
+            <button class="tab-btn" id="navTabMonitoring" onclick="switchReport('outlet-mc', this)"><i class="fa-solid fa-desktop"></i> Site Monitoring</button>
+            <button class="tab-btn" id="navTabOutlet" onclick="switchReport('detail-outlet', this)"><i class="fa-solid fa-store"></i> Detail Outlet</button>
+            <button class="tab-btn" id="navTabDaily" onclick="switchReport('daily-dse', this)"><i class="fa-solid fa-calendar-days"></i> Daily Sell In DSE</button>
+            <button class="tab-btn" id="navTabPartner" onclick="switchReport('partner-performance', this)"><i class="fa-solid fa-chart-line"></i> Partner Performance</button>
         </div>
         <div class="update">Status: <b>Live Data Active</b></div>
     </div>
@@ -144,7 +168,7 @@
                             <option value="SABTU">Sabtu</option>
                         </select>
                         <button class="btn-snapshot-section" onclick="takeSectionSnapshot('snapshotSectionMission')"><i class="fa-solid fa-camera"></i> Snapshot Mission</button>
-                        <div id="pjpDisplayLabel" style="font-weight: 800; color: #b45309; font-size: 13px; background: #fef3c7; padding: 6px 12px; border-radius: 8px; border: 1px solid #f59e0b; white-space: nowrap;">PJP Hari: 0 Out</div>
+                        <div id="pjpDisplayLabel" style="font-weight: 800; color: #b45309; font-size: 13px; background: #fef3c7; padding: 6px 12px; border-radius: 8px; border: 1px solid #f59e0b; white-space: nowrap;">PJP Hari: 0 Outlet</div>
                     </div>
                 </div>
 
@@ -217,7 +241,7 @@
                 <button class="btn-full-link" onclick="switchReport('detail-outlet', null)">Lihat Detail Selengkapnya di Detail Outlet →</button>
             </div>
 
-            <!-- SECTION 4: KPI RSE PERFORMANCE SCORECARD -->
+            <!-- SECTION 4: KPI RSE PERFORMANCE SCORECARD (HIDDEN FOR DSE USERS) -->
             <div class="exec-card-panel border-top-red" id="snapshotSectionRse">
                 <div class="exec-panel-header-flex">
                     <div class="exec-panel-header"><i class="fa-solid fa-square-poll-vertical color-red"></i> KPI RSE PERFORMANCE SCORECARD (AUG 2026)</div>
@@ -738,34 +762,6 @@
     <div class="loader-bar"><div class="loader-fill"></div></div>
     <p>Loading Dashboard MC Bengkayang...</p>
     <div class="loader-subtext">Mengambil & memproses data real-time...</div>
-</div>
-
-<!-- BOTTOM NAVIGATION BAR (MOBILE) -->
-<div class="mobile-bottom-nav">
-    <button class="mobile-nav-btn active" onclick="switchReport('all-summary-tab', this)">
-        <i class="fa-solid fa-layer-group"></i>
-        <span>Summary</span>
-    </button>
-    <button class="mobile-nav-btn" onclick="switchReport('ms-bengkayang', this)">
-        <i class="fa-solid fa-chart-pie"></i>
-        <span>PST</span>
-    </button>
-    <button class="mobile-nav-btn" onclick="switchReport('outlet-mc', this)">
-        <i class="fa-solid fa-desktop"></i>
-        <span>Monitoring</span>
-    </button>
-    <button class="mobile-nav-btn" onclick="switchReport('detail-outlet', this)">
-        <i class="fa-solid fa-store"></i>
-        <span>Outlet</span>
-    </button>
-    <button class="mobile-nav-btn" onclick="switchReport('daily-dse', this)">
-        <i class="fa-solid fa-calendar-days"></i>
-        <span>Daily</span>
-    </button>
-    <button class="mobile-nav-btn" onclick="switchReport('partner-performance', this)">
-        <i class="fa-solid fa-chart-line"></i>
-        <span>Partner</span>
-    </button>
 </div>
 
 <script src="script.js"></script>

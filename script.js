@@ -23,6 +23,100 @@ let quickFilterTypeDO = 'ALL';
 let filterUnachModeDO = false;
 let currentActiveTabId = 'all-summary-tab';
 
+// DAFTAR USER YANG DIIZINKAN & ATURAN AKSESNYA
+const ALLOWED_USERS = {
+    "HERY IRWANSYAH": { type: "admin" },
+    "SDP MONTERADO": { type: "admin" },
+    "SDP JAGOI BABANG": { type: "admin" },
+    "DSE-BENGKAYANG01": { type: "dse", dseCode: "DSE-BENGKAYANG01" },
+    "DSE1147": { type: "dse", dseCode: "DSE1147" },
+    "DSE1082": { type: "dse", dseCode: "DSE1082" },
+    "DSE-JAGOIBABNG02": { type: "dse", dseCode: "DSE-JAGOIBABNG02" },
+    "DSE-JAGOIBABNG01": { type: "dse", dseCode: "DSE-JAGOIBABNG01" }
+};
+
+function handleUserLogin() {
+    const inputVal = document.getElementById("loginUserInput").value.trim().toUpperCase();
+    const errorMsg = document.getElementById("loginErrorMsg");
+
+    if (ALLOWED_USERS[inputVal]) {
+        localStorage.setItem("logged_in_user", inputVal);
+        document.getElementById("loginModalOverlay").style.display = "none";
+        applyUserSessionPermissions();
+    } else {
+        errorMsg.style.display = "block";
+    }
+}
+
+function handleLogout() {
+    localStorage.removeItem("logged_in_user");
+    location.reload();
+}
+
+function applyUserSessionPermissions() {
+    const currentUser = localStorage.getItem("logged_in_user");
+    if (!currentUser || !ALLOWED_USERS[currentUser]) {
+        document.getElementById("loginModalOverlay").style.display = "flex";
+        return;
+    }
+
+    document.getElementById("loginModalOverlay").style.display = "none";
+    document.getElementById("activeUserNameDisplay").innerText = currentUser;
+
+    const userInfo = ALLOWED_USERS[currentUser];
+    const navTabs = document.getElementById("mainReportTabsContainer");
+    const rseCard = document.getElementById("snapshotSectionRse");
+
+    if (userInfo.type === "dse") {
+        // HIDE SEMUA TAB KECUALI EXECUTIVE SUMMARY, SITE MONITORING, DETAIL OUTLET
+        if (navTabs) {
+            const buttons = navTabs.getElementsByTagName("button");
+            for (let btn of buttons) {
+                if (btn.id !== "navTabSummary" && btn.id !== "navTabMonitoring" && btn.id !== "navTabOutlet") {
+                    btn.style.display = "none";
+                }
+            }
+        }
+        // HIDE KARTU RSE SCORECARD DI EXECUTIVE SUMMARY
+        if (rseCard) rseCard.style.display = "none";
+
+        // KUNCI FILTER DSE OTOMATIS KE ID MEREKA
+        setTimeout(() => {
+            const execDseSel = document.getElementById("execDseFilter");
+            if (execDseSel) {
+                execDseSel.value = userInfo.dseCode;
+                execDseSel.disabled = true;
+            }
+            const dseDosel = document.getElementById("dseFilterDO");
+            if (dseDosel) {
+                dseDosel.value = userInfo.dseCode;
+                dseDosel.disabled = true;
+            }
+            const dseMcsel = document.getElementById("dseFilterMC");
+            if (dseMcsel) {
+                dseMcsel.value = userInfo.dseCode;
+                dseMcsel.disabled = true;
+            }
+            updateExecutiveSummaryNew();
+            updateDashboardDO();
+            updateDashboardSM();
+        }, 500);
+    } else {
+        // ADMIN / PARTNER (FULL ACCESS)
+        if (rseCard) rseCard.style.display = "block";
+    }
+}
+
+// Jalankan pengecekan sesi saat halaman pertama kali dimuat
+document.addEventListener("DOMContentLoaded", () => {
+    const savedUser = localStorage.getItem("logged_in_user");
+    if (savedUser && ALLOWED_USERS[savedUser]) {
+        applyUserSessionPermissions();
+    } else {
+        document.getElementById("loginModalOverlay").style.display = "flex";
+    }
+});
+
 function getRemainingWorkingDaysInfo() {
     let now = new Date(); 
     let lastUpdate = new Date(now);
@@ -128,9 +222,18 @@ window.addEventListener("scroll", function () {
 });
 
 function resetFilters(tabId) {
+    const currentUser = localStorage.getItem("logged_in_user");
+    const userInfo = ALLOWED_USERS[currentUser];
+
     const container = document.getElementById(tabId);
     if (!container) return;
-    container.querySelectorAll("select").forEach(s => s.value = "ALL");
+    container.querySelectorAll("select").forEach(s => {
+        if (userInfo && userInfo.type === "dse" && (s.id === "execDseFilter" || s.id === "dseFilterDO" || s.id === "dseFilterMC")) {
+            s.value = userInfo.dseCode; // Jangan direset jika DSE terkunci
+        } else {
+            s.value = "ALL";
+        }
+    });
     container.querySelectorAll("input[type='text'], input[type='number']").forEach(i => i.value = "");
     quickFilterTypeDO = 'ALL';
     filterUnachModeDO = false;
@@ -278,6 +381,7 @@ Promise.all([p1, p2, p3, p4, p5, p6]).then(() => {
   updateAutoDateH2();
   updateGlobalAiHeaderSummary();
   updateExecutiveSummaryNew();
+  applyUserSessionPermissions();
   const loadingElem = document.getElementById("loading");
   if (loadingElem) loadingElem.style.display = "none";
 }).catch(error => {
@@ -508,7 +612,14 @@ function renderKecamatanTopBottomLeaderboards(rows) {
 
 function updateDashboardSM() {
   const selectedPartner = document.getElementById("partnerFilterMC")?.value || "ALL";
-  const selectedDse = document.getElementById("dseFilterMC")?.value || "ALL";
+  const currentUser = localStorage.getItem("logged_in_user");
+  const userInfo = ALLOWED_USERS[currentUser];
+  
+  let selectedDse = document.getElementById("dseFilterMC")?.value || "ALL";
+  if (userInfo && userInfo.type === "dse") {
+      selectedDse = userInfo.dseCode;
+  }
+
   const selectedCategory = document.getElementById("categoryFilterMC")?.value || "ALL";
   const searchKeyword = document.getElementById("searchInputMC")?.value.toLowerCase().trim() || "";
 
@@ -821,7 +932,14 @@ function renderPpItemCharts(labels, rev, primary, secondary, tertiary, trade, rg
 }
 
 function updateDashboardDO() {
-  const selDse = document.getElementById("dseFilterDO")?.value || "ALL";
+  const currentUser = localStorage.getItem("logged_in_user");
+  const userInfo = ALLOWED_USERS[currentUser];
+
+  let selDse = document.getElementById("dseFilterDO")?.value || "ALL";
+  if (userInfo && userInfo.type === "dse") {
+      selDse = userInfo.dseCode;
+  }
+
   const selCategory = document.getElementById("categoryFilterDO")?.value || "ALL";
   const selIsimple = document.getElementById("isimpleFilterDO")?.value || "ALL";
   const selHari = document.getElementById("hariFilterDO")?.value.toUpperCase() || "ALL";
@@ -1156,7 +1274,6 @@ function updateExecutiveSummaryNew() {
     let pctSellIn = targetSellIn > 0 ? (achSellIn / targetSellIn) * 100 : 0;
     let pctOsa = targetOsa > 0 ? (achOsa / targetOsa) * 100 : 0;
     
-    // Hitung persentase global untuk KPI Global MTD
     let globalBioAchCount = 0;
     let globalTagAchCount = 0;
     globalDataDO.forEach(r => {
@@ -1190,7 +1307,7 @@ function updateExecutiveSummaryNew() {
     let tagWeighted = tagScore * 0.175;
 
     let fwaTargetVal = 10;
-    let fwaAchCount = 2; 
+    let fwaAchCount = 1; 
     let fwaAchPct = fwaTargetVal > 0 ? (fwaAchCount / fwaTargetVal) * 100 : 0;
     let fwaScore = Math.min(fwaAchPct, 160);
     let fwaWeighted = fwaScore * 0.15;
@@ -1222,7 +1339,14 @@ function updateExecutiveSummaryNew() {
     document.getElementById("rseTotalScoreText").innerText = totalRseScore.toFixed(2) + "%";
     document.getElementById("rseFooterTotal").innerText = totalRseScore.toFixed(2) + "%";
 
+    const currentUser = localStorage.getItem("logged_in_user");
+    const userInfo = ALLOWED_USERS[currentUser];
+
     let selDse = document.getElementById("execDseFilter")?.value || "ALL";
+    if (userInfo && userInfo.type === "dse") {
+        selDse = userInfo.dseCode;
+    }
+
     let selHari = document.getElementById("execHariFilter")?.value.toUpperCase() || "ALL";
     let colIdxHari = selHari !== "ALL" ? globalHeaderDO.findIndex(h => h.toUpperCase() === selHari) : -1;
 
@@ -1234,16 +1358,6 @@ function updateExecutiveSummaryNew() {
 
     let mTargetSellInTotal = 0, mTargetOsaTotal = 0;
     let subAchSellIn = 0, subAchOsa = 0;
-
-    let dseMapForMission = {};
-    missionRows.forEach(r => {
-        let dName = String(r[2] || '').trim();
-        if (!dseMapForMission[dName]) {
-            dseMapForMission[dName] = { achSellIn: 0, achOsa: 0 };
-        }
-        dseMapForMission[dName].achSellIn += parseNum(r[8]);
-        dseMapForMission[dName].achOsa += parseNum(r[12]);
-    });
 
     if (selDse !== "ALL" && customTargets[selDse]) {
         mTargetSellInTotal = customTargets[selDse].sellIn;
@@ -1270,7 +1384,6 @@ function updateExecutiveSummaryNew() {
     let dailySellInTgt = Math.ceil(totalGapSellIn / sisaHk);
     let dailyOsaTgt = Math.round(totalGapOsa / sisaHk);
 
-    // 1. Hitung angka utama (terfilter oleh DSE & Hari) untuk Bio & Tagging
     let mUnachBioFiltered = 0;
     let mUnachTagFiltered = 0;
     missionRows.forEach(r => {
@@ -1278,7 +1391,6 @@ function updateExecutiveSummaryNew() {
         if (parseNum(r[15]) < 3 && parseNum(r[16]) < 1) mUnachTagFiltered++;
     });
 
-    // 2. Hitung GAP Total spesifik per DSE (atau global jika ALL)
     let dseTotalBioGap = 0;
     let dseTotalTagGap = 0;
     globalDataDO.forEach(r => {
