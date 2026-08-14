@@ -50,8 +50,8 @@
                 <div class="date-badge-box">
                     <i class="fa-solid fa-calendar-days" style="color:#f59e0b; font-size:15px;"></i>
                     <div>
-                        <b id="headerDayCountText">Hari ke-13 Agustus 2026</b>
-                        <small id="lastUpdateText">Last Update : 11 Agustus 2026 (H-2) | Sisa HK: 20 Hari</small>
+                        <b id="headerDayCountText">Hari ke-14 Agustus 2026</b>
+                        <small id="lastUpdateText">Last Update : 12 Agustus 2026 (H-2) | Sisa HK: 19 Hari</small>
                     </div>
                 </div>
             </div>
@@ -97,7 +97,7 @@
                 <div class="exec-kpi-global-grid">
                     <div class="exec-kpi-box box-red">
                         <span class="box-lbl">REVENUE MTD</span>
-                        <b class="box-val" id="exKpiRev">Rp 0</b>
+                        <b class="box-val" id="exKpiRev" style="white-space: nowrap;">Rp 0</b>
                     </div>
                     <div class="exec-kpi-box box-yellow">
                         <span class="box-lbl">TERTIARY B#</span>
@@ -144,47 +144,52 @@
                             <option value="SABTU">Sabtu</option>
                         </select>
                         <button class="btn-snapshot-section" onclick="takeSectionSnapshot('snapshotSectionMission')"><i class="fa-solid fa-camera"></i> Snapshot Mission</button>
+                        <div id="pjpDisplayLabel" style="font-weight: 800; color: #b45309; font-size: 13px; background: #fef3c7; padding: 6px 12px; border-radius: 8px; border: 1px solid #f59e0b; white-space: nowrap;">PJP Hari: 0 Out</div>
                     </div>
                 </div>
 
                 <div class="exec-mission-stats-grid">
                     <div class="mission-stat-card" onclick="actionGotoOutletUnach('SELL_IN')">
-                        <span class="m-lbl"><i class="fa-solid fa-cart-shopping color-cyan"></i> TARGET SP SELL IN</span>
+                        <span class="m-lbl"><i class="fa-solid fa-cart-shopping color-cyan"></i> TARGET Today SP SELL IN</span>
                         <b class="m-val color-cyan" id="exMissionSellInTgt">0 pcs</b>
-                        <span class="m-sub" id="exTotalGapSelIn">Total GAP: 0 pcs</span>
+                        <span class="m-sub" id="exTotalGapSelIn">GAP Total: 0 pcs</span>
                     </div>
                     <div class="mission-stat-card" onclick="actionGotoOutletUnach('OSA')">
-                        <span class="m-lbl"><i class="fa-solid fa-bullseye color-green"></i> TARGET OSA</span>
-                        <b class="m-val color-green" id="exMissionOsaTgt">0</b>
-                        <span class="m-sub" id="exTotalGapOsa">Total GAP OSA</span>
+                        <span class="m-lbl"><i class="fa-solid fa-bullseye color-green"></i> TARGET Today OSA</span>
+                        <b class="m-val color-green" id="exMissionOsaTgt">Rp 0</b>
+                        <span class="m-sub" id="exTotalGapOsa">GAP Total: Rp 0</span>
                     </div>
                     <div class="mission-stat-card" onclick="actionGotoOutletUnach('BIO')">
                         <span class="m-lbl"><i class="fa-solid fa-fingerprint color-purple"></i> BELUM BIOMETRIK</span>
                         <b class="m-val color-purple" id="exMissionBioUnach">0 Outlet</b>
-                        <span class="m-sub">Total GAP Outlet</span>
+                        <span class="m-sub" id="exTotalBioGap">GAP Total: 0 Outlet</span>
                     </div>
                     <div class="mission-stat-card" onclick="actionGotoOutletUnach('TAG')">
                         <span class="m-lbl"><i class="fa-solid fa-tags color-orange"></i> BELUM TAGGING 3PCS</span>
                         <b class="m-val color-orange" id="exMissionTagUnach">0 Outlet</b>
-                        <span class="m-sub">Total GAP Outlet</span>
+                        <span class="m-sub" id="exTotalTagGap">GAP Total: 0 Outlet</span>
                     </div>
                 </div>
+            </div>
 
-                <div style="margin-top:10px;">
-                    <div style="font-size:12px; font-weight:800; color:#0f172a; margin-bottom:6px;"><i class="fa-solid fa-table-list"></i> TARGET NON KPI PER DSE (FWA, TAGGING 50%, BIOMETRIK 80%)</div>
-                    <div class="mini-table-wrapper">
-                        <table class="mini-exec-table">
-                            <thead>
-                                <tr>
-                                    <th>Nama DSE</th>
-                                    <th>Target RGUGA FWA</th>
-                                    <th>Ach Tagging 3PCS (50%) & GAP</th>
-                                    <th>Ach GA Biometrik (80%) & GAP</th>
-                                </tr>
-                            </thead>
-                            <tbody id="nonKpiTableBody"></tbody>
-                        </table>
-                    </div>
+            <!-- SECTION NON KPI PANEL -->
+            <div class="exec-card-panel border-top-blue" id="snapshotSectionNonKpi">
+                <div class="exec-panel-header-flex">
+                    <div class="exec-panel-header"><i class="fa-solid fa-table-list color-blue"></i> TARGET NON KPI PER DSE (FWA, TAGGING 50%, BIOMETRIK 80%)</div>
+                    <button class="btn-snapshot-section" onclick="takeSectionSnapshot('snapshotSectionNonKpi')"><i class="fa-solid fa-camera"></i> Snapshot Non KPI</button>
+                </div>
+                <div class="mini-table-wrapper">
+                    <table class="mini-exec-table">
+                        <thead>
+                            <tr>
+                                <th>Nama DSE</th>
+                                <th>Target RGUGA FWA</th>
+                                <th>Ach Tagging 3PCS (50%) & GAP</th>
+                                <th>Ach GA Biometrik (80%) & GAP</th>
+                            </tr>
+                        </thead>
+                        <tbody id="nonKpiTableBody"></tbody>
+                    </table>
                 </div>
             </div>
 

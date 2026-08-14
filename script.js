@@ -1136,21 +1136,35 @@ function updateExecutiveSummaryNew() {
     });
 
     let totalOutlet = globalDataDO.length;
-    let targetSellIn = 0, achSellIn = 0, targetOsa = 0, achOsa = 0, bioAchCount = 0, tagAchCount = 0;
+    let targetSellIn = 0, achSellIn = 0, targetOsa = 0, achOsa = 0;
+
+    const customTargets = {
+        "DSE1082": { sellIn: 744, osa: 621760720 },
+        "DSE1147": { sellIn: 398, osa: 575117071 },
+        "DSE-BENGKAYANG01": { sellIn: 74, osa: 91900861 },
+        "DSE-JAGOIBABNG01": { sellIn: 325, osa: 241784637 },
+        "DSE-JAGOIBABNG02": { sellIn: 399, osa: 451939961 }
+    };
 
     globalDataDO.forEach(r => {
         targetSellIn += Math.ceil(parseNum(r[7]));
         achSellIn += parseNum(r[8]);
         targetOsa += parseNum(r[11]);
         achOsa += parseNum(r[12]);
-        if (parseNum(r[18]) >= 1) bioAchCount++; 
-        if (parseNum(r[15]) >= 3 || parseNum(r[16]) >= 1) tagAchCount++; 
     });
 
     let pctSellIn = targetSellIn > 0 ? (achSellIn / targetSellIn) * 100 : 0;
     let pctOsa = targetOsa > 0 ? (achOsa / targetOsa) * 100 : 0;
-    let pctBio = totalOutlet > 0 ? (bioAchCount / totalOutlet) * 100 : 0;
-    let pctTag = totalOutlet > 0 ? (tagAchCount / totalOutlet) * 100 : 0;
+    
+    // Hitung persentase global untuk KPI Global MTD
+    let globalBioAchCount = 0;
+    let globalTagAchCount = 0;
+    globalDataDO.forEach(r => {
+        if (parseNum(r[18]) >= 1) globalBioAchCount++;
+        if (parseNum(r[15]) >= 3 || parseNum(r[16]) >= 1) globalTagAchCount++;
+    });
+    let pctBio = totalOutlet > 0 ? (globalBioAchCount / totalOutlet) * 100 : 0;
+    let pctTag = totalOutlet > 0 ? (globalTagAchCount / totalOutlet) * 100 : 0;
 
     document.getElementById("exKpiRev").innerText = "Rp " + Math.round(totalRev).toLocaleString('id-ID');
     document.getElementById("exKpiTertiary").innerText = Math.round(totalTertiary).toLocaleString('id-ID');
@@ -1171,7 +1185,7 @@ function updateExecutiveSummaryNew() {
     let sellInWeighted = sellInScore * 0.175;
 
     let tagTargetVal = 167;
-    let tagAchPct = tagTargetVal > 0 ? (tagAchCount / tagTargetVal) * 100 : 0;
+    let tagAchPct = tagTargetVal > 0 ? (globalTagAchCount / tagTargetVal) * 100 : 0;
     let tagScore = Math.min(tagAchPct, 140);
     let tagWeighted = tagScore * 0.175;
 
@@ -1196,7 +1210,7 @@ function updateExecutiveSummaryNew() {
     document.getElementById("rseWScoreSellIn").innerText = sellInWeighted.toFixed(2) + "%";
 
     document.getElementById("rseTgtTag").innerText = Math.round(tagTargetVal).toLocaleString('id-ID');
-    document.getElementById("rseActTag").innerText = tagAchCount.toLocaleString('id-ID');
+    document.getElementById("rseActTag").innerText = globalTagAchCount.toLocaleString('id-ID');
     document.getElementById("rseAchTag").innerText = tagAchPct.toFixed(2) + "%";
     document.getElementById("rseWScoreTag").innerText = tagWeighted.toFixed(2) + "%";
 
@@ -1218,27 +1232,78 @@ function updateExecutiveSummaryNew() {
         return matchDse && matchHari;
     });
 
-    let mTargetSellInTotal = 0, mTargetOsaTotal = 0, mUnachBio = 0, mUnachTag = 0;
+    let mTargetSellInTotal = 0, mTargetOsaTotal = 0;
     let subAchSellIn = 0, subAchOsa = 0;
 
+    let dseMapForMission = {};
     missionRows.forEach(r => {
-        mTargetSellInTotal += parseNum(r[7]);
-        mTargetOsaTotal += parseNum(r[11]);
-        subAchSellIn += parseNum(r[8]);
-        subAchOsa += parseNum(r[12]);
-        if (parseNum(r[18]) < 1) mUnachBio++;
-        if (parseNum(r[15]) < 3 && parseNum(r[16]) < 1) mUnachTag++;
+        let dName = String(r[2] || '').trim();
+        if (!dseMapForMission[dName]) {
+            dseMapForMission[dName] = { achSellIn: 0, achOsa: 0 };
+        }
+        dseMapForMission[dName].achSellIn += parseNum(r[8]);
+        dseMapForMission[dName].achOsa += parseNum(r[12]);
     });
+
+    if (selDse !== "ALL" && customTargets[selDse]) {
+        mTargetSellInTotal = customTargets[selDse].sellIn;
+        mTargetOsaTotal = customTargets[selDse].osa;
+        
+        let dseAllRows = globalDataDO.filter(r => String(r[2] || "").trim() === selDse);
+        subAchSellIn = dseAllRows.reduce((acc, r) => acc + parseNum(r[8]), 0);
+        subAchOsa = dseAllRows.reduce((acc, r) => acc + parseNum(r[12]), 0);
+    } else {
+        mTargetSellInTotal = 1940; 
+        mTargetOsaTotal = 1982503250; 
+        globalDataDO.forEach(r => {
+            subAchSellIn += parseNum(r[8]);
+            subAchOsa += parseNum(r[12]);
+        });
+    }
 
     let totalGapSellIn = Math.max(0, mTargetSellInTotal - subAchSellIn);
     let totalGapOsa = Math.max(0, mTargetOsaTotal - subAchOsa);
 
-    document.getElementById("exMissionSellInTgt").innerText = Math.round(totalGapSellIn).toLocaleString('id-ID') + " pcs";
-    document.getElementById("exTotalGapSelIn").innerText = "Total GAP: " + Math.round(totalGapSellIn).toLocaleString('id-ID') + " pcs";
-    document.getElementById("exMissionOsaTgt").innerText = "Rp " + Math.round(totalGapOsa).toLocaleString('id-ID');
-    document.getElementById("exTotalGapOsa").innerText = "Total GAP OSA";
-    document.getElementById("exMissionBioUnach").innerText = mUnachBio.toLocaleString('id-ID') + " Outlet";
-    document.getElementById("exMissionTagUnach").innerText = mUnachTag.toLocaleString('id-ID') + " Outlet";
+    let hkInfo = getRemainingWorkingDaysInfo();
+    let sisaHk = hkInfo.remainingDays;
+
+    let dailySellInTgt = Math.ceil(totalGapSellIn / sisaHk);
+    let dailyOsaTgt = Math.round(totalGapOsa / sisaHk);
+
+    // 1. Hitung angka utama (terfilter oleh DSE & Hari) untuk Bio & Tagging
+    let mUnachBioFiltered = 0;
+    let mUnachTagFiltered = 0;
+    missionRows.forEach(r => {
+        if (parseNum(r[18]) < 1) mUnachBioFiltered++;
+        if (parseNum(r[15]) < 3 && parseNum(r[16]) < 1) mUnachTagFiltered++;
+    });
+
+    // 2. Hitung GAP Total spesifik per DSE (atau global jika ALL)
+    let dseTotalBioGap = 0;
+    let dseTotalTagGap = 0;
+    globalDataDO.forEach(r => {
+        let dName = String(r[2] || "").trim();
+        let matchDse = (selDse === "ALL" || dName === selDse);
+        if (matchDse) {
+            if (parseNum(r[18]) < 1) dseTotalBioGap++;
+            if (parseNum(r[15]) < 3 && parseNum(r[16]) < 1) dseTotalTagGap++;
+        }
+    });
+
+    document.getElementById("exMissionSellInTgt").innerText = Math.round(dailySellInTgt).toLocaleString('id-ID') + " pcs";
+    document.getElementById("exMissionOsaTgt").innerText = "Rp " + Math.round(dailyOsaTgt).toLocaleString('id-ID');
+    
+    document.getElementById("exMissionBioUnach").innerText = mUnachBioFiltered.toLocaleString('id-ID') + " Outlet";
+    document.getElementById("exMissionTagUnach").innerText = mUnachTagFiltered.toLocaleString('id-ID') + " Outlet";
+
+    let hariLabelStr = selHari !== "ALL" ? `${selHari.charAt(0) + selHari.slice(1).toLowerCase()}` : `Hari`;
+    document.getElementById("pjpDisplayLabel").innerText = `PJP ${hariLabelStr} : ${missionRows.length} Outlet`;
+
+    document.getElementById("exTotalGapSelIn").innerText = `GAP Total: ${Math.round(totalGapSellIn).toLocaleString('id-ID')} pcs`;
+    document.getElementById("exTotalGapOsa").innerText = `GAP Total: Rp ${Math.round(totalGapOsa).toLocaleString('id-ID')}`;
+    
+    document.getElementById("exTotalBioGap").innerText = `GAP Total: ${dseTotalBioGap} Outlet`;
+    document.getElementById("exTotalTagGap").innerText = `GAP Total: ${dseTotalTagGap} Outlet`;
 
     renderTargetNonKpiTable(selDse);
     renderDseAttentionTable();
@@ -1357,7 +1422,7 @@ function renderDseAttentionTable() {
         let sellIn3PcsPct = d.outletSellIn3PcsTgt > 0 ? ((d.outletSellIn3PcsAch / d.outletSellIn3PcsTgt) * 100).toFixed(1) : "0.0";
 
         let formattedAchOsa = "Rp " + Math.round(d.achOsa).toLocaleString('id-ID');
-        let formattedTgtOsa = (d.targetOsa / 1000000).toFixed(1) + " Juta";
+        let formattedTgtOsa = "Rp " + Math.round(d.targetOsa).toLocaleString('id-ID');
 
         return `
             <tr>
@@ -1378,7 +1443,7 @@ function renderDseAttentionTable() {
     let footerHtml = `
         <tr style="background-color: #f8fafc; font-weight: 800; border-top: 2px solid #cbd5e1;">
             <td style="text-align: left; color: #0f172a;">TOTAL KESELURUHAN</td>
-            <td>Rp ${Math.round(grandAchOsa).toLocaleString('id-ID')} / ${(grandTargetOsa / 1000000).toFixed(1)} Juta</td>
+            <td>Rp ${Math.round(grandAchOsa).toLocaleString('id-ID')} / Rp ${Math.round(grandTargetOsa).toLocaleString('id-ID')}</td>
             <td><span style="color:${parseFloat(totalOsaPct) >= 100 ? '#15803d' : '#ef4444'};">${totalOsaPct}%</span></td>
             <td>${grandAchSellIn.toLocaleString('id-ID')} / ${grandTargetSellIn.toLocaleString('id-ID')}</td>
             <td><span style="color:${parseFloat(totalSellInPct) >= 100 ? '#15803d' : '#ef4444'};">${totalSellInPct}%</span></td>
@@ -1425,53 +1490,12 @@ function refreshGlobalAiSummary() {
     let totalSite = globalDataSM.length;
     let totalOutlet = globalDataDO.length;
 
-    let focusList = [
-        "penanganan site berstatus AT RISK secara intensif",
-        "percepatan eksekusi target SP Sell In pada outlet tier-2",
-        "optimalisasi kunjungan DSE ke wilayah dengan penetrasi rendah",
-        "peningkatan kepatuhan Tagging 3PCS di seluruh titik mikro cluster"
-    ];
-
-    let actionList = [
-        "Fokuskan supervisi harian pada DSE dengan pencapaian di bawah rata-rata.",
-        "Pastikan ketersediaan stok produk IM3 mencukupi di level outlet.",
-        "Jadwalkan program jemput bola untuk outlet yang belum bertransaksi.",
-        "Evaluasi pencapaian harian secara berkala setiap sore menjelang tutup logistik."
-    ];
-
-    let prefixTypes = [
-        `⚡ <b>AI Executive Insight #${Math.floor(Math.random() * 900) + 100}:</b>`,
-        `💡 <b>AI Strategic Recommendation:</b>`,
-        `📈 <b>AI Performance Analytics:</b>`
-    ];
-
-    let randPrefix = prefixTypes[Math.floor(Math.random() * prefixTypes.length)];
-    let randFocus = focusList[Math.floor(Math.random() * focusList.length)];
-    let randAction = actionList[Math.floor(Math.random() * actionList.length)];
-
-    let dynamicText = `${randPrefix} Total Revenue MTD tercatat <b>Rp ${Math.round(totRevPST).toLocaleString('id-ID')}</b> dari ${totalSite} site aktif dan ${totalOutlet} outlet. Rekomendasi taktis saat ini diarahkan pada <b>${randFocus}</b>. ${randAction}`;
-
+    let dynamicText = `⚡ <b>AI Executive Insight:</b> Total Revenue MTD tercatat <b>Rp ${Math.round(totRevPST).toLocaleString('id-ID')}</b> dari ${totalSite} site aktif dan ${totalOutlet} outlet. Fokuskan supervisi harian pada DSE dengan pencapaian di bawah rata-rata.`;
     elem.innerHTML = dynamicText;
 }
 
 function updateGlobalAiHeaderSummary() {
     refreshGlobalAiSummary();
-}
-
-function renderLeaderboardList(elemId, items, isAlert = false) {
-    const elem = document.getElementById(elemId);
-    if (!elem) return;
-    const badges = ["🥇", "🥈", "🥉"];
-    elem.innerHTML = items.map((it, idx) => `
-        <div class="lb-item">
-            <span class="lb-rank">${badges[idx] || (idx + 1)}</span>
-            <div class="lb-info-group">
-                <span class="lb-name">${it.name}</span>
-                ${it.subText ? `<span class="lb-subtext">${it.subText}</span>` : ''}
-            </div>
-            <span class="lb-val ${isAlert ? 'badge-danger' : 'badge-success'}">${it.val}</span>
-        </div>
-    `).join('');
 }
 
 function exportExcelCurrent() { alert("Proses Export Excel dimulai..."); }
@@ -1603,7 +1627,7 @@ function renderTable(tableId, header, data) {
       else if (judulKolom.includes("BIOMETRIX") || judulKolom.includes("RGUGA")) {
         valDisplay = Math.floor(numVal).toLocaleString("id-ID");
       }
-      else if ((judulKolom.includes("ACH OSA") || judulKolom.includes("PREPAID REV") || judulKolom.includes("REVENUE")) && numVal >= 1000) {
+      else if ((judulKolom.includes("ACH OSA") || judulKolom.includes("PREPAID REV") || judulKolom.includes("REVENUE") || judulKolom.includes("TARGET OSA")) && numVal >= 1000) {
         valDisplay = "Rp " + Math.round(numVal).toLocaleString("id-ID");
       }
       else if (judulKolom.includes("%") || judulKolom.includes("ACH %") || judulKolom.includes("MOM") || judulKolom.includes("GROWTH")) {
@@ -1683,4 +1707,5 @@ document.addEventListener("change", function (e) {
   if (e.target.id.includes("DO" ) || e.target.id === "columnFilterDO") updateDashboardDO();
   if (e.target.id.includes("Daily")) updateDashboardDaily();
   if (e.target.id.includes("PP")) updateDashboardPP();
+  if (e.target.id === "execDseFilter" || e.target.id === "execHariFilter") updateExecutiveSummaryNew();
 });
