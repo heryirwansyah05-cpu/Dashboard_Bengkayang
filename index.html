@@ -30,7 +30,7 @@
         </div>
         <button onclick="handleUserLogin()" style="width: 100%; background: #e11d48; color: white; border: none; padding: 12px; border-radius: 10px; font-size: 14px; font-weight: 800; cursor: pointer; transition: background 0.2s;">MASUK DASHBOARD</button>
         <div style="margin-top: 15px; font-size: 10.5px; color: #94a3b8;">
-            Protected by MC BENGKAYANG SECURITY
+            Protected by Indosat Ooredoo Hutchison Security
         </div>
     </div>
 </div>
@@ -74,8 +74,8 @@
                 <div class="date-badge-box">
                     <i class="fa-solid fa-calendar-days" style="color:#f59e0b; font-size:15px;"></i>
                     <div>
-                        <b id="headerDayCountText">Hari ke-14 Agustus 2026</b>
-                        <small id="lastUpdateText">Last Update : 12 Agustus 2026 (H-2) | Sisa HK: 19 Hari</small>
+                        <b id="headerDayCountText">Hari ke-17 Agustus 2026</b>
+                        <small id="lastUpdateText">Last Update : 15 Agustus 2026 (H-2) | Sisa HK: 16 Hari</small>
                     </div>
                 </div>
             </div>
@@ -94,7 +94,7 @@
             <button class="tab-btn" id="navTabPst" onclick="switchReport('ms-bengkayang', this)"><i class="fa-solid fa-chart-pie"></i> PST</button>
             <button class="tab-btn" id="navTabMonitoring" onclick="switchReport('outlet-mc', this)"><i class="fa-solid fa-desktop"></i> Site Monitoring</button>
             <button class="tab-btn" id="navTabOutlet" onclick="switchReport('detail-outlet', this)"><i class="fa-solid fa-store"></i> Detail Outlet</button>
-            <button class="tab-btn" id="navTabDaily" onclick="switchReport('daily-dse', this)"><i class="fa-solid fa-calendar-days"></i> Daily Sell In DSE</button>
+            <button class="tab-btn" id="navTabDaily" onclick="switchReport('daily-dse', this)"><i class="fa-solid fa-calendar-days"></i> GAP Daily KPI DSE</button>
             <button class="tab-btn" id="navTabPartner" onclick="switchReport('partner-performance', this)"><i class="fa-solid fa-chart-line"></i> Partner Performance</button>
         </div>
         <div class="update">Status: <b>Live Data Active</b></div>
@@ -215,30 +215,6 @@
                         <tbody id="nonKpiTableBody"></tbody>
                     </table>
                 </div>
-            </div>
-
-            <!-- SECTION 3: DSE KPI PANEL -->
-            <div class="exec-card-panel border-top-red" id="snapshotSectionDseKpi" style="grid-column: span 2;">
-                <div class="exec-panel-header-flex">
-                    <div class="exec-panel-header"><i class="fa-solid fa-chart-line color-red"></i> DSE PERFORMANCE</div>
-                    <button class="btn-snapshot-section" onclick="takeSectionSnapshot('snapshotSectionDseKpi')"><i class="fa-solid fa-camera"></i> Snapshot DSE KPI</button>
-                </div>
-                <div class="mini-table-wrapper">
-                    <table class="mini-exec-table">
-                        <thead>
-                            <tr>
-                                <th>Nama DSE</th>
-                                <th>Ach OSA / Target</th>
-                                <th>Ach % OSA</th>
-                                <th>Ach Sell In / Target</th>
-                                <th>Ach % Sell In</th>
-                                <th>Sell In 3pcs per Outlet (Ach / Target)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="dseAttentionTableBody"></tbody>
-                    </table>
-                </div>
-                <button class="btn-full-link" onclick="switchReport('detail-outlet', null)">Lihat Detail Selengkapnya di Detail Outlet →</button>
             </div>
 
             <!-- SECTION 4: KPI RSE PERFORMANCE SCORECARD (HIDDEN FOR DSE USERS) -->
@@ -553,7 +529,7 @@
         <div class="table-container"><table id="dataTableDO"></table></div>
     </div>
 
-    <!-- ================= TAB 5: DAILY SELL IN DSE ================= -->
+    <!-- ================= TAB 5: GAP DAILY KPI DSE ================= -->
     <div id="daily-dse" class="report-content" style="display: none;">
         
         <div class="exec-card-panel border-top-green" id="snapshotSectionDailyOsa" style="margin-bottom: 25px;">

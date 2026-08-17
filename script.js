@@ -26,8 +26,8 @@ let currentActiveTabId = 'all-summary-tab';
 // DAFTAR USER YANG DIIZINKAN & ATURAN AKSESNYA
 const ALLOWED_USERS = {
     "HERY IRWANSYAH": { type: "admin" },
-    "SDP MONTERADO": { type: "admin" },
-    "SDP JAGOI BABANG": { type: "admin" },
+    "SDP MONTERADO": { type: "sdp", filter: "MONTERADO" },
+    "SDP JAGOI BABANG": { type: "sdp", filter: "JAGOI BABANG" },
     "DSE-BENGKAYANG01": { type: "dse", dseCode: "DSE-BENGKAYANG01" },
     "DSE1147": { type: "dse", dseCode: "DSE1147" },
     "DSE1082": { type: "dse", dseCode: "DSE1082" },
@@ -43,8 +43,9 @@ function handleUserLogin() {
         localStorage.setItem("logged_in_user", inputVal);
         document.getElementById("loginModalOverlay").style.display = "none";
         applyUserSessionPermissions();
+        location.reload();
     } else {
-        errorMsg.style.display = "block";
+        if (errorMsg) errorMsg.style.display = "block";
     }
 }
 
@@ -56,31 +57,33 @@ function handleLogout() {
 function applyUserSessionPermissions() {
     const currentUser = localStorage.getItem("logged_in_user");
     if (!currentUser || !ALLOWED_USERS[currentUser]) {
-        document.getElementById("loginModalOverlay").style.display = "flex";
+        const modal = document.getElementById("loginModalOverlay");
+        if (modal) modal.style.display = "flex";
         return;
     }
 
-    document.getElementById("loginModalOverlay").style.display = "none";
-    document.getElementById("activeUserNameDisplay").innerText = currentUser;
+    const modal = document.getElementById("loginModalOverlay");
+    if (modal) modal.style.display = "none";
+    
+    const userDisplay = document.getElementById("activeUserNameDisplay");
+    if (userDisplay) userDisplay.innerText = currentUser;
 
     const userInfo = ALLOWED_USERS[currentUser];
     const navTabs = document.getElementById("mainReportTabsContainer");
     const rseCard = document.getElementById("snapshotSectionRse");
 
     if (userInfo.type === "dse") {
-        // HIDE SEMUA TAB KECUALI EXECUTIVE SUMMARY, SITE MONITORING, DETAIL OUTLET
         if (navTabs) {
             const buttons = navTabs.getElementsByTagName("button");
             for (let btn of buttons) {
-                if (btn.id !== "navTabSummary" && btn.id !== "navTabMonitoring" && btn.id !== "navTabOutlet") {
+                // IZINKAN: Summary, Site Monitoring, Detail Outlet, dan GAP Daily KPI DSE
+                if (btn.id !== "navTabSummary" && btn.id !== "navTabMonitoring" && btn.id !== "navTabOutlet" && btn.id !== "navTabDaily") {
                     btn.style.display = "none";
                 }
             }
         }
-        // HIDE KARTU RSE SCORECARD DI EXECUTIVE SUMMARY
         if (rseCard) rseCard.style.display = "none";
 
-        // KUNCI FILTER DSE OTOMATIS KE ID MEREKA
         setTimeout(() => {
             const execDseSel = document.getElementById("execDseFilter");
             if (execDseSel) {
@@ -97,23 +100,59 @@ function applyUserSessionPermissions() {
                 dseMcsel.value = userInfo.dseCode;
                 dseMcsel.disabled = true;
             }
+            const dseDailySel = document.getElementById("dseFilterDaily");
+            if (dseDailySel) {
+                dseDailySel.value = userInfo.dseCode;
+                dseDailySel.disabled = true;
+            }
             updateExecutiveSummaryNew();
             updateDashboardDO();
             updateDashboardSM();
+            updateDashboardDaily();
+        }, 500);
+    } else if (userInfo.type === "sdp") {
+        if (navTabs) {
+            const buttons = navTabs.getElementsByTagName("button");
+            for (let btn of buttons) {
+                if (btn.id === "navTabDaily") {
+                    btn.style.display = "none";
+                }
+            }
+        }
+
+        setTimeout(() => {
+            const partnerSel = document.getElementById("partnerFilter");
+            if (partnerSel) {
+                partnerSel.value = userInfo.filter;
+                partnerSel.disabled = true;
+            }
+            const partnerSelMC = document.getElementById("partnerFilterMC");
+            if (partnerSelMC) {
+                partnerSelMC.value = userInfo.filter;
+                partnerSelMC.disabled = true;
+            }
+            const partnerSelPP = document.getElementById("partnerFilterPP");
+            if (partnerSelPP) {
+                partnerSelPP.value = userInfo.filter;
+                partnerSelPP.disabled = true;
+            }
+            updateDashboardMS();
+            updateDashboardSM();
+            updateDashboardPP();
+            updateExecutiveSummaryNew();
         }, 500);
     } else {
-        // ADMIN / PARTNER (FULL ACCESS)
         if (rseCard) rseCard.style.display = "block";
     }
 }
 
-// Jalankan pengecekan sesi saat halaman pertama kali dimuat
 document.addEventListener("DOMContentLoaded", () => {
     const savedUser = localStorage.getItem("logged_in_user");
     if (savedUser && ALLOWED_USERS[savedUser]) {
         applyUserSessionPermissions();
     } else {
-        document.getElementById("loginModalOverlay").style.display = "flex";
+        const modal = document.getElementById("loginModalOverlay");
+        if (modal) modal.style.display = "flex";
     }
 });
 
@@ -146,23 +185,6 @@ function parseNum(val) {
   return isNaN(num) ? 0 : num;
 }
 
-function formatDailyHeader(row) {
-    return (row || []).map(h => {
-        if (h === undefined || h === null) return '';
-        let str = String(h).trim();
-        let num = Number(str);
-        if (!isNaN(num) && num > 40000 && num < 50000) {
-            let d = new Date(Math.round((num - 25569) * 86400 * 1000));
-            return `${d.getDate()}/${d.getMonth() + 1}`;
-        }
-        if (str.includes('00:00:00') || (!isNaN(Date.parse(str)) && str.includes("-"))) {
-            let d = new Date(str);
-            if (!isNaN(d.getDate())) return `${d.getDate()}/${d.getMonth() + 1}`;
-        }
-        return str;
-    });
-}
-
 function updateAutoDateH2() {
     const updateText = document.getElementById("lastUpdateText");
     const dayCountText = document.getElementById("headerDayCountText");
@@ -190,10 +212,10 @@ function updateProgressBarAndBadge(pct, progressId, badgeId) {
     let safePct = Math.min(Math.max(pct, 0), 100);
     if (progressBar) progressBar.style.width = safePct.toFixed(1) + "%";
     if (badge) {
-        if (pct >= 120) { badge.className = "status-badge badge-excellent"; badge.innerText = "🔵 Excellent"; }
-        else if (pct >= 100) { badge.className = "status-badge badge-success"; badge.innerText = "🟢 On Target"; }
-        else if (pct >= 50) { badge.className = "status-badge badge-warning"; badge.innerText = "🟡 In Progress"; }
-        else { badge.className = "status-badge badge-danger"; badge.innerText = "🔴 Under Target"; }
+        if (pct >= 120) { badge.className = "status-badge badge-excellent"; badge.innerText = "⭐ Excellent"; }
+        else if (pct >= 100) { badge.className = "status-badge badge-success"; badge.innerText = "🎯 On Target"; }
+        else if (pct >= 50) { badge.className = "status-badge badge-warning"; badge.innerText = "📈 In Progress"; }
+        else { badge.className = "status-badge badge-danger"; badge.innerText = "⚠️ Under Target"; }
     }
 }
 
@@ -228,8 +250,10 @@ function resetFilters(tabId) {
     const container = document.getElementById(tabId);
     if (!container) return;
     container.querySelectorAll("select").forEach(s => {
-        if (userInfo && userInfo.type === "dse" && (s.id === "execDseFilter" || s.id === "dseFilterDO" || s.id === "dseFilterMC")) {
-            s.value = userInfo.dseCode; // Jangan direset jika DSE terkunci
+        if (userInfo && userInfo.type === "dse" && (s.id === "execDseFilter" || s.id === "dseFilterDO" || s.id === "dseFilterMC" || s.id === "dseFilterDaily")) {
+            s.value = userInfo.dseCode;
+        } else if (userInfo && userInfo.type === "sdp" && (s.id === "partnerFilter" || s.id === "partnerFilterMC" || s.id === "partnerFilterPP")) {
+            s.value = userInfo.filter;
         } else {
             s.value = "ALL";
         }
@@ -288,9 +312,7 @@ const p3 = fetch("DETAIL OUTLET.xlsx")
     const rows = XLSX.utils.sheet_to_json(ws, { header: 1, range: 4, raw: true });
     if (!rows || rows.length === 0) return;
     globalHeaderDO = (rows[0] || []).map((h) => String(h || "").replace(/\r?\n|\r/g, " ").trim());
-    
     let targetRgugaIdx = globalHeaderDO.findIndex(h => h.toUpperCase().includes("TARGET RGUGA BIOMETRIX"));
-    
     globalDataDO = rows.slice(1).filter(r => r.length > 0 && r[0] && String(r[0]).toUpperCase() !== "OUTLET ID").map(r => {
         let newRow = [...r];
         if (targetRgugaIdx !== -1 && newRow[targetRgugaIdx] !== undefined) {
@@ -303,12 +325,11 @@ const p3 = fetch("DETAIL OUTLET.xlsx")
     populateDropdown(globalDataDO, "execDseFilter", 2, "Semua DSE Code");
     populateDropdown(globalDataDO, "categoryFilterDO", 3, "Semua Category");
     populateDropdown(globalDataDO, "isimpleFilterDO", 4, "Semua ISIMPLE");
-    
     populateColumnFilterDO();
     updateDashboardDO();
   }).catch(e => console.log("DO load skip"));
 
-const p4 = fetch("DAILY SELL IN DSE.xlsx")
+const p4 = fetch("GAP DAILY KPI DSE.xlsx")
   .then((res) => res.arrayBuffer())
   .then((data) => {
     const wb = XLSX.read(data, { type: "array" });
@@ -318,18 +339,16 @@ const p4 = fetch("DAILY SELL IN DSE.xlsx")
     let idxOsaHeader = jsonData.findIndex(r => r && r.some(c => String(c).toUpperCase().includes("TARGET OSA")));
     let idxSpHeader = jsonData.findIndex(r => r && r.some(c => String(c).toUpperCase().includes("TARGET SP SELL IN")));
     if (idxOsaHeader !== -1) {
-        globalHeaderDailyOSA = formatDailyHeader(jsonData[idxOsaHeader]);
         let endIdx = idxSpHeader !== -1 ? idxSpHeader : jsonData.length;
         globalDataDailyOSA = jsonData.slice(idxOsaHeader + 1, endIdx).filter(r => r && r.some(c => c !== undefined && c !== null && c !== ''));
     }
     if (idxSpHeader !== -1) {
-        globalHeaderDailySP = formatDailyHeader(jsonData[idxSpHeader]);
         globalDataDailySP = jsonData.slice(idxSpHeader + 1).filter(r => r && r.some(c => c !== undefined && c !== null && c !== ''));
     }
     let combinedData = globalDataDailyOSA.length > 0 ? globalDataDailyOSA : globalDataDailySP;
     populateDropdown(combinedData, "dseFilterDaily", 0, "Semua DSE Code");
     updateDashboardDaily();
-  }).catch(e => console.log("Daily load skip"));
+  }).catch(e => console.log("GAP DAILY KPI DSE load skip"));
 
 const p5 = fetch("PARTNER PERFORMANCE.xlsx")
   .then((res) => res.arrayBuffer())
@@ -338,18 +357,13 @@ const p5 = fetch("PARTNER PERFORMANCE.xlsx")
     const ws = wb.Sheets[wb.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(ws, { header: 1, range: 0, raw: true });
     if (!rows || rows.length < 5) return;
-    
     globalHeaderPP = (rows[4] || []).map((h) => String(h || "").replace(/\r?\n|\r/g, " ").trim());
-    
     globalDataPP = rows.slice(5).filter(r => {
         if (!r || r.length === 0 || !r[1]) return false;
         let ptName = String(r[1]).trim().toUpperCase();
-        if (ptName === "PT NAME" || ptName === "NAMA PARTNER" || ptName === "PARAMETER" || ptName.includes("BENGKAYANG")) {
-            return false;
-        }
+        if (ptName === "PT NAME" || ptName === "NAMA PARTNER" || ptName === "PARAMETER" || ptName.includes("BENGKAYANG")) return false;
         return true;
     });
-
     populateDropdown(globalDataPP, "partnerFilterPP", 1, "Semua PT Partner");
     updateDashboardPP();
   }).catch(e => console.log("PP load skip"));
@@ -361,7 +375,6 @@ const p6 = fetch("MS WEEK 30.xlsx")
     const ws = wb.Sheets[wb.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true });
     if (!rows || rows.length < 8) return;
-    
     let rowSub = rows[6] || [];
     let rowMain = rows[7] || [];
     globalHeaderW30 = rowMain.map((val, idx) => {
@@ -372,7 +385,6 @@ const p6 = fetch("MS WEEK 30.xlsx")
         }
         return mainTxt || `Col ${idx}`;
     });
-
     globalDataW30 = rows.slice(8).filter(r => r.length > 0 && r[1]);
     updateDashboardW30();
   }).catch(e => console.log("MS Week 30 load skip"));
@@ -393,16 +405,13 @@ function populateDropdown(dataRows, selectId, colIdx, defaultText) {
   const selectElem = document.getElementById(selectId);
   if (!selectElem) return;
   const valSet = new Set();
-  
   dataRows.forEach((r) => {
     const val = r[colIdx] !== undefined && r[colIdx] !== null ? String(r[colIdx]).trim() : "";
     if (val && val !== "undefined" && val.toUpperCase() !== "NAN" && !val.toUpperCase().includes("HEADER") && !val.toUpperCase().includes("DSE CODE")) {
       valSet.add(val);
     }
   });
-
   selectElem.innerHTML = `<option value="ALL">${defaultText}</option>`;
-  
   Array.from(valSet).sort((a, b) => a.localeCompare(b, 'id', { numeric: true })).forEach((val) => {
     const opt = document.createElement("option");
     opt.value = val;
@@ -432,15 +441,16 @@ function updateGrowthBadge(elemId, currentVal, prevVal) {
     let growth = prevVal > 0 ? ((currentVal - prevVal) / prevVal) * 100 : (currentVal > 0 ? 100 : 0);
     let sign = growth >= 0 ? "+" : "";
     elem.innerText = `${sign}${growth.toFixed(1)}%`;
-    if (growth >= 0) {
-        elem.className = "growth-badge growth-positive";
-    } else {
-        elem.className = "growth-badge growth-negative";
-    }
+    if (growth >= 0) elem.className = "growth-badge growth-positive";
+    else elem.className = "growth-badge growth-negative";
 }
 
 function updateDashboardMS() {
-  const selectedPartner = document.getElementById("partnerFilter")?.value || "ALL";
+  const currentUser = localStorage.getItem("logged_in_user");
+  const userInfo = ALLOWED_USERS[currentUser];
+  let selectedPartner = document.getElementById("partnerFilter")?.value || "ALL";
+  if (userInfo && userInfo.type === "sdp") selectedPartner = userInfo.filter;
+
   const selectedKecamatan = document.getElementById("kecamatanFilter")?.value || "ALL";
   const searchKeyword = document.getElementById("searchInput")?.value.toLowerCase().trim() || "";
   
@@ -520,11 +530,9 @@ function renderKecamatanTopBottomLeaderboards(rows) {
     let idxRevGrowth = globalHeaderMS.findIndex(h => h.toUpperCase() === "GROWTH" || h.toUpperCase().includes("GROWTH"));
     let idxRevMtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("REVENUE MTD"));
     let idxRevLmtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("REVENUE LMTD"));
-
     let idxVlrMtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("VLR SUBS MTD"));
     let idxVlrLmtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("VLR SUBS LMTD"));
     let idxVlrGrowth = globalHeaderMS.findIndex(h => h.toUpperCase().includes("VLR") && h.toUpperCase().includes("GROWTH"));
-
     let idxTertMtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("TERTIARY B# MTD"));
     let idxTertLmtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("TERTIARY B# LMTD"));
     let idxTertGrowth = globalHeaderMS.findIndex(h => h.toUpperCase().includes("TERTIARY") && h.toUpperCase().includes("GROWTH"));
@@ -533,15 +541,12 @@ function renderKecamatanTopBottomLeaderboards(rows) {
         let revM = parseNum(r[idxRevMtd !== -1 ? idxRevMtd : 2]);
         let revL = parseNum(r[idxRevLmtd !== -1 ? idxRevLmtd : 3]);
         let revG = idxRevGrowth !== -1 ? parseNum(r[idxRevGrowth]) : (revL > 0 ? (revM - revL) / revL : 0);
-
         let vlrM = parseNum(r[idxVlrMtd !== -1 ? idxVlrMtd : 17]);
         let vlrL = parseNum(r[idxVlrLmtd !== -1 ? idxVlrLmtd : 18]);
         let vlrG = idxVlrGrowth !== -1 ? parseNum(r[idxVlrGrowth]) : (vlrL > 0 ? (vlrM - vlrL) / vlrL : 0);
-
         let tertM = parseNum(r[idxTertMtd !== -1 ? idxTertMtd : 11]);
         let tertL = parseNum(r[idxTertLmtd !== -1 ? idxTertLmtd : 12]);
         let tertG = idxTertGrowth !== -1 ? parseNum(r[idxTertGrowth]) : (tertL > 0 ? (tertM - tertL) / tertL : 0);
-
         return {
             kec: String(r[idxKec] || "Kecamatan").trim(),
             revMtd: revM, revLmtd: revL, revGrowth: revG,
@@ -554,7 +559,6 @@ function renderKecamatanTopBottomLeaderboards(rows) {
         let sorted = [...arr].sort((a,b) => b[growthKey] - a[growthKey]);
         let top3 = sorted.slice(0, 3);
         let bot3 = sorted.slice(-3).reverse();
-        
         let html = `<div style="font-size:11px; font-weight:800; color:#15803d; margin-bottom:4px;">TOP 3 KECAMATAN</div>`;
         top3.forEach((item, idx) => {
             let mtdStr = isCurrency ? "Rp " + Math.round(item[mtdKey]).toLocaleString('id-ID') : Math.round(item[mtdKey]).toLocaleString('id-ID');
@@ -562,7 +566,6 @@ function renderKecamatanTopBottomLeaderboards(rows) {
             let gVal = item[growthKey] * 100;
             let gStr = (gVal >= 0 ? "+" : "") + gVal.toFixed(2) + "%";
             let gColor = gVal >= 0 ? "#15803d" : "#be123c";
-
             html += `
               <div style="font-size:11px; padding:4px 0; border-bottom:1px dashed #f1f5f9;">
                 <div style="display:flex; justify-content:space-between; font-weight:700;">
@@ -576,7 +579,6 @@ function renderKecamatanTopBottomLeaderboards(rows) {
               </div>
             `;
         });
-
         html += `<div style="font-size:11px; font-weight:800; color:#be123c; margin-top:8px; margin-bottom:4px;">BOTTOM 3 KECAMATAN</div>`;
         bot3.forEach((item, idx) => {
             let mtdStr = isCurrency ? "Rp " + Math.round(item[mtdKey]).toLocaleString('id-ID') : Math.round(item[mtdKey]).toLocaleString('id-ID');
@@ -584,7 +586,6 @@ function renderKecamatanTopBottomLeaderboards(rows) {
             let gVal = item[growthKey] * 100;
             let gStr = (gVal >= 0 ? "+" : "") + gVal.toFixed(2) + "%";
             let gColor = gVal >= 0 ? "#15803d" : "#be123c";
-
             html += `
               <div style="font-size:11px; padding:4px 0; border-bottom:1px dashed #f1f5f9;">
                 <div style="display:flex; justify-content:space-between; font-weight:700;">
@@ -604,21 +605,19 @@ function renderKecamatanTopBottomLeaderboards(rows) {
     let elRev = document.getElementById("topBottomRevGrowthList");
     let elVlr = document.getElementById("topBottomVlrList");
     let elTert = document.getElementById("topBottomTertiaryList");
-
     if (elRev) elRev.innerHTML = makeDetailedListHtml(dataList, 'revMtd', 'revLmtd', 'revGrowth', true);
     if (elVlr) elVlr.innerHTML = makeDetailedListHtml(dataList, 'vlrMtd', 'vlrLmtd', 'vlrGrowth', false);
     if (elTert) elTert.innerHTML = makeDetailedListHtml(dataList, 'tertMtd', 'tertLmtd', 'tertGrowth', true);
 }
 
 function updateDashboardSM() {
-  const selectedPartner = document.getElementById("partnerFilterMC")?.value || "ALL";
   const currentUser = localStorage.getItem("logged_in_user");
   const userInfo = ALLOWED_USERS[currentUser];
+  let selectedPartner = document.getElementById("partnerFilterMC")?.value || "ALL";
+  if (userInfo && userInfo.type === "sdp") selectedPartner = userInfo.filter;
   
   let selectedDse = document.getElementById("dseFilterMC")?.value || "ALL";
-  if (userInfo && userInfo.type === "dse") {
-      selectedDse = userInfo.dseCode;
-  }
+  if (userInfo && userInfo.type === "dse") selectedDse = userInfo.dseCode;
 
   const selectedCategory = document.getElementById("categoryFilterMC")?.value || "ALL";
   const searchKeyword = document.getElementById("searchInputMC")?.value.toLowerCase().trim() || "";
@@ -653,10 +652,8 @@ function updateDashboardSM() {
     if (idxVlrMtd !== -1) totVlrMtd += parseNum(r[idxVlrMtd]);
     if (idx90DLmtd !== -1) tot90DLmtd += parseNum(r[idx90DLmtd]);
     if (idx90DMtd !== -1) tot90DMtd += parseNum(r[idx90DMtd]);
-    
     let rguVal = idxRguMtd !== -1 ? parseNum(r[idxRguMtd]) : 0;
     totRguMtd += rguVal;
-
     if (rguVal === 0) {
       let sName = String(r[1] || r[0] || "Site").trim();
       zeroRguSiteList.push(sName);
@@ -679,11 +676,8 @@ function updateDashboardSM() {
 
   const smallListElem = document.getElementById("zeroRguSiteSmallList");
   if (smallListElem) {
-      if (zeroRguSiteList.length > 0) {
-          smallListElem.innerHTML = zeroRguSiteList.join(", ");
-      } else {
-          smallListElem.innerHTML = "<i>Tidak ada site dengan RGU GA MTD = 0</i>";
-      }
+      if (zeroRguSiteList.length > 0) smallListElem.innerHTML = zeroRguSiteList.join(", ");
+      else smallListElem.innerHTML = "<i>Tidak ada site dengan RGU GA MTD = 0</i>";
   }
 
   renderSiteLeaderboards(filteredRows, idxRevMtd, idxRevLmtd, idxVlrMtd, idxVlrLmtd, idx90DMtd, idx90DLmtd);
@@ -696,19 +690,15 @@ function renderSiteLeaderboards(filteredRows, idxRevMtd, idxRevLmtd, idxVlrMtd, 
         let siteId = String(r[0] || '-').trim();
         let dseName = String(r[3] || '-').trim();
         let subText = `ID: ${siteId} | DSE: ${dseName}`;
-
         let revM = parseNum(r[idxRevMtd]);
         let revL = parseNum(r[idxRevLmtd]);
         let revG = revL > 0 ? (revM - revL) / revL : (revM > 0 ? 1 : 0);
-
         let vlrM = parseNum(r[idxVlrMtd]);
         let vlrL = parseNum(r[idxVlrLmtd]);
         let vlrG = vlrL > 0 ? (vlrM - vlrL) / vlrL : (vlrM > 0 ? 1 : 0);
-
         let m90M = parseNum(r[idx90DMtd]);
         let m90L = parseNum(r[idx90DLmtd]);
         let m90G = m90L > 0 ? (m90M - m90L) / m90L : (m90M > 0 ? 1 : 0);
-
         return {
             name: siteName, subText: subText,
             revMtd: revM, revLmtd: revL, revGrowth: revG,
@@ -721,7 +711,6 @@ function renderSiteLeaderboards(filteredRows, idxRevMtd, idxRevLmtd, idxVlrMtd, 
         let sorted = [...arr].sort((a,b) => b[growthKey] - a[growthKey]);
         let top3 = sorted.slice(0, 3);
         let bot3 = sorted.slice(-3).reverse();
-        
         let html = `<div style="font-size:11px; font-weight:800; color:#15803d; margin-bottom:4px;">TOP 3 SITE</div>`;
         top3.forEach((item, idx) => {
             let mtdStr = isCurrency ? "Rp " + Math.round(item[mtdKey]).toLocaleString('id-ID') : Math.round(item[mtdKey]).toLocaleString('id-ID');
@@ -729,7 +718,6 @@ function renderSiteLeaderboards(filteredRows, idxRevMtd, idxRevLmtd, idxVlrMtd, 
             let gVal = item[growthKey] * 100;
             let gStr = (gVal >= 0 ? "+" : "") + gVal.toFixed(2) + "%";
             let gColor = gVal >= 0 ? "#15803d" : "#be123c";
-
             html += `
               <div style="font-size:11px; padding:4px 0; border-bottom:1px dashed #f1f5f9;">
                 <div style="display:flex; justify-content:space-between; font-weight:700;">
@@ -744,7 +732,6 @@ function renderSiteLeaderboards(filteredRows, idxRevMtd, idxRevLmtd, idxVlrMtd, 
               </div>
             `;
         });
-
         html += `<div style="font-size:11px; font-weight:800; color:#be123c; margin-top:8px; margin-bottom:4px;">BOTTOM 3 SITE</div>`;
         bot3.forEach((item, idx) => {
             let mtdStr = isCurrency ? "Rp " + Math.round(item[mtdKey]).toLocaleString('id-ID') : Math.round(item[mtdKey]).toLocaleString('id-ID');
@@ -752,7 +739,6 @@ function renderSiteLeaderboards(filteredRows, idxRevMtd, idxRevLmtd, idxVlrMtd, 
             let gVal = item[growthKey] * 100;
             let gStr = (gVal >= 0 ? "+" : "") + gVal.toFixed(2) + "%";
             let gColor = gVal >= 0 ? "#15803d" : "#be123c";
-
             html += `
               <div style="font-size:11px; padding:4px 0; border-bottom:1px dashed #f1f5f9;">
                 <div style="display:flex; justify-content:space-between; font-weight:700;">
@@ -773,16 +759,18 @@ function renderSiteLeaderboards(filteredRows, idxRevMtd, idxRevLmtd, idxVlrMtd, 
     let elRev = document.getElementById("topBottomRevGrowthSiteList");
     let elVlr = document.getElementById("topBottomVlrSiteList");
     let el90D = document.getElementById("topBottom90DSiteList");
-
     if (elRev) elRev.innerHTML = makeDetailedSiteListHtml(siteArr, 'revMtd', 'revLmtd', 'revGrowth', true);
     if (elVlr) elVlr.innerHTML = makeDetailedSiteListHtml(siteArr, 'vlrMtd', 'vlrLmtd', 'vlrGrowth', false);
     if (el90D) el90D.innerHTML = makeDetailedSiteListHtml(siteArr, 'm90Mtd', 'm90Lmtd', 'm90Growth', false);
 }
 
 function updateDashboardPP() {
-  const selPT = document.getElementById("partnerFilterPP")?.value || "ALL";
+  const currentUser = localStorage.getItem("logged_in_user");
+  const userInfo = ALLOWED_USERS[currentUser];
+  let selPT = document.getElementById("partnerFilterPP")?.value || "ALL";
+  if (userInfo && userInfo.type === "sdp") selPT = userInfo.filter;
+
   const search = document.getElementById("searchInputPP")?.value.toLowerCase().trim() || "";
-  
   let idxPtName = 1; 
   const filteredRows = globalDataPP.filter(r => {
       let ptName = String(r[idxPtName] || "").trim();
@@ -793,7 +781,6 @@ function updateDashboardPP() {
   document.getElementById("kpiTotalPartnersPP").innerText = uniquePartners.length;
 
   const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni"];
-  
   const colsMap = {
       rev: [2, 3, 4, 5, 6, 7],
       primary: [8, 9, 10, 11, 12, 13],
@@ -934,17 +921,13 @@ function renderPpItemCharts(labels, rev, primary, secondary, tertiary, trade, rg
 function updateDashboardDO() {
   const currentUser = localStorage.getItem("logged_in_user");
   const userInfo = ALLOWED_USERS[currentUser];
-
   let selDse = document.getElementById("dseFilterDO")?.value || "ALL";
-  if (userInfo && userInfo.type === "dse") {
-      selDse = userInfo.dseCode;
-  }
+  if (userInfo && userInfo.type === "dse") selDse = userInfo.dseCode;
 
   const selCategory = document.getElementById("categoryFilterDO")?.value || "ALL";
   const selIsimple = document.getElementById("isimpleFilterDO")?.value || "ALL";
   const selHari = document.getElementById("hariFilterDO")?.value.toUpperCase() || "ALL";
   const searchKeyword = document.getElementById("searchInputDO")?.value.toLowerCase().trim() || "";
-  
   const colFilterIdx = document.getElementById("columnFilterDO")?.value || "ALL";
   const colFilterVal = parseNum(document.getElementById("columnFilterValDO")?.value);
 
@@ -1035,12 +1018,16 @@ function updateDashboardDO() {
 }
 
 function updateDashboardDaily() {
-  const selDSE = document.getElementById("dseFilterDaily")?.value || "ALL";
+  const currentUser = localStorage.getItem("logged_in_user");
+  const userInfo = ALLOWED_USERS[currentUser];
+  let selDSE = document.getElementById("dseFilterDaily")?.value || "ALL";
+  if (userInfo && userInfo.type === "dse") selDSE = userInfo.dseCode;
+
   const searchKeyword = document.getElementById("searchInputDaily")?.value.toLowerCase().trim() || "";
 
   const hkInfo = getRemainingWorkingDaysInfo();
-  document.getElementById("osaSectionTitleText").innerHTML = `<i class="fa-solid fa-bullseye color-green"></i> 1. MONITORING TARGET OSA PER DSE (GAP / ${hkInfo.remainingDays} SISA HK)`;
-  document.getElementById("spSectionTitleText").innerHTML = `<i class="fa-solid fa-cart-shopping color-cyan"></i> 2. MONITORING TARGET SP SELL IN PER DSE (GAP / ${hkInfo.remainingDays} SISA HK)`;
+  document.getElementById("osaSectionTitleText").innerHTML = `<i class="fa-solid fa-bullseye color-green"></i> 1. GAP DAILY KPI OSA PER DSE (${hkInfo.remainingDays} SISA HK)`;
+  document.getElementById("spSectionTitleText").innerHTML = `<i class="fa-solid fa-cart-shopping color-cyan"></i> 2. GAP DAILY KPI SP SELL IN PER DSE (${hkInfo.remainingDays} SISA HK)`;
   document.getElementById("thOsaDailyHeader").innerText = `Target Daily (Gap / ${hkInfo.remainingDays} HK)`;
   document.getElementById("thSpDailyHeader").innerText = `Target Daily (Gap / ${hkInfo.remainingDays} HK)`;
 
@@ -1059,7 +1046,7 @@ function renderDailyOsaSection(rows, remainingDays) {
   const tbody = document.getElementById("execDailyOsaTableBody");
   if (!tbody) return;
 
-  let totTarget = 0, sumW1 = 0, sumW2 = 0, sumW3 = 0, sumW4 = 0;
+  let totTarget = 0;
   let tableHtml = "";
 
   rows.forEach(r => {
@@ -1070,18 +1057,7 @@ function renderDailyOsaSection(rows, remainingDays) {
     let remaining = Math.max(0, tgt - ach);
     let dailyTarget = remaining / remainingDays; 
     let pct = tgt > 0 ? ((ach / tgt) * 100).toFixed(1) : "0.0";
-
     totTarget += tgt;
-    for (let colIdx = 5; colIdx < globalHeaderDailyOSA.length; colIdx++) {
-      let day = parseInt(globalHeaderDailyOSA[colIdx].split('/')[0]);
-      let val = parseNum(r[colIdx]);
-      if (!isNaN(day)) {
-        if (day >= 1 && day <= 7) sumW1 += val;
-        else if (day >= 8 && day <= 14) sumW2 += val;
-        else if (day >= 15 && day <= 21) sumW3 += val;
-        else if (day >= 22 && day <= 31) sumW4 += val;
-      }
-    }
 
     tableHtml += `
       <tr>
@@ -1095,41 +1071,22 @@ function renderDailyOsaSection(rows, remainingDays) {
   });
 
   tbody.innerHTML = tableHtml || `<tr><td colspan="5" style="text-align:center;">Tidak ada data OSA</td></tr>`;
-
-  let tw1 = Math.round(totTarget * (7 / 31)), tw2 = Math.round(totTarget * (7 / 31)), tw3 = Math.round(totTarget * (7 / 31)), tw4 = Math.round(totTarget * (10 / 31));
-  let pw1 = tw1 > 0 ? ((sumW1 / tw1) * 100).toFixed(1) : "0.0";
-  let pw2 = tw2 > 0 ? ((sumW2 / tw2) * 100).toFixed(1) : "0.0";
-  let pw3 = tw3 > 0 ? ((sumW3 / tw3) * 100).toFixed(1) : "0.0";
-  let pw4 = tw4 > 0 ? ((sumW4 / tw4) * 100).toFixed(1) : "0.0";
-
-  document.getElementById("dashOsaTitle").innerText = "Pencapaian Mingguan Target OSA";
+  document.getElementById("dashOsaTitle").innerText = "Monitoring Gap Bulanan & Harian Target OSA";
   document.getElementById("weeklyOsaKpiContainer").innerHTML = `
-    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px dashed rgba(0,0,0,0.1); padding:4px 0;">
-      <span><b>Minggu 1 (Tgl 1-7):</b> Rp ${sumW1.toLocaleString('id-ID')} / Rp ${tw1.toLocaleString('id-ID')}</span>
-      <span class="status-badge ${parseFloat(pw1) >= 100 ? 'badge-success' : 'badge-danger'}">(${pw1}%)</span>
-    </div>
-    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px dashed rgba(0,0,0,0.1); padding:4px 0;">
-      <span><b>Minggu 2 (Tgl 8-14):</b> Rp ${sumW2.toLocaleString('id-ID')} / Rp ${tw2.toLocaleString('id-ID')}</span>
-      <span class="status-badge ${parseFloat(pw2) >= 100 ? 'badge-success' : 'badge-danger'}">(${pw2}%)</span>
-    </div>
-    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px dashed rgba(0,0,0,0.1); padding:4px 0;">
-      <span><b>Minggu 3 (Tgl 15-21):</b> Rp ${sumW3.toLocaleString('id-ID')} / Rp ${tw3.toLocaleString('id-ID')}</span>
-      <span class="status-badge ${parseFloat(pw3) >= 100 ? 'badge-success' : 'badge-danger'}">(${pw3}%)</span>
-    </div>
-    <div style="display:flex; justify-content:space-between; align-items:center; padding:4px 0;">
-      <span><b>Minggu 4 (Tgl 22-31):</b> Rp ${sumW4.toLocaleString('id-ID')} / Rp ${tw4.toLocaleString('id-ID')}</span>
-      <span class="status-badge ${parseFloat(pw4) >= 100 ? 'badge-success' : 'badge-danger'}">(${pw4}%)</span>
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0;">
+      <span><b>Total Target MC Bengkayang:</b> Rp ${totTarget.toLocaleString('id-ID')}</span>
+      <span class="status-badge badge-success">Gap Daily Tracker</span>
     </div>
   `;
 
-  renderDailyChartCanvas('dailyOsaChartCanvas', globalHeaderDailyOSA, rows, 'Penjualan OSA Harian', '#10b981', 'rgba(16, 185, 129, 0.15)', 'dailyOsaChartInstance');
+  renderDailyBarChartCanvas('dailyOsaChartInstance', 'dailyOsaChartCanvas', rows, 'Target OSA', 'MTD Actual OSA', '#f59e0b', '#0284c7');
 }
 
 function renderDailySpSection(rows, remainingDays) {
   const tbody = document.getElementById("execDailySpTableBody");
   if (!tbody) return;
 
-  let totTarget = 0, sumW1 = 0, sumW2 = 0, sumW3 = 0, sumW4 = 0;
+  let totTarget = 0;
   let tableHtml = "";
 
   rows.forEach(r => {
@@ -1140,18 +1097,7 @@ function renderDailySpSection(rows, remainingDays) {
     let remaining = Math.max(0, tgt - ach);
     let dailyTarget = remaining / remainingDays; 
     let pct = tgt > 0 ? ((ach / tgt) * 100).toFixed(1) : "0.0";
-
     totTarget += tgt;
-    for (let colIdx = 5; colIdx < globalHeaderDailySP.length; colIdx++) {
-      let day = parseInt(globalHeaderDailySP[colIdx].split('/')[0]);
-      let val = parseNum(r[colIdx]);
-      if (!isNaN(day)) {
-        if (day >= 1 && day <= 7) sumW1 += val;
-        else if (day >= 8 && day <= 14) sumW2 += val;
-        else if (day >= 15 && day <= 21) sumW3 += val;
-        else if (day >= 22 && day <= 31) sumW4 += val;
-      }
-    }
 
     tableHtml += `
       <tr>
@@ -1165,46 +1111,32 @@ function renderDailySpSection(rows, remainingDays) {
   });
 
   tbody.innerHTML = tableHtml || `<tr><td colspan="5" style="text-align:center;">Tidak ada data SP Sell In</td></tr>`;
-
-  let tw1 = Math.round(totTarget * (7 / 31)), tw2 = Math.round(totTarget * (7 / 31)), tw3 = Math.round(totTarget * (7 / 31)), tw4 = Math.round(totTarget * (10 / 31));
-  let pw1 = tw1 > 0 ? ((sumW1 / tw1) * 100).toFixed(1) : "0.0";
-  let pw2 = tw2 > 0 ? ((sumW2 / tw2) * 100).toFixed(1) : "0.0";
-  let pw3 = tw3 > 0 ? ((sumW3 / tw3) * 100).toFixed(1) : "0.0";
-  let pw4 = tw4 > 0 ? ((sumW4 / tw4) * 100).toFixed(1) : "0.0";
-
-  document.getElementById("dashSpTitle").innerText = "Pencapaian Mingguan Target SP Sell In";
+  document.getElementById("dashSpTitle").innerText = "Monitoring Gap Bulanan & Harian Target SP Sell In";
   document.getElementById("weeklySpKpiContainer").innerHTML = `
-    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px dashed rgba(0,0,0,0.1); padding:4px 0;">
-      <span><b>Minggu 1 (Tgl 1-7):</b> ${sumW1.toLocaleString('id-ID')} / ${tw1.toLocaleString('id-ID')} pcs</span>
-      <span class="status-badge ${parseFloat(pw1) >= 100 ? 'badge-success' : 'badge-danger'}">(${pw1}%)</span>
-    </div>
-    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px dashed rgba(0,0,0,0.1); padding:4px 0;">
-      <span><b>Minggu 2 (Tgl 8-14):</b> ${sumW2.toLocaleString('id-ID')} / ${tw2.toLocaleString('id-ID')} pcs</span>
-      <span class="status-badge ${parseFloat(pw2) >= 100 ? 'badge-success' : 'badge-danger'}">(${pw2}%)</span>
-    </div>
-    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px dashed rgba(0,0,0,0.1); padding:4px 0;">
-      <span><b>Minggu 3 (Tgl 15-21):</b> ${sumW3.toLocaleString('id-ID')} / ${tw3.toLocaleString('id-ID')} pcs</span>
-      <span class="status-badge ${parseFloat(pw3) >= 100 ? 'badge-success' : 'badge-danger'}">(${pw3}%)</span>
-    </div>
-    <div style="display:flex; justify-content:space-between; align-items:center; padding:4px 0;">
-      <span><b>Minggu 4 (Tgl 22-31):</b> ${sumW4.toLocaleString('id-ID')} / ${tw4.toLocaleString('id-ID')} pcs</span>
-      <span class="status-badge ${parseFloat(pw4) >= 100 ? 'badge-success' : 'badge-danger'}">(${pw4}%)</span>
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0;">
+      <span><b>Total Target MC Bengkayang:</b> ${totTarget.toLocaleString('id-ID')} pcs</span>
+      <span class="status-badge badge-success">Gap Daily Tracker</span>
     </div>
   `;
 
-  renderDailyChartCanvas('dailySpChartCanvas', globalHeaderDailySP, rows, 'Penjualan SP Sell In Harian', '#0891b2', 'rgba(8, 145, 178, 0.15)', 'dailySpChartInstance');
+  renderDailyBarChartCanvas('dailySpChartInstance', 'dailySpChartCanvas', rows, 'Target SP Sell In', 'MTD Actual SP', '#f59e0b', '#0284c7');
 }
 
-function renderDailyChartCanvas(canvasId, header, dataRows, datasetLabel, borderColor, bgColor, instanceName) {
+function renderDailyBarChartCanvas(instanceName, canvasId, dataRows, labelTarget, labelAch, colorTarget, colorAch) {
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
-  let dateLabels = [], dailyTotals = [];
-  for (let c = 5; c < header.length; c++) {
-    dateLabels.push(header[c]);
-    let colTotal = 0;
-    dataRows.forEach(r => colTotal += parseNum(r[c]));
-    dailyTotals.push(colTotal);
-  }
+
+  let dseLabels = [];
+  let targetArr = [];
+  let achArr = [];
+
+  dataRows.forEach(r => {
+    let dse = String(r[0] || "").trim();
+    if (!dse || dse.toUpperCase() === "DSE CODE") return;
+    dseLabels.push(dse);
+    targetArr.push(parseNum(r[2]));
+    achArr.push(parseNum(r[3]));
+  });
 
   if (instanceName === 'dailyOsaChartInstance') {
       if (dailyOsaChartInstance) dailyOsaChartInstance.destroy();
@@ -1213,25 +1145,19 @@ function renderDailyChartCanvas(canvasId, header, dataRows, datasetLabel, border
   }
 
   let newChart = new Chart(canvas.getContext('2d'), {
-    type: 'line',
+    type: 'bar',
     data: {
-      labels: dateLabels,
-      datasets: [{
-        label: datasetLabel,
-        data: dailyTotals,
-        borderColor: borderColor,
-        backgroundColor: bgColor,
-        fill: true,
-        tension: 0.3,
-        pointRadius: 3,
-        borderWidth: 2
-      }]
+      labels: dseLabels,
+      datasets: [
+        { label: labelTarget, data: targetArr, backgroundColor: colorTarget, borderWidth: 1 },
+        { label: labelAch, data: achArr, backgroundColor: colorAch, borderWidth: 1 }
+      ]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: { x: { ticks: { font: { size: 9 }, color: '#475569' } }, y: { ticks: { font: { size: 9 }, color: '#475569' } } }
+      plugins: { legend: { display: true, position: 'top', labels: { font: { size: 10 } } } },
+      scales: { x: { ticks: { font: { size: 10 }, color: '#475569' } }, y: { ticks: { font: { size: 10 }, color: '#475569' } } }
     }
   });
 
@@ -1255,14 +1181,6 @@ function updateExecutiveSummaryNew() {
 
     let totalOutlet = globalDataDO.length;
     let targetSellIn = 0, achSellIn = 0, targetOsa = 0, achOsa = 0;
-
-    const customTargets = {
-        "DSE1082": { sellIn: 744, osa: 621760720 },
-        "DSE1147": { sellIn: 398, osa: 575117071 },
-        "DSE-BENGKAYANG01": { sellIn: 74, osa: 91900861 },
-        "DSE-JAGOIBABNG01": { sellIn: 325, osa: 241784637 },
-        "DSE-JAGOIBABNG02": { sellIn: 399, osa: 451939961 }
-    };
 
     globalDataDO.forEach(r => {
         targetSellIn += Math.ceil(parseNum(r[7]));
@@ -1307,14 +1225,13 @@ function updateExecutiveSummaryNew() {
     let tagWeighted = tagScore * 0.175;
 
     let fwaTargetVal = 10;
-    let fwaAchCount = 2; 
+    let fwaAchCount = 3; 
     let fwaAchPct = fwaTargetVal > 0 ? (fwaAchCount / fwaTargetVal) * 100 : 0;
     let fwaScore = Math.min(fwaAchPct, 160);
     let fwaWeighted = fwaScore * 0.15;
 
     let dseProdScore = 0;
     let dseProdWeighted = dseProdScore * 0.20;
-
     let totalRseScore = tradeWeighted + sellInWeighted + tagWeighted + fwaWeighted + dseProdWeighted;
 
     document.getElementById("rseActTrade").innerText = Math.round(totalTradeSupply).toLocaleString('id-ID');
@@ -1341,11 +1258,8 @@ function updateExecutiveSummaryNew() {
 
     const currentUser = localStorage.getItem("logged_in_user");
     const userInfo = ALLOWED_USERS[currentUser];
-
     let selDse = document.getElementById("execDseFilter")?.value || "ALL";
-    if (userInfo && userInfo.type === "dse") {
-        selDse = userInfo.dseCode;
-    }
+    if (userInfo && userInfo.type === "dse") selDse = userInfo.dseCode;
 
     let selHari = document.getElementById("execHariFilter")?.value.toUpperCase() || "ALL";
     let colIdxHari = selHari !== "ALL" ? globalHeaderDO.findIndex(h => h.toUpperCase() === selHari) : -1;
@@ -1356,43 +1270,28 @@ function updateExecutiveSummaryNew() {
         return matchDse && matchHari;
     });
 
-    let mTargetSellInTotal = 0, mTargetOsaTotal = 0;
+    let mTargetSellInTotal = 1940, mTargetOsaTotal = 1982503250;
     let subAchSellIn = 0, subAchOsa = 0;
-
-    if (selDse !== "ALL" && customTargets[selDse]) {
-        mTargetSellInTotal = customTargets[selDse].sellIn;
-        mTargetOsaTotal = customTargets[selDse].osa;
-        
-        let dseAllRows = globalDataDO.filter(r => String(r[2] || "").trim() === selDse);
-        subAchSellIn = dseAllRows.reduce((acc, r) => acc + parseNum(r[8]), 0);
-        subAchOsa = dseAllRows.reduce((acc, r) => acc + parseNum(r[12]), 0);
-    } else {
-        mTargetSellInTotal = 1940; 
-        mTargetOsaTotal = 1982503250; 
-        globalDataDO.forEach(r => {
-            subAchSellIn += parseNum(r[8]);
-            subAchOsa += parseNum(r[12]);
-        });
-    }
+    globalDataDO.forEach(r => {
+        subAchSellIn += parseNum(r[8]);
+        subAchOsa += parseNum(r[12]);
+    });
 
     let totalGapSellIn = Math.max(0, mTargetSellInTotal - subAchSellIn);
     let totalGapOsa = Math.max(0, mTargetOsaTotal - subAchOsa);
 
     let hkInfo = getRemainingWorkingDaysInfo();
     let sisaHk = hkInfo.remainingDays;
-
     let dailySellInTgt = Math.ceil(totalGapSellIn / sisaHk);
     let dailyOsaTgt = Math.round(totalGapOsa / sisaHk);
 
-    let mUnachBioFiltered = 0;
-    let mUnachTagFiltered = 0;
+    let mUnachBioFiltered = 0, mUnachTagFiltered = 0;
     missionRows.forEach(r => {
         if (parseNum(r[18]) < 1) mUnachBioFiltered++;
         if (parseNum(r[15]) < 3 && parseNum(r[16]) < 1) mUnachTagFiltered++;
     });
 
-    let dseTotalBioGap = 0;
-    let dseTotalTagGap = 0;
+    let dseTotalBioGap = 0, dseTotalTagGap = 0;
     globalDataDO.forEach(r => {
         let dName = String(r[2] || "").trim();
         let matchDse = (selDse === "ALL" || dName === selDse);
@@ -1404,7 +1303,6 @@ function updateExecutiveSummaryNew() {
 
     document.getElementById("exMissionSellInTgt").innerText = Math.round(dailySellInTgt).toLocaleString('id-ID') + " pcs";
     document.getElementById("exMissionOsaTgt").innerText = "Rp " + Math.round(dailyOsaTgt).toLocaleString('id-ID');
-    
     document.getElementById("exMissionBioUnach").innerText = mUnachBioFiltered.toLocaleString('id-ID') + " Outlet";
     document.getElementById("exMissionTagUnach").innerText = mUnachTagFiltered.toLocaleString('id-ID') + " Outlet";
 
@@ -1413,12 +1311,10 @@ function updateExecutiveSummaryNew() {
 
     document.getElementById("exTotalGapSelIn").innerText = `GAP Total: ${Math.round(totalGapSellIn).toLocaleString('id-ID')} pcs`;
     document.getElementById("exTotalGapOsa").innerText = `GAP Total: Rp ${Math.round(totalGapOsa).toLocaleString('id-ID')}`;
-    
     document.getElementById("exTotalBioGap").innerText = `GAP Total: ${dseTotalBioGap} Outlet`;
     document.getElementById("exTotalTagGap").innerText = `GAP Total: ${dseTotalTagGap} Outlet`;
 
     renderTargetNonKpiTable(selDse);
-    renderDseAttentionTable();
 }
 
 function renderTargetNonKpiTable(selectedDseFilter) {
@@ -1450,120 +1346,42 @@ function renderTargetNonKpiTable(selectedDseFilter) {
         let tgtFwa = 2; 
         let fwaAch = dseMap[k].fwaAch;
         let gapFwa = Math.max(0, tgtFwa - fwaAch);
+        let pctFwa = Math.min(100, (fwaAch / tgtFwa) * 100);
 
         let tgtTag50 = Math.ceil(dseMap[k].totalOutlet * 0.5);
         let tagAch = dseMap[k].tagAch;
         let gapTag = Math.max(0, tgtTag50 - tagAch);
+        let pctTag = tgtTag50 > 0 ? Math.min(100, (tagAch / tgtTag50) * 100) : 0;
 
         let tgtBio80 = Math.ceil(dseMap[k].totalOutlet * 0.8);
         let bioAch = dseMap[k].bioAch;
         let gapBio = Math.max(0, tgtBio80 - bioAch);
+        let pctBio = tgtBio80 > 0 ? Math.min(100, (bioAch / tgtBio80) * 100) : 0;
 
         return `
             <tr>
                 <td><b>${k}</b></td>
-                <td><span class="badge-target">Ach: ${fwaAch} | Target: ${tgtFwa} <br><b style="color:#e11d48;">GAP: ${gapFwa} pcs</b></span></td>
-                <td><span class="badge-target">Ach: ${tagAch} | Target: ${tgtTag50} <br><b style="color:#e11d48;">GAP: ${gapTag} Outlet</b></span></td>
-                <td><span class="badge-target">Ach: ${bioAch} | Target: ${tgtBio80} <br><b style="color:#e11d48;">GAP: ${gapBio} Outlet</b></span></td>
+                <td>
+                    <div style="font-size:11px; margin-bottom:2px;">Ach: ${fwaAch} | Target: ${tgtFwa} <b style="color:#e11d48;">(GAP: ${gapFwa})</b></div>
+                    <div style="background:#e2e8f0; border-radius:4px; height:8px; width:100%; overflow:hidden;">
+                        <div style="background:#0284c7; height:100%; width:${pctFwa}%;"></div>
+                    </div>
+                </td>
+                <td>
+                    <div style="font-size:11px; margin-bottom:2px;">Ach: ${tagAch} | Target: ${tgtTag50} <b style="color:#e11d48;">(GAP: ${gapTag})</b></div>
+                    <div style="background:#e2e8f0; border-radius:4px; height:8px; width:100%; overflow:hidden;">
+                        <div style="background:#0284c7; height:100%; width:${pctTag}%;"></div>
+                    </div>
+                </td>
+                <td>
+                    <div style="font-size:11px; margin-bottom:2px;">Ach: ${bioAch} | Target: ${tgtBio80} <b style="color:#e11d48;">(GAP: ${gapBio})</b></div>
+                    <div style="background:#e2e8f0; border-radius:4px; height:8px; width:100%; overflow:hidden;">
+                        <div style="background:#0284c7; height:100%; width:${pctBio}%;"></div>
+                    </div>
+                </td>
             </tr>
         `;
     }).join('');
-}
-
-function renderDseAttentionTable() {
-    const tbody = document.getElementById("dseAttentionTableBody");
-    if (!tbody) return;
-
-    const customTargets = {
-        "DSE1082": { sellIn: 744, osa: 621760720 },
-        "DSE1147": { sellIn: 398, osa: 575117071 },
-        "DSE-BENGKAYANG01": { sellIn: 74, osa: 91900861 },
-        "DSE-JAGOIBABNG01": { sellIn: 325, osa: 241784637 },
-        "DSE-JAGOIBABNG02": { sellIn: 399, osa: 451939961 }
-    };
-
-    let dseMap = {};
-    let grandAchOsa = 0, grandTargetOsa = 0;
-    let grandAchSellIn = 0, grandTargetSellIn = 0;
-    let grand3PcsAch = 0, grand3PcsTgt = 0;
-
-    globalDataDO.forEach(r => {
-        let dName = String(r[2] || '').trim();
-        if (!dName || dName === 'undefined') return;
-        
-        if (!dseMap[dName]) {
-            let targetOsaVal = customTargets[dName] ? customTargets[dName].osa : parseNum(r[11]);
-            let targetSellInVal = customTargets[dName] ? customTargets[dName].sellIn : Math.ceil(parseNum(r[7]));
-
-            dseMap[dName] = { 
-                name: dName, 
-                achOsa: 0, 
-                targetOsa: targetOsaVal, 
-                achSellIn: 0, 
-                targetSellIn: targetSellInVal, 
-                outletSellIn3PcsAch: 0,
-                outletSellIn3PcsTgt: 25 
-            };
-        }
-        dseMap[dName].achOsa += parseNum(r[12]);
-        dseMap[dName].achSellIn += parseNum(r[8]);
-        
-        if (parseNum(r[8]) >= 3) {
-            dseMap[dName].outletSellIn3PcsAch++;
-        }
-    });
-
-    let keys = Object.keys(dseMap).sort();
-    if (keys.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">Tidak ada data DSE</td></tr>`;
-        return;
-    }
-
-    let rowsHtml = keys.map(k => {
-        let d = dseMap[k];
-        
-        grandAchOsa += d.achOsa;
-        grandTargetOsa += d.targetOsa;
-        grandAchSellIn += d.achSellIn;
-        grandTargetSellIn += d.targetSellIn;
-        grand3PcsAch += d.outletSellIn3PcsAch;
-        grand3PcsTgt += d.outletSellIn3PcsTgt;
-
-        let osaPct = d.targetOsa > 0 ? ((d.achOsa / d.targetOsa) * 100).toFixed(1) : "0.0";
-        let sellInPct = d.targetSellIn > 0 ? ((d.achSellIn / d.targetSellIn) * 100).toFixed(1) : "0.0";
-        let sellIn3PcsPct = d.outletSellIn3PcsTgt > 0 ? ((d.outletSellIn3PcsAch / d.outletSellIn3PcsTgt) * 100).toFixed(1) : "0.0";
-
-        let formattedAchOsa = "Rp " + Math.round(d.achOsa).toLocaleString('id-ID');
-        let formattedTgtOsa = "Rp " + Math.round(d.targetOsa).toLocaleString('id-ID');
-
-        return `
-            <tr>
-                <td><b>${k}</b></td>
-                <td>${formattedAchOsa} / ${formattedTgtOsa}</td>
-                <td><span style="color:${parseFloat(osaPct) >= 100 ? '#15803d' : '#ef4444'}; font-weight:700;">${osaPct}%</span></td>
-                <td>${d.achSellIn.toLocaleString('id-ID')} / ${d.targetSellIn.toLocaleString('id-ID')}</td>
-                <td><span style="color:${parseFloat(sellInPct) >= 100 ? '#15803d' : '#ef4444'}; font-weight:700;">${sellInPct}%</span></td>
-                <td><b>${d.outletSellIn3PcsAch} / ${d.outletSellIn3PcsTgt} Outlet</b> <span style="color:#64748b; font-size:10px;">(${sellIn3PcsPct}%)</span></td>
-            </tr>
-        `;
-    }).join('');
-
-    let totalOsaPct = grandTargetOsa > 0 ? ((grandAchOsa / grandTargetOsa) * 100).toFixed(1) : "0.0";
-    let totalSellInPct = grandTargetSellIn > 0 ? ((grandAchSellIn / grandTargetSellIn) * 100).toFixed(1) : "0.0";
-    let total3PcsPct = grand3PcsTgt > 0 ? ((grand3PcsAch / grand3PcsTgt) * 100).toFixed(1) : "0.0";
-
-    let footerHtml = `
-        <tr style="background-color: #f8fafc; font-weight: 800; border-top: 2px solid #cbd5e1;">
-            <td style="text-align: left; color: #0f172a;">TOTAL KESELURUHAN</td>
-            <td>Rp ${Math.round(grandAchOsa).toLocaleString('id-ID')} / Rp ${Math.round(grandTargetOsa).toLocaleString('id-ID')}</td>
-            <td><span style="color:${parseFloat(totalOsaPct) >= 100 ? '#15803d' : '#ef4444'};">${totalOsaPct}%</span></td>
-            <td>${grandAchSellIn.toLocaleString('id-ID')} / ${grandTargetSellIn.toLocaleString('id-ID')}</td>
-            <td><span style="color:${parseFloat(totalSellInPct) >= 100 ? '#15803d' : '#ef4444'};">${totalSellInPct}%</span></td>
-            <td><b>${grand3PcsAch} / ${grand3PcsTgt} Outlet</b> <span style="color:#64748b; font-size:10px;">(${total3PcsPct}%)</span></td>
-        </tr>
-    `;
-
-    tbody.innerHTML = rowsHtml + footerHtml;
 }
 
 function actionGotoOutletUnach(filterType) {
@@ -1593,7 +1411,6 @@ function takeSectionSnapshot(sectionId) {
 function refreshGlobalAiSummary() {
     let elem = document.getElementById("globalAiSummaryContent");
     if (!elem) return;
-
     let totRevPST = 0;
     globalDataMS.forEach(r => {
         let idxRev = globalHeaderMS.findIndex(h => h.toUpperCase().includes("REVENUE MTD"));
@@ -1601,8 +1418,7 @@ function refreshGlobalAiSummary() {
     });
     let totalSite = globalDataSM.length;
     let totalOutlet = globalDataDO.length;
-
-    let dynamicText = `⚡ <b>AI Executive Insight:</b> Total Revenue MTD tercatat <b>Rp ${Math.round(totRevPST).toLocaleString('id-ID')}</b> dari ${totalSite} site aktif dan ${totalOutlet} outlet. Fokuskan supervisi harian pada DSE dengan pencapaian di bawah rata-rata.`;
+    let dynamicText = `💡 <b>AI Executive Insight:</b> Total Revenue MTD tercatat <b>Rp ${Math.round(totRevPST).toLocaleString('id-ID')}</b> dari ${totalSite} site aktif dan ${totalOutlet} outlet. Fokuskan supervisi harian pada DSE dengan pencapaian di bawah rata-rata.`;
     elem.innerHTML = dynamicText;
 }
 
@@ -1736,9 +1552,7 @@ function renderTable(tableId, header, data) {
       let pctVal = 0;
 
       if (judulKolom.includes("TARGET SP SELL IN")) valDisplay = Math.ceil(numVal).toLocaleString("id-ID");
-      else if (judulKolom.includes("BIOMETRIX") || judulKolom.includes("RGUGA")) {
-        valDisplay = Math.floor(numVal).toLocaleString("id-ID");
-      }
+      else if (judulKolom.includes("BIOMETRIX") || judulKolom.includes("RGUGA")) valDisplay = Math.floor(numVal).toLocaleString("id-ID");
       else if ((judulKolom.includes("ACH OSA") || judulKolom.includes("PREPAID REV") || judulKolom.includes("REVENUE") || judulKolom.includes("TARGET OSA")) && numVal >= 1000) {
         valDisplay = "Rp " + Math.round(numVal).toLocaleString("id-ID");
       }
@@ -1816,7 +1630,7 @@ document.addEventListener("input", function (e) {
 document.addEventListener("change", function (e) {
   if (e.target.id === "partnerFilter" || e.target.id === "kecamatanFilter") updateDashboardMS();
   if (e.target.id.includes("MC")) updateDashboardSM();
-  if (e.target.id.includes("DO" ) || e.target.id === "columnFilterDO") updateDashboardDO();
+  if (e.target.id.includes("DO") || e.target.id === "columnFilterDO") updateDashboardDO();
   if (e.target.id.includes("Daily")) updateDashboardDaily();
   if (e.target.id.includes("PP")) updateDashboardPP();
   if (e.target.id === "execDseFilter" || e.target.id === "execHariFilter") updateExecutiveSummaryNew();
