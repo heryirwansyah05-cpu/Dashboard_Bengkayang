@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=1280">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
     <title>Dashboard MC Bengkayang - Indosat Ooredoo Hutchison</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
@@ -11,13 +11,122 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* CSS TAMBAHAN KHUSUS MOBILE UX & APP-LIKE REDESIGN */
+        #mobileHomeView {
+            display: none;
+            padding: 15px 10px 80px 10px;
+            box-sizing: border-box;
+        }
+        .mobile-home-header {
+            background: linear-gradient(135deg, #e11d48, #be123c);
+            color: #ffffff;
+            padding: 24px 20px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 15px -3px rgba(225, 29, 72, 0.2);
+            text-align: center;
+        }
+        .mobile-home-header h2 { font-size: 20px; font-weight: 800; margin: 0; }
+        .mobile-home-header p { font-size: 12.5px; opacity: 0.9; margin: 5px 0 0 0; }
+        .mobile-menu-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 14px;
+        }
+        .mobile-menu-card {
+            background: #ffffff;
+            border-radius: 14px;
+            padding: 18px 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .mobile-menu-card:active { transform: scale(0.98); background: #f8fafc; }
+        .mobile-menu-icon {
+            width: 48px; height: 48px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; flex-shrink: 0;
+        }
+        .mobile-menu-info h3 { font-size: 15px; font-weight: 800; color: #0f172a; margin: 0; }
+        .mobile-menu-info p { font-size: 12px; color: #64748b; margin: 3px 0 0 0; }
+
+        /* MOBILE BOTTOM NAVIGATION */
+        .mobile-bottom-nav {
+            display: none;
+            position: fixed;
+            bottom: 0; left: 0; width: 100%;
+            background: #ffffff;
+            box-shadow: 0 -4px 15px rgba(0,0,0,0.08);
+            border-top: 1px solid #e2e8f0;
+            z-index: 9999;
+            padding: 8px 6px env(safe-area-inset-bottom, 8px) 6px;
+            box-sizing: border-box;
+            justify-content: space-around;
+            align-items: center;
+        }
+        .mobile-nav-item {
+            display: flex; flex-direction: column; align-items: center;
+            background: none; border: none; color: #64748b;
+            font-size: 10px; font-weight: 700; gap: 3px; cursor: pointer;
+            padding: 4px 8px; flex: 1; text-align: center;
+        }
+        .mobile-nav-item i { font-size: 16px; }
+        .mobile-nav-item.active { color: #e11d48; }
+
+        /* BACK TO MENU HEADER BUTTON */
+        .mobile-back-btn {
+            display: none;
+            align-items: center;
+            gap: 6px;
+            background: #f1f5f9;
+            color: #334155;
+            border: 1px solid #cbd5e1;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+
+        /* SMART VIEW / FULL TABLE TOGGLE */
+        .smart-view-container { display: none; gap: 8px; margin-bottom: 10px; }
+        .smart-view-btn {
+            background: #f8fafc; border: 1px solid #cbd5e1; color: #334155;
+            padding: 6px 12px; border-radius: 8px; font-size: 11.5px; font-weight: 700; cursor: pointer;
+        }
+        .smart-view-btn.active { background: #e11d48; color: white; border-color: #e11d48; }
+
+        @media (max-width: 768px) {
+            body { overflow-x: hidden; background-color: #f8fafc; }
+            .container { padding: 6px; max-width: 100%; width: 100%; }
+            .top-nav-bar { display: none !important; }
+            .mobile-bottom-nav { display: flex !important; }
+            .mobile-back-btn { display: inline-flex !important; }
+            .smart-view-container { display: flex !important; }
+            .header-top-row { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .header-actions { display: none !important; }
+            .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
+            .exec-kpi-global-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
+            .exec-mission-stats-grid { grid-template-columns: 1fr !important; gap: 8px !important; }
+            .leaderboard-grid { grid-template-columns: 1fr !important; gap: 10px !important; }
+            .pp-dashboard-grid { grid-template-columns: 1fr !important; }
+            .toolbar { flex-direction: column; align-items: stretch; gap: 8px; }
+            .toolbar select, .toolbar input { max-width: 100% !important; width: 100% !important; }
+        }
+    </style>
 </head>
 
 <body>
 
 <!-- LOGIN MODAL OVERLAY -->
 <div id="loginModalOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.85); z-index: 99999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(8px);">
-    <div style="background: #ffffff; padding: 35px 40px; border-radius: 20px; width: 420px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3); text-align: center; border-top: 6px solid #e11d48;">
+    <div style="background: #ffffff; padding: 35px 40px; border-radius: 20px; width: 420px; max-width: 90%; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3); text-align: center; border-top: 6px solid #e11d48;">
         <div style="margin-bottom: 20px;">
             <img src="im3.png" alt="IM3" style="height: 45px; object-fit: contain; margin-bottom: 10px;">
             <h2 style="font-size: 22px; font-weight: 800; color: #0f172a; margin: 0;">Portal Dashboard Login</h2>
@@ -100,8 +209,47 @@
         <div class="update">Status: <b>Live Data Active</b></div>
     </div>
 
+    <!-- ================= MOBILE HOME VIEW ================= -->
+    <div id="mobileHomeView">
+        <div class="mobile-home-header">
+            <h2>Dashboard MC Bengkayang</h2>
+            <p>Pilih Menu Modul Performance & Monitoring</p>
+        </div>
+        <div class="mobile-menu-grid" id="mobileMenuGridContainer">
+            <div class="mobile-menu-card" onclick="openMobileModule('all-summary-tab')">
+                <div class="mobile-menu-icon" style="background: #fee2e2; color: #e11d48;"><i class="fa-solid fa-layer-group"></i></div>
+                <div class="mobile-menu-info">
+                    <h3>Executive Summary</h3>
+                    <p>Performance & KPI Global MTD</p>
+                </div>
+            </div>
+            <div class="mobile-menu-card" onclick="openMobileModule('outlet-mc')">
+                <div class="mobile-menu-icon" style="background: #e0f2fe; color: #0284c7;"><i class="fa-solid fa-desktop"></i></div>
+                <div class="mobile-menu-info">
+                    <h3>Site Monitoring</h3>
+                    <p>Site & Market Performance</p>
+                </div>
+            </div>
+            <div class="mobile-menu-card" onclick="openMobileModule('detail-outlet')">
+                <div class="mobile-menu-icon" style="background: #fef3c7; color: #d97706;"><i class="fa-solid fa-store"></i></div>
+                <div class="mobile-menu-info">
+                    <h3>Detail Outlet</h3>
+                    <p>Monitoring Outlet & PJP</p>
+                </div>
+            </div>
+            <div class="mobile-menu-card" onclick="openMobileModule('daily-dse')">
+                <div class="mobile-menu-icon" style="background: #dcfce7; color: #15803d;"><i class="fa-solid fa-calendar-days"></i></div>
+                <div class="mobile-menu-info">
+                    <h3>GAP Daily KPI DSE</h3>
+                    <p>Target vs Achievement Harian</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- ================= TAB 1: EXECUTIVE SUMMARY ================= -->
-    <div id="all-summary-tab" class="report-content">
+    <div id="all-summary-tab" class="report-content" style="display: none;">
+        <button class="mobile-back-btn" onclick="backToMobileHome()"><i class="fa-solid fa-arrow-left"></i> Menu Utama</button>
         <div class="exec-summary-wrapper" id="snapshotSectionAllSummary">
             
             <div class="exec-summary-title-banner">
@@ -303,6 +451,7 @@
 
     <!-- ================= TAB 2: PST ================= -->
     <div id="ms-bengkayang" class="report-content" style="display: none;">
+        <button class="mobile-back-btn" onclick="backToMobileHome()"><i class="fa-solid fa-arrow-left"></i> Menu Utama</button>
         <div class="kpi-grid" style="grid-template-columns: repeat(6, minmax(0, 1fr));">
             <div class="card card-red">
                 <div class="icon"><i class="fa-solid fa-chart-line"></i></div>
@@ -387,6 +536,7 @@
 
     <!-- ================= TAB 3: SITE MONITORING ================= -->
     <div id="outlet-mc" class="report-content" style="display: none;">
+        <button class="mobile-back-btn" onclick="backToMobileHome()"><i class="fa-solid fa-arrow-left"></i> Menu Utama</button>
         <div class="kpi-grid" style="grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: 20px;">
             <div class="card card-red">
                 <div class="icon"><i class="fa-solid fa-chart-line"></i></div>
@@ -454,6 +604,7 @@
 
     <!-- ================= TAB 4: DETAIL OUTLET ================= -->
     <div id="detail-outlet" class="report-content" style="display: none;">
+        <button class="mobile-back-btn" onclick="backToMobileHome()"><i class="fa-solid fa-arrow-left"></i> Menu Utama</button>
         <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));">
             <div class="card card-cyan">
                 <div class="icon"><i class="fa-solid fa-cart-shopping"></i></div>
@@ -526,11 +677,19 @@
             <button class="reset-btn" onclick="resetFilters('detail-outlet')"><i class="fa-solid fa-rotate-left"></i> Reset</button>
             <button class="btn-snapshot-table" onclick="takeTableSnapshotDO()"><i class="fa-solid fa-camera"></i> Snapshot Tabel</button>
         </div>
+        
+        <!-- SMART VIEW / FULL TABLE TOGGLE -->
+        <div class="smart-view-container">
+            <button class="smart-view-btn active" id="btnSmartView" onclick="setDetailOutletViewMode('smart')">🔍 Smart View (Ringkas)</button>
+            <button class="smart-view-btn" id="btnFullView" onclick="setDetailOutletViewMode('full')">📋 Full Table (17 Kolom)</button>
+        </div>
+
         <div class="table-container"><table id="dataTableDO"></table></div>
     </div>
 
     <!-- ================= TAB 5: GAP DAILY KPI DSE ================= -->
     <div id="daily-dse" class="report-content" style="display: none;">
+        <button class="mobile-back-btn" onclick="backToMobileHome()"><i class="fa-solid fa-arrow-left"></i> Menu Utama</button>
         
         <div class="exec-card-panel border-top-green" id="snapshotSectionDailyOsa" style="margin-bottom: 25px;">
             <div class="exec-panel-header-flex">
@@ -607,6 +766,7 @@
 
     <!-- ================= TAB 6: PARTNER PERFORMANCE ================= -->
     <div id="partner-performance" class="report-content" style="display: none;">
+        <button class="mobile-back-btn" onclick="backToMobileHome()"><i class="fa-solid fa-arrow-left"></i> Menu Utama</button>
         
         <div class="pp-dashboard-grid">
             <div class="card card-red pp-card-interactive">
@@ -730,6 +890,26 @@
     </div>
 </div>
 
+<!-- MOBILE BOTTOM NAVIGATION -->
+<div class="mobile-bottom-nav" id="mobileBottomNavContainer">
+    <button class="mobile-nav-item" id="mobNavSummary" onclick="openMobileModule('all-summary-tab')">
+        <i class="fa-solid fa-layer-group"></i>
+        <span>Summary</span>
+    </button>
+    <button class="mobile-nav-item" id="mobNavMonitoring" onclick="openMobileModule('outlet-mc')">
+        <i class="fa-solid fa-desktop"></i>
+        <span>Site</span>
+    </button>
+    <button class="mobile-nav-item" id="mobNavOutlet" onclick="openMobileModule('detail-outlet')">
+        <i class="fa-solid fa-store"></i>
+        <span>Outlet</span>
+    </button>
+    <button class="mobile-nav-item" id="mobNavDaily" onclick="openMobileModule('daily-dse')">
+        <i class="fa-solid fa-calendar-days"></i>
+        <span>GAP Daily</span>
+    </button>
+</div>
+
 <!-- LOADING SCREEN -->
 <div id="loading">
     <div class="im3-loader-logo">
@@ -741,5 +921,62 @@
 </div>
 
 <script src="script.js"></script>
+<script>
+    // MOBILE NAVIGATION & SMART VIEW HELPER SCRIPT
+    let detailOutletViewMode = 'smart'; // 'smart' or 'full'
+
+    function isMobileDevice() {
+        return window.innerWidth <= 768;
+    }
+
+    function openMobileModule(reportId) {
+        document.getElementById('mobileHomeView').style.display = 'none';
+        document.querySelectorAll('.report-content').forEach(c => c.style.display = 'none');
+        
+        const target = document.getElementById(reportId);
+        if (target) target.style.display = 'block';
+
+        // Update Bottom Nav active state
+        document.querySelectorAll('.mobile-nav-item').forEach(btn => btn.classList.remove('active'));
+        if (reportId === 'all-summary-tab') document.getElementById('mobNavSummary')?.classList.add('active');
+        else if (reportId === 'outlet-mc') document.getElementById('mobNavMonitoring')?.classList.add('active');
+        else if (reportId === 'detail-outlet') document.getElementById('mobNavOutlet')?.classList.add('active');
+        else if (reportId === 'daily-dse') document.getElementById('mobNavDaily')?.classList.add('active');
+
+        switchReport(reportId, null);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function backToMobileHome() {
+        if (!isMobileDevice()) return;
+        document.querySelectorAll('.report-content').forEach(c => c.style.display = 'none');
+        document.getElementById('mobileHomeView').style.display = 'block';
+        document.querySelectorAll('.mobile-nav-item').forEach(btn => btn.classList.remove('active'));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function setDetailOutletViewMode(mode) {
+        detailOutletViewMode = mode;
+        document.getElementById('btnSmartView').classList.toggle('active', mode === 'smart');
+        document.getElementById('btnFullView', mode === 'full').classList.toggle('active', mode === 'full');
+        // Re-render table DO
+        updateDashboardDO();
+    }
+
+    // Hook into applyUserSessionPermissions and switchReport to respect mobile flow
+    const originalApplyPermissions = window.applyUserSessionPermissions;
+    window.applyUserSessionPermissions = function() {
+        if (originalApplyPermissions) originalApplyPermissions();
+        if (isMobileDevice()) {
+            // Hide mobile home view until login is confirmed
+            const modal = document.getElementById("loginModalOverlay");
+            if (!modal || modal.style.display === "none") {
+                // If logged in on mobile, show mobile home instead of auto-opening summary
+                document.querySelectorAll('.report-content').forEach(c => c.style.display = 'none');
+                document.getElementById('mobileHomeView').style.display = 'block';
+            }
+        }
+    };
+</script>
 </body>
 </html>

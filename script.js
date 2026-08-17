@@ -1225,7 +1225,7 @@ function updateExecutiveSummaryNew() {
     let tagWeighted = tagScore * 0.175;
 
     let fwaTargetVal = 10;
-    let fwaAchCount = 3; 
+    let fwaAchCount = 1; 
     let fwaAchPct = fwaTargetVal > 0 ? (fwaAchCount / fwaTargetVal) * 100 : 0;
     let fwaScore = Math.min(fwaAchPct, 160);
     let fwaWeighted = fwaScore * 0.15;
@@ -1387,8 +1387,12 @@ function renderTargetNonKpiTable(selectedDseFilter) {
 function actionGotoOutletUnach(filterType) {
     filterUnachModeDO = true;
     quickFilterTypeDO = filterType;
-    const tabDOBtn = document.querySelectorAll('.tab-btn')[3];
-    switchReport('detail-outlet', tabDOBtn);
+    if (window.innerWidth <= 768) {
+        openMobileModule('detail-outlet');
+    } else {
+        const tabDOBtn = document.querySelectorAll('.tab-btn')[3];
+        switchReport('detail-outlet', tabDOBtn);
+    }
 }
 
 function takeSectionSnapshot(sectionId) {
@@ -1500,6 +1504,20 @@ function renderTable(tableId, header, data) {
       if (allowedIndices.length > 0) {
           activeHeader = allowedIndices.map(i => header[i]);
           activeData = data.map(row => allowedIndices.map(i => row[i]));
+      }
+
+      // Check Smart View mode on mobile
+      if (window.innerWidth <= 768 && typeof detailOutletViewMode !== 'undefined' && detailOutletViewMode === 'smart') {
+          const smartCols = ["OUTLET ID", "OUTLET NAME", "DSE CODE", "TARGET SP SELL IN", "SP SELL IN", "ACH % SP SELL IN", "RGUGA BIOMETRIX MTD", "ACH OSA", "ACH % OSA"];
+          let smartIndices = [];
+          activeHeader.forEach((h, idx) => {
+              let cleanH = String(h || "").trim().toUpperCase();
+              if (smartCols.some(s => cleanH.includes(s))) smartIndices.push(idx);
+          });
+          if (smartIndices.length > 0) {
+              activeHeader = smartIndices.map(i => activeHeader[i]);
+              activeData = activeData.map(row => smartIndices.map(i => row[i]));
+          }
       }
   }
 
