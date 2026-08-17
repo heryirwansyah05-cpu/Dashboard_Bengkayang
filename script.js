@@ -76,6 +76,7 @@ function applyUserSessionPermissions() {
         if (navTabs) {
             const buttons = navTabs.getElementsByTagName("button");
             for (let btn of buttons) {
+                // IZINKAN: Summary, Site Monitoring, Detail Outlet, dan GAP Daily KPI DSE
                 if (btn.id !== "navTabSummary" && btn.id !== "navTabMonitoring" && btn.id !== "navTabOutlet" && btn.id !== "navTabDaily") {
                     btn.style.display = "none";
                 }
@@ -1051,35 +1052,34 @@ function renderDailyOsaSection(rows, remainingDays) {
   rows.forEach(r => {
     let dse = String(r[0] || "").trim();
     if (!dse || dse.toUpperCase() === "DSE CODE") return;
-    let targetMonthly = Math.round(parseNum(r[2]));
-    let ach = Math.round(parseNum(r[3]));
-    let remaining = Math.max(0, targetMonthly - ach);
-    let dailyTarget = Math.round(remaining / remainingDays); 
-    let pct = targetMonthly > 0 ? ((ach / targetMonthly) * 100).toFixed(1) : "0.0";
-    totTarget += targetMonthly;
+    let tgt = parseNum(r[2]);
+    let ach = parseNum(r[3]);
+    let remaining = Math.max(0, tgt - ach);
+    let dailyTarget = remaining / remainingDays; 
+    let pct = tgt > 0 ? ((ach / tgt) * 100).toFixed(1) : "0.0";
+    totTarget += tgt;
 
     tableHtml += `
       <tr>
         <td><b>${dse}</b></td>
-        <td>Rp ${targetMonthly.toLocaleString('id-ID')}</td>
-        <td>Rp ${remaining.toLocaleString('id-ID')}</td>
-        <td><b>Rp ${dailyTarget.toLocaleString('id-ID')}</b></td>
-        <td>Rp ${ach.toLocaleString('id-ID')}</td>
+        <td>Rp ${Math.round(remaining).toLocaleString('id-ID')}</td>
+        <td><b>Rp ${Math.round(dailyTarget).toLocaleString('id-ID')}</b></td>
+        <td>Rp ${Math.round(ach).toLocaleString('id-ID')}</td>
         <td><span style="color:${parseFloat(pct) >= 100 ? '#15803d' : '#ef4444'}; font-weight:700;">${pct}%</span></td>
       </tr>
     `;
   });
 
-  tbody.innerHTML = tableHtml || `<tr><td colspan="6" style="text-align:center;">Tidak ada data OSA</td></tr>`;
-  document.getElementById("dashOsaTitle").innerText = "Monitoring Target Monthly, Gap Bulanan & Harian Target OSA";
+  tbody.innerHTML = tableHtml || `<tr><td colspan="5" style="text-align:center;">Tidak ada data OSA</td></tr>`;
+  document.getElementById("dashOsaTitle").innerText = "Monitoring Gap Bulanan & Harian Target OSA";
   document.getElementById("weeklyOsaKpiContainer").innerHTML = `
     <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0;">
-      <span><b>Total Target Monthly MC Bengkayang:</b> Rp ${totTarget.toLocaleString('id-ID')}</span>
+      <span><b>Total Target MC Bengkayang:</b> Rp ${totTarget.toLocaleString('id-ID')}</span>
       <span class="status-badge badge-success">Gap Daily Tracker</span>
     </div>
   `;
 
-  renderDailyBarChartCanvas('dailyOsaChartInstance', 'dailyOsaChartCanvas', rows, 'Target Monthly OSA', 'MTD Actual OSA', '#f59e0b', '#0284c7');
+  renderDailyBarChartCanvas('dailyOsaChartInstance', 'dailyOsaChartCanvas', rows, 'Target OSA', 'MTD Actual OSA', '#f59e0b', '#0284c7');
 }
 
 function renderDailySpSection(rows, remainingDays) {
@@ -1092,35 +1092,34 @@ function renderDailySpSection(rows, remainingDays) {
   rows.forEach(r => {
     let dse = String(r[0] || "").trim();
     if (!dse || dse.toUpperCase() === "DSE CODE") return;
-    let targetMonthly = Math.round(parseNum(r[2]));
-    let ach = Math.round(parseNum(r[3]));
-    let remaining = Math.max(0, targetMonthly - ach);
-    let dailyTarget = Math.round(remaining / remainingDays); 
-    let pct = targetMonthly > 0 ? ((ach / targetMonthly) * 100).toFixed(1) : "0.0";
-    totTarget += targetMonthly;
+    let tgt = parseNum(r[2]);
+    let ach = parseNum(r[3]);
+    let remaining = Math.max(0, tgt - ach);
+    let dailyTarget = remaining / remainingDays; 
+    let pct = tgt > 0 ? ((ach / tgt) * 100).toFixed(1) : "0.0";
+    totTarget += tgt;
 
     tableHtml += `
       <tr>
         <td><b>${dse}</b></td>
-        <td>${targetMonthly.toLocaleString('id-ID')} pcs</td>
-        <td>${remaining.toLocaleString('id-ID')} pcs</td>
-        <td><b>${dailyTarget.toLocaleString('id-ID')} pcs</b></td>
-        <td>${ach.toLocaleString('id-ID')} pcs</td>
+        <td>${Math.round(remaining).toLocaleString('id-ID')} pcs</td>
+        <td><b>${Math.round(dailyTarget).toLocaleString('id-ID')} pcs</b></td>
+        <td>${Math.round(ach).toLocaleString('id-ID')} pcs</td>
         <td><span style="color:${parseFloat(pct) >= 100 ? '#15803d' : '#ef4444'}; font-weight:700;">${pct}%</span></td>
       </tr>
     `;
   });
 
-  tbody.innerHTML = tableHtml || `<tr><td colspan="6" style="text-align:center;">Tidak ada data SP Sell In</td></tr>`;
-  document.getElementById("dashSpTitle").innerText = "Monitoring Target Monthly, Gap Bulanan & Harian Target SP Sell In";
+  tbody.innerHTML = tableHtml || `<tr><td colspan="5" style="text-align:center;">Tidak ada data SP Sell In</td></tr>`;
+  document.getElementById("dashSpTitle").innerText = "Monitoring Gap Bulanan & Harian Target SP Sell In";
   document.getElementById("weeklySpKpiContainer").innerHTML = `
     <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0;">
-      <span><b>Total Target Monthly MC Bengkayang:</b> ${totTarget.toLocaleString('id-ID')} pcs</span>
+      <span><b>Total Target MC Bengkayang:</b> ${totTarget.toLocaleString('id-ID')} pcs</span>
       <span class="status-badge badge-success">Gap Daily Tracker</span>
     </div>
   `;
 
-  renderDailyBarChartCanvas('dailySpChartInstance', 'dailySpChartCanvas', rows, 'Target Monthly SP Sell In', 'MTD Actual SP', '#f59e0b', '#0284c7');
+  renderDailyBarChartCanvas('dailySpChartInstance', 'dailySpChartCanvas', rows, 'Target SP Sell In', 'MTD Actual SP', '#f59e0b', '#0284c7');
 }
 
 function renderDailyBarChartCanvas(instanceName, canvasId, dataRows, labelTarget, labelAch, colorTarget, colorAch) {
@@ -1135,8 +1134,8 @@ function renderDailyBarChartCanvas(instanceName, canvasId, dataRows, labelTarget
     let dse = String(r[0] || "").trim();
     if (!dse || dse.toUpperCase() === "DSE CODE") return;
     dseLabels.push(dse);
-    targetArr.push(Math.round(parseNum(r[2])));
-    achArr.push(Math.round(parseNum(r[3])));
+    targetArr.push(parseNum(r[2]));
+    achArr.push(parseNum(r[3]));
   });
 
   if (instanceName === 'dailyOsaChartInstance') {
@@ -1388,12 +1387,8 @@ function renderTargetNonKpiTable(selectedDseFilter) {
 function actionGotoOutletUnach(filterType) {
     filterUnachModeDO = true;
     quickFilterTypeDO = filterType;
-    if (window.innerWidth <= 768) {
-        openMobileModule('detail-outlet');
-    } else {
-        const tabDOBtn = document.querySelectorAll('.tab-btn')[3];
-        switchReport('detail-outlet', tabDOBtn);
-    }
+    const tabDOBtn = document.querySelectorAll('.tab-btn')[3];
+    switchReport('detail-outlet', tabDOBtn);
 }
 
 function takeSectionSnapshot(sectionId) {
@@ -1506,19 +1501,6 @@ function renderTable(tableId, header, data) {
           activeHeader = allowedIndices.map(i => header[i]);
           activeData = data.map(row => allowedIndices.map(i => row[i]));
       }
-
-      if (window.innerWidth <= 768 && typeof detailOutletViewMode !== 'undefined' && detailOutletViewMode === 'smart') {
-          const smartCols = ["OUTLET ID", "OUTLET NAME", "DSE CODE", "TARGET SP SELL IN", "SP SELL IN", "ACH % SP SELL IN", "RGUGA BIOMETRIX MTD", "ACH OSA", "ACH % OSA"];
-          let smartIndices = [];
-          activeHeader.forEach((h, idx) => {
-              let cleanH = String(h || "").trim().toUpperCase();
-              if (smartCols.some(s => cleanH.includes(s))) smartIndices.push(idx);
-          });
-          if (smartIndices.length > 0) {
-              activeHeader = smartIndices.map(i => activeHeader[i]);
-              activeData = activeData.map(row => smartIndices.map(i => row[i]));
-          }
-      }
   }
 
   const thead = document.createElement("thead");
@@ -1558,10 +1540,8 @@ function renderTable(tableId, header, data) {
   table.appendChild(thead);
 
   const tbody = document.createElement("tbody");
-  activeData.forEach((baris, rowIndex) => {
+  activeData.forEach((baris) => {
     const tr = document.createElement("tr");
-    if (rowIndex % 2 === 1) tr.style.backgroundColor = "#f8fafc"; // Striped row variation for nicer snapshots
-    
     baris.forEach((nilai, index) => {
       const td = document.createElement("td");
       const judulKolom = String(activeHeader[index] || "").trim().toUpperCase();
