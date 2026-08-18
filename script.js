@@ -153,6 +153,40 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
+// ================= SNAPSHOT / SCREENSHOT FUNCTIONS =================
+function takeScreenshot() {
+    const container = document.querySelector(".container");
+    if (!container) return;
+    html2canvas(container, { scale: 2, useCORS: true }).then(canvas => {
+        let link = document.createElement('a');
+        link.download = `Dashboard-MC-Bengkayang-${new Date().toISOString().slice(0,10)}.png`;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+    }).catch(err => console.error("Snapshot error:", err));
+}
+
+function takeSectionSnapshot(sectionId) {
+    const section = document.getElementById(sectionId);
+    if (!section) return;
+    html2canvas(section, { scale: 2, useCORS: true }).then(canvas => {
+        let link = document.createElement('a');
+        link.download = `Snapshot-${sectionId}-${new Date().toISOString().slice(0,10)}.png`;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+    }).catch(err => console.error("Section snapshot error:", err));
+}
+
+function takeTableSnapshotDO() {
+    const tableContainer = document.querySelector("#detail-outlet .table-container");
+    if (!tableContainer) return;
+    html2canvas(tableContainer, { scale: 2, useCORS: true }).then(canvas => {
+        let link = document.createElement('a');
+        link.download = `Snapshot-Detail-Outlet-${new Date().toISOString().slice(0,10)}.png`;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+    }).catch(err => console.error("Table snapshot error:", err));
+}
+
 function getRemainingWorkingDaysInfo() {
     let now = new Date(); 
     let lastUpdate = new Date(now);
