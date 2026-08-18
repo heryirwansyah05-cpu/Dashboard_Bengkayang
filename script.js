@@ -14,8 +14,6 @@ let chartTradePPInstance = null;
 let chartRguTradePPInstance = null;
 let chartVlrSubsPPInstance = null;
 
-let globalHeaderW30 = [], globalDataW30 = [];
-
 let dailyOsaChartInstance = null;
 let dailySpChartInstance = null;
 
@@ -76,7 +74,6 @@ function applyUserSessionPermissions() {
         if (navTabs) {
             const buttons = navTabs.getElementsByTagName("button");
             for (let btn of buttons) {
-                // IZINKAN: Summary, Site Monitoring, Detail Outlet, dan GAP Daily KPI DSE
                 if (btn.id !== "navTabSummary" && btn.id !== "navTabMonitoring" && btn.id !== "navTabOutlet" && btn.id !== "navTabDaily") {
                     btn.style.display = "none";
                 }
@@ -259,14 +256,17 @@ function resetFilters(tabId) {
         }
     });
     container.querySelectorAll("input[type='text'], input[type='number']").forEach(i => i.value = "");
-    quickFilterTypeDO = 'ALL';
-    filterUnachModeDO = false;
+    
+    if (tabId === 'detail-outlet') {
+        quickFilterTypeDO = 'ALL';
+        filterUnachModeDO = false;
+    }
+
     if (tabId === 'ms-bengkayang') updateDashboardMS();
     else if (tabId === 'outlet-mc') updateDashboardSM();
     else if (tabId === 'detail-outlet') updateDashboardDO();
     else if (tabId === 'daily-dse') updateDashboardDaily();
     else if (tabId === 'partner-performance') updateDashboardPP();
-    else if (tabId === 'ms-week-30') updateDashboardW30();
 }
 
 const p1 = fetch("MS BENGKAYANG 19 JULI 2026.xlsx")
@@ -368,28 +368,7 @@ const p5 = fetch("PARTNER PERFORMANCE.xlsx")
     updateDashboardPP();
   }).catch(e => console.log("PP load skip"));
 
-const p6 = fetch("MS WEEK 30.xlsx")
-  .then((res) => res.arrayBuffer())
-  .then((data) => {
-    const wb = XLSX.read(data, { type: "array" });
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true });
-    if (!rows || rows.length < 8) return;
-    let rowSub = rows[6] || [];
-    let rowMain = rows[7] || [];
-    globalHeaderW30 = rowMain.map((val, idx) => {
-        let mainTxt = String(val || "").trim();
-        let subTxt = String(rowSub[idx] || "").trim();
-        if (subTxt && subTxt !== "nan" && !mainTxt.toUpperCase().includes(subTxt.toUpperCase())) {
-            return `${subTxt} - ${mainTxt}`;
-        }
-        return mainTxt || `Col ${idx}`;
-    });
-    globalDataW30 = rows.slice(8).filter(r => r.length > 0 && r[1]);
-    updateDashboardW30();
-  }).catch(e => console.log("MS Week 30 load skip"));
-
-Promise.all([p1, p2, p3, p4, p5, p6]).then(() => {
+Promise.all([p1, p2, p3, p4, p5]).then(() => {
   updateAutoDateH2();
   updateGlobalAiHeaderSummary();
   updateExecutiveSummaryNew();
@@ -503,7 +482,7 @@ function updateDashboardMS() {
   animateCounter("kpiPrimaryPST", totalPrimaryMtd);
   animateCounter("kpiSecondaryPST", totalSecondaryMtd);
   animateCounter("kpiTertiaryPST", totalTertiaryMtd);
-  animateCounter("kpiTradeSupplyPST", totalTradeMtd);
+  animateCounter("kpiTradeSupplyPST", totalTradeMtd, true);
   animateCounter("kpiVlrPST", totalVlrMtd);
 
   document.getElementById("kpiRevLmtdPST").innerText = Math.round(totalRevLmtd).toLocaleString("id-ID");
@@ -867,12 +846,6 @@ function updateDashboardPP() {
   renderTable("dataTablePP", globalHeaderPP, filteredRows);
 }
 
-function updateDashboardW30() {
-    const searchKeyword = document.getElementById("searchInputW30")?.value.toLowerCase().trim() || "";
-    const filteredRows = globalDataW30.filter(r => r.join(" ").toLowerCase().includes(searchKeyword));
-    renderTable("dataTableW30", globalHeaderW30, filteredRows);
-}
-
 function renderPpItemCharts(labels, rev, primary, secondary, tertiary, trade, rguTrade, vlr, filteredRows) {
     let partnerCountMap = {};
     filteredRows.forEach(r => {
@@ -989,7 +962,7 @@ function updateDashboardDO() {
   const gaugeFill = document.getElementById("gaugeOsaFill");
   if (gaugeFill) gaugeFill.style.width = Math.min(pctOsa, 100).toFixed(1) + "%";
   animateCounter("kpiPctOsaDO", pctOsa, false, true);
-  document.getElementById("kpiTargetOsaDO").innerText = (targetOsa / 1000000).toFixed(3) + " Juta";
+  document.getElementById("kpiTargetOsaDO").innerText = "Rp " + Math.round(targetOsa).toLocaleString("id-ID");
   document.getElementById("kpiAchOsaDO").innerText = "Rp " + Math.round(achOsa).toLocaleString("id-ID");
   document.getElementById("kpiGapOsaDO").innerText = "Rp " + Math.round(targetOsa - achOsa).toLocaleString("id-ID");
   updateProgressBarAndBadge(pctOsa, "gaugeOsaFill", "badgeOsaDO");
@@ -1052,34 +1025,38 @@ function renderDailyOsaSection(rows, remainingDays) {
   rows.forEach(r => {
     let dse = String(r[0] || "").trim();
     if (!dse || dse.toUpperCase() === "DSE CODE") return;
-    let tgt = parseNum(r[2]);
+    let targetMonthly = parseNum(r[2]);
     let ach = parseNum(r[3]);
-    let remaining = Math.max(0, tgt - ach);
-    let dailyTarget = remaining / remainingDays; 
-    let pct = tgt > 0 ? ((ach / tgt) * 100).toFixed(1) : "0.0";
-    totTarget += tgt;
+    let rawPct = parseNum(r[4]);
+    let pctVal = Math.abs(rawPct) <= 1 && rawPct !== 0 ? rawPct * 100 : rawPct;
+    let remaining = Math.abs(parseNum(r[5]));
+    let dailyTarget = Math.abs(parseNum(r[6]));
+    if (dailyTarget === 0 && remaining > 0 && remainingDays > 0) {
+        dailyTarget = remaining / remainingDays;
+    }
+    totTarget += targetMonthly;
 
     tableHtml += `
       <tr>
         <td><b>${dse}</b></td>
-        <td>Rp ${Math.round(remaining).toLocaleString('id-ID')}</td>
+        <td><b>Rp ${Math.round(remaining).toLocaleString('id-ID')}</b></td>
         <td><b>Rp ${Math.round(dailyTarget).toLocaleString('id-ID')}</b></td>
-        <td>Rp ${Math.round(ach).toLocaleString('id-ID')}</td>
-        <td><span style="color:${parseFloat(pct) >= 100 ? '#15803d' : '#ef4444'}; font-weight:700;">${pct}%</span></td>
+        <td><b>Rp ${Math.round(ach).toLocaleString('id-ID')}</b></td>
+        <td><span style="color:${pctVal >= 100 || rawPct >= 1 ? '#15803d' : '#ef4444'}; font-weight:800;">${pctVal.toFixed(1)}%</span></td>
       </tr>
     `;
   });
 
   tbody.innerHTML = tableHtml || `<tr><td colspan="5" style="text-align:center;">Tidak ada data OSA</td></tr>`;
-  document.getElementById("dashOsaTitle").innerText = "Monitoring Gap Bulanan & Harian Target OSA";
+  document.getElementById("dashOsaTitle").innerText = "Monitoring Target Full Month, Gap Bulanan & Harian Target OSA";
   document.getElementById("weeklyOsaKpiContainer").innerHTML = `
     <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0;">
-      <span><b>Total Target MC Bengkayang:</b> Rp ${totTarget.toLocaleString('id-ID')}</span>
-      <span class="status-badge badge-success">Gap Daily Tracker</span>
+      <span><b>Total Target Full Month MC Bengkayang:</b> Rp ${Math.round(totTarget).toLocaleString('id-ID')}</span>
+      <span class="status-badge badge-success">Gap Daily Tracker (${remainingDays} HK)</span>
     </div>
   `;
 
-  renderDailyBarChartCanvas('dailyOsaChartInstance', 'dailyOsaChartCanvas', rows, 'Target OSA', 'MTD Actual OSA', '#f59e0b', '#0284c7');
+  renderDailyBarChartCanvas('dailyOsaChartInstance', 'dailyOsaChartCanvas', rows, 'Target Monthly OSA', 'MTD Actual OSA', '#f59e0b', '#0284c7');
 }
 
 function renderDailySpSection(rows, remainingDays) {
@@ -1092,34 +1069,38 @@ function renderDailySpSection(rows, remainingDays) {
   rows.forEach(r => {
     let dse = String(r[0] || "").trim();
     if (!dse || dse.toUpperCase() === "DSE CODE") return;
-    let tgt = parseNum(r[2]);
+    let targetMonthly = parseNum(r[2]);
     let ach = parseNum(r[3]);
-    let remaining = Math.max(0, tgt - ach);
-    let dailyTarget = remaining / remainingDays; 
-    let pct = tgt > 0 ? ((ach / tgt) * 100).toFixed(1) : "0.0";
-    totTarget += tgt;
+    let rawPct = parseNum(r[4]);
+    let pctVal = Math.abs(rawPct) <= 1 && rawPct !== 0 ? rawPct * 100 : rawPct;
+    let remaining = Math.abs(parseNum(r[5]));
+    let dailyTarget = Math.abs(parseNum(r[6]));
+    if (dailyTarget === 0 && remaining > 0 && remainingDays > 0) {
+        dailyTarget = remaining / remainingDays;
+    }
+    totTarget += targetMonthly;
 
     tableHtml += `
       <tr>
         <td><b>${dse}</b></td>
-        <td>${Math.round(remaining).toLocaleString('id-ID')} pcs</td>
+        <td><b>${Math.round(remaining).toLocaleString('id-ID')} pcs</b></td>
         <td><b>${Math.round(dailyTarget).toLocaleString('id-ID')} pcs</b></td>
-        <td>${Math.round(ach).toLocaleString('id-ID')} pcs</td>
-        <td><span style="color:${parseFloat(pct) >= 100 ? '#15803d' : '#ef4444'}; font-weight:700;">${pct}%</span></td>
+        <td><b>${Math.round(ach).toLocaleString('id-ID')} pcs</b></td>
+        <td><span style="color:${pctVal >= 100 || rawPct >= 1 ? '#15803d' : '#ef4444'}; font-weight:800;">${pctVal.toFixed(1)}%</span></td>
       </tr>
     `;
   });
 
   tbody.innerHTML = tableHtml || `<tr><td colspan="5" style="text-align:center;">Tidak ada data SP Sell In</td></tr>`;
-  document.getElementById("dashSpTitle").innerText = "Monitoring Gap Bulanan & Harian Target SP Sell In";
+  document.getElementById("dashSpTitle").innerText = "Monitoring Target Full Month, Gap Bulanan & Harian Target SP Sell In";
   document.getElementById("weeklySpKpiContainer").innerHTML = `
     <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0;">
-      <span><b>Total Target MC Bengkayang:</b> ${totTarget.toLocaleString('id-ID')} pcs</span>
-      <span class="status-badge badge-success">Gap Daily Tracker</span>
+      <span><b>Total Target Full Month MC Bengkayang:</b> ${Math.round(totTarget).toLocaleString('id-ID')} pcs</span>
+      <span class="status-badge badge-success">Gap Daily Tracker (${remainingDays} HK)</span>
     </div>
   `;
 
-  renderDailyBarChartCanvas('dailySpChartInstance', 'dailySpChartCanvas', rows, 'Target SP Sell In', 'MTD Actual SP', '#f59e0b', '#0284c7');
+  renderDailyBarChartCanvas('dailySpChartInstance', 'dailySpChartCanvas', rows, 'Target Monthly SP Sell In', 'MTD Actual SP', '#f59e0b', '#0284c7');
 }
 
 function renderDailyBarChartCanvas(instanceName, canvasId, dataRows, labelTarget, labelAch, colorTarget, colorAch) {
@@ -1134,8 +1115,8 @@ function renderDailyBarChartCanvas(instanceName, canvasId, dataRows, labelTarget
     let dse = String(r[0] || "").trim();
     if (!dse || dse.toUpperCase() === "DSE CODE") return;
     dseLabels.push(dse);
-    targetArr.push(parseNum(r[2]));
-    achArr.push(parseNum(r[3]));
+    targetArr.push(Math.round(parseNum(r[2])));
+    achArr.push(Math.round(parseNum(r[3])));
   });
 
   if (instanceName === 'dailyOsaChartInstance') {
@@ -1143,6 +1124,31 @@ function renderDailyBarChartCanvas(instanceName, canvasId, dataRows, labelTarget
   } else {
       if (dailySpChartInstance) dailySpChartInstance.destroy();
   }
+
+  const permanentLabelPlugin = {
+    id: 'permanentLabelPlugin',
+    afterDatasetsDraw(chart) {
+      const { ctx } = chart;
+      chart.data.datasets.forEach((dataset, datasetIndex) => {
+        const meta = chart.getDatasetMeta(datasetIndex);
+        meta.data.forEach((bar, index) => {
+          let val = dataset.data[index];
+          if (val === undefined || val === null || val === 0) return;
+          let valStr = Math.round(val).toLocaleString('id-ID');
+          
+          ctx.save();
+          ctx.font = 'bold 10px "Plus Jakarta Sans", sans-serif';
+          ctx.fillStyle = '#0f172a';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+          
+          let position = bar.tooltipPosition();
+          ctx.fillText(valStr, position.x, position.y - 5);
+          ctx.restore();
+        });
+      });
+    }
+  };
 
   let newChart = new Chart(canvas.getContext('2d'), {
     type: 'bar',
@@ -1156,9 +1162,25 @@ function renderDailyBarChartCanvas(instanceName, canvasId, dataRows, labelTarget
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { display: true, position: 'top', labels: { font: { size: 10 } } } },
-      scales: { x: { ticks: { font: { size: 10 }, color: '#475569' } }, y: { ticks: { font: { size: 10 }, color: '#475569' } } }
-    }
+      plugins: { 
+        legend: { display: true, position: 'top', labels: { font: { size: 10, weight: 'bold' } } },
+        tooltip: { enabled: true }
+      },
+      scales: { 
+        x: { ticks: { font: { size: 10, weight: 'bold' }, color: '#0f172a' } }, 
+        y: { 
+          beginAtZero: true,
+          ticks: { 
+            font: { size: 10, weight: 'bold' }, 
+            color: '#0f172a',
+            callback: function(value) {
+              return Math.round(value).toLocaleString('id-ID');
+            }
+          } 
+        } 
+      }
+    },
+    plugins: [permanentLabelPlugin]
   });
 
   if (instanceName === 'dailyOsaChartInstance') dailyOsaChartInstance = newChart;
@@ -1179,14 +1201,45 @@ function updateExecutiveSummaryNew() {
         else totalTradeSupply += parseNum(r[6] || 0);
     });
 
+    const currentUser = localStorage.getItem("logged_in_user");
+    const userInfo = ALLOWED_USERS[currentUser];
+    let selDse = document.getElementById("execDseFilter")?.value || "ALL";
+    if (userInfo && userInfo.type === "dse") selDse = userInfo.dseCode;
+
+    let selHari = document.getElementById("execHariFilter")?.value.toUpperCase() || "ALL";
+    let colIdxHari = selHari !== "ALL" ? globalHeaderDO.findIndex(h => h.toUpperCase() === selHari) : -1;
+
+    let missionRows = globalDataDO.filter(r => {
+        let matchDse = (selDse === "ALL" || String(r[2] || "").trim() === selDse);
+        let matchHari = (colIdxHari === -1 || parseNum(r[colIdxHari]) > 0);
+        return matchDse && matchHari;
+    });
+
     let totalOutlet = globalDataDO.length;
     let targetSellIn = 0, achSellIn = 0, targetOsa = 0, achOsa = 0;
+    let filteredTargetSellIn = 0, filteredAchSellIn = 0, filteredTargetOsa = 0, filteredAchOsa = 0;
 
     globalDataDO.forEach(r => {
-        targetSellIn += Math.ceil(parseNum(r[7]));
-        achSellIn += parseNum(r[8]);
-        targetOsa += parseNum(r[11]);
-        achOsa += parseNum(r[12]);
+        let dName = String(r[2] || "").trim();
+        let isMatchDse = (selDse === "ALL" || dName === selDse);
+        let isMatchHari = (colIdxHari === -1 || parseNum(r[colIdxHari]) > 0);
+
+        let tSi = Math.ceil(parseNum(r[7]));
+        let aSi = parseNum(r[8]);
+        let tOsa = parseNum(r[11]);
+        let aOsa = parseNum(r[12]);
+
+        targetSellIn += tSi;
+        achSellIn += aSi;
+        targetOsa += tOsa;
+        achOsa += aOsa;
+
+        if (isMatchDse && isMatchHari) {
+            filteredTargetSellIn += tSi;
+            filteredAchSellIn += aSi;
+            filteredTargetOsa += tOsa;
+            filteredAchOsa += aOsa;
+        }
     });
 
     let pctSellIn = targetSellIn > 0 ? (achSellIn / targetSellIn) * 100 : 0;
@@ -1195,15 +1248,18 @@ function updateExecutiveSummaryNew() {
     let globalBioAchCount = 0;
     let globalTagAchCount = 0;
     globalDataDO.forEach(r => {
-        if (parseNum(r[18]) >= 1) globalBioAchCount++;
-        if (parseNum(r[15]) >= 3 || parseNum(r[16]) >= 1) globalTagAchCount++;
+        let matchDse = (selDse === "ALL" || String(r[2] || "").trim() === selDse);
+        if (matchDse) {
+            if (parseNum(r[18]) >= 1) globalBioAchCount++;
+            if (parseNum(r[15]) >= 3 || parseNum(r[16]) >= 1) globalTagAchCount++;
+        }
     });
     let pctBio = totalOutlet > 0 ? (globalBioAchCount / totalOutlet) * 100 : 0;
     let pctTag = totalOutlet > 0 ? (globalTagAchCount / totalOutlet) * 100 : 0;
 
     document.getElementById("exKpiRev").innerText = "Rp " + Math.round(totalRev).toLocaleString('id-ID');
     document.getElementById("exKpiTertiary").innerText = Math.round(totalTertiary).toLocaleString('id-ID');
-    document.getElementById("exKpiTradeSupply").innerText = Math.round(totalTradeSupply).toLocaleString('id-ID');
+    document.getElementById("exKpiTradeSupply").innerText = "Rp " + Math.round(totalTradeSupply).toLocaleString('id-ID');
     document.getElementById("exKpiSellIn").innerText = pctSellIn.toFixed(1) + "%";
     document.getElementById("exKpiOsa").innerText = pctOsa.toFixed(1) + "%";
     document.getElementById("exKpiBio").innerText = pctBio.toFixed(1) + "%";
@@ -1225,7 +1281,14 @@ function updateExecutiveSummaryNew() {
     let tagWeighted = tagScore * 0.175;
 
     let fwaTargetVal = 10;
-    let fwaAchCount = 1; 
+    let fwaAchCount = 0;
+    globalDataDO.forEach(r => {
+        let matchDse = (selDse === "ALL" || String(r[2] || "").trim() === selDse);
+        if (matchDse) {
+            fwaAchCount += parseNum(r[19]);
+        }
+    });
+
     let fwaAchPct = fwaTargetVal > 0 ? (fwaAchCount / fwaTargetVal) * 100 : 0;
     let fwaScore = Math.min(fwaAchPct, 160);
     let fwaWeighted = fwaScore * 0.15;
@@ -1254,31 +1317,9 @@ function updateExecutiveSummaryNew() {
 
     document.getElementById("rseWScoreProd").innerText = dseProdWeighted.toFixed(2) + "%";
     document.getElementById("rseTotalScoreText").innerText = totalRseScore.toFixed(2) + "%";
-    document.getElementById("rseFooterTotal").innerText = totalRseScore.toFixed(2) + "%";
 
-    const currentUser = localStorage.getItem("logged_in_user");
-    const userInfo = ALLOWED_USERS[currentUser];
-    let selDse = document.getElementById("execDseFilter")?.value || "ALL";
-    if (userInfo && userInfo.type === "dse") selDse = userInfo.dseCode;
-
-    let selHari = document.getElementById("execHariFilter")?.value.toUpperCase() || "ALL";
-    let colIdxHari = selHari !== "ALL" ? globalHeaderDO.findIndex(h => h.toUpperCase() === selHari) : -1;
-
-    let missionRows = globalDataDO.filter(r => {
-        let matchDse = (selDse === "ALL" || String(r[2] || "").trim() === selDse);
-        let matchHari = (colIdxHari === -1 || parseNum(r[colIdxHari]) > 0);
-        return matchDse && matchHari;
-    });
-
-    let mTargetSellInTotal = 1940, mTargetOsaTotal = 1982503250;
-    let subAchSellIn = 0, subAchOsa = 0;
-    globalDataDO.forEach(r => {
-        subAchSellIn += parseNum(r[8]);
-        subAchOsa += parseNum(r[12]);
-    });
-
-    let totalGapSellIn = Math.max(0, mTargetSellInTotal - subAchSellIn);
-    let totalGapOsa = Math.max(0, mTargetOsaTotal - subAchOsa);
+    let totalGapSellIn = Math.max(0, filteredTargetSellIn - filteredAchSellIn);
+    let totalGapOsa = Math.max(0, filteredTargetOsa - filteredAchOsa);
 
     let hkInfo = getRemainingWorkingDaysInfo();
     let sisaHk = hkInfo.remainingDays;
@@ -1307,7 +1348,7 @@ function updateExecutiveSummaryNew() {
     document.getElementById("exMissionTagUnach").innerText = mUnachTagFiltered.toLocaleString('id-ID') + " Outlet";
 
     let hariLabelStr = selHari !== "ALL" ? `${selHari.charAt(0) + selHari.slice(1).toLowerCase()}` : `Hari`;
-    document.getElementById("pjpDisplayLabel").innerText = `PJP ${hariLabelStr} : ${missionRows.length} Outlet`;
+    document.getElementById("pjpDisplayLabel").innerHTML = `<i class="fa-solid fa-route"></i> PJP ${hariLabelStr} : ${missionRows.length} Outlet`;
 
     document.getElementById("exTotalGapSelIn").innerText = `GAP Total: ${Math.round(totalGapSellIn).toLocaleString('id-ID')} pcs`;
     document.getElementById("exTotalGapOsa").innerText = `GAP Total: Rp ${Math.round(totalGapOsa).toLocaleString('id-ID')}`;
@@ -1362,19 +1403,19 @@ function renderTargetNonKpiTable(selectedDseFilter) {
             <tr>
                 <td><b>${k}</b></td>
                 <td>
-                    <div style="font-size:11px; margin-bottom:2px;">Ach: ${fwaAch} | Target: ${tgtFwa} <b style="color:#e11d48;">(GAP: ${gapFwa})</b></div>
+                    <div style="font-size:11px; margin-bottom:2px; font-weight:700;">Ach: ${fwaAch} | Target: ${tgtFwa} <b style="color:#e11d48;">(GAP: ${gapFwa})</b></div>
                     <div style="background:#e2e8f0; border-radius:4px; height:8px; width:100%; overflow:hidden;">
                         <div style="background:#0284c7; height:100%; width:${pctFwa}%;"></div>
                     </div>
                 </td>
                 <td>
-                    <div style="font-size:11px; margin-bottom:2px;">Ach: ${tagAch} | Target: ${tgtTag50} <b style="color:#e11d48;">(GAP: ${gapTag})</b></div>
+                    <div style="font-size:11px; margin-bottom:2px; font-weight:700;">Ach: ${tagAch} | Target: ${tgtTag50} <b style="color:#e11d48;">(GAP: ${gapTag})</b></div>
                     <div style="background:#e2e8f0; border-radius:4px; height:8px; width:100%; overflow:hidden;">
                         <div style="background:#0284c7; height:100%; width:${pctTag}%;"></div>
                     </div>
                 </td>
                 <td>
-                    <div style="font-size:11px; margin-bottom:2px;">Ach: ${bioAch} | Target: ${tgtBio80} <b style="color:#e11d48;">(GAP: ${gapBio})</b></div>
+                    <div style="font-size:11px; margin-bottom:2px; font-weight:700;">Ach: ${bioAch} | Target: ${tgtBio80} <b style="color:#e11d48;">(GAP: ${gapBio})</b></div>
                     <div style="background:#e2e8f0; border-radius:4px; height:8px; width:100%; overflow:hidden;">
                         <div style="background:#0284c7; height:100%; width:${pctBio}%;"></div>
                     </div>
@@ -1382,30 +1423,6 @@ function renderTargetNonKpiTable(selectedDseFilter) {
             </tr>
         `;
     }).join('');
-}
-
-function actionGotoOutletUnach(filterType) {
-    filterUnachModeDO = true;
-    quickFilterTypeDO = filterType;
-    const tabDOBtn = document.querySelectorAll('.tab-btn')[3];
-    switchReport('detail-outlet', tabDOBtn);
-}
-
-function takeSectionSnapshot(sectionId) {
-    const targetElem = document.getElementById(sectionId);
-    if (!targetElem) {
-        alert("Bagian/Section tidak ditemukan!");
-        return;
-    }
-    html2canvas(targetElem, { scale: 2, useCORS: true, logging: false }).then(canvas => {
-        let link = document.createElement("a");
-        link.download = `Snapshot_${sectionId}.png`;
-        link.href = canvas.toDataURL("image/png");
-        link.click();
-    }).catch(err => {
-        console.error("Gagal mengambil snapshot:", err);
-        alert("Gagal mengambil snapshot section.");
-    });
 }
 
 function refreshGlobalAiSummary() {
@@ -1424,53 +1441,6 @@ function refreshGlobalAiSummary() {
 
 function updateGlobalAiHeaderSummary() {
     refreshGlobalAiSummary();
-}
-
-function exportExcelCurrent() { alert("Proses Export Excel dimulai..."); }
-function takeScreenshot() {
-    html2canvas(document.body).then(canvas => {
-        let link = document.createElement("a");
-        link.download = "Dashboard_MC_Bengkayang_Snapshot.png";
-        link.href = canvas.toDataURL();
-        link.click();
-    });
-}
-
-function takeTableSnapshotDO() {
-    const originalTable = document.querySelector("#detail-outlet #dataTableDO");
-    if (!originalTable) {
-        alert("Tabel detail outlet tidak ditemukan!");
-        return;
-    }
-    const cloneWrapper = document.createElement("div");
-    cloneWrapper.style.position = "absolute";
-    cloneWrapper.style.left = "-9999px";
-    cloneWrapper.style.top = "0";
-    cloneWrapper.style.width = "max-content";
-    cloneWrapper.style.backgroundColor = "#ffffff";
-    cloneWrapper.style.padding = "20px";
-
-    const clonedTable = originalTable.cloneNode(true);
-    clonedTable.style.width = "100%";
-    clonedTable.style.display = "table";
-    clonedTable.querySelectorAll("th, td").forEach(el => {
-        el.style.position = "static";
-        el.style.zIndex = "auto";
-    });
-
-    cloneWrapper.appendChild(clonedTable);
-    document.body.appendChild(cloneWrapper);
-
-    html2canvas(cloneWrapper, { scale: 2, useCORS: true, logging: false }).then(canvas => {
-        document.body.removeChild(cloneWrapper);
-        let link = document.createElement("a");
-        link.download = "Snapshot_Detail_Outlet_Sales_Full.png";
-        link.href = canvas.toDataURL("image/png");
-        link.click();
-    }).catch(err => {
-        document.body.removeChild(cloneWrapper);
-        console.error(err);
-    });
 }
 
 function renderTable(tableId, header, data) {
@@ -1505,34 +1475,26 @@ function renderTable(tableId, header, data) {
 
   const thead = document.createElement("thead");
   const trHead = document.createElement("tr");
-  const isFreeze5Col = (tableId === "dataTableW30" || tableId === "dataTablePP");
-  const isFreeze2Col = (tableId === "dataTableMC" || tableId === "dataTableDO");
-
-  const colWidths = ["120px", "180px", "130px", "150px", "160px"];
-  let acumulatedWidths = [0, 120, 300, 430, 580];
+  
+  const isFreeze2Col = (tableId === "dataTablePP" || tableId === "dataTableMC" || tableId === "dataTableDO");
+  const colWidths = ["150px", "200px"];
 
   activeHeader.forEach((judul, index) => {
     const th = document.createElement("th");
     const txt = String(judul || "").trim().toUpperCase();
     th.innerText = judul || "";
-    let baseStyle = "padding: 12px 16px !important; font-size: 12px !important; text-align: center; white-space: nowrap; border-right: 1px solid rgba(255,255,255,0.1);";
+    let baseStyle = "padding: 12px 16px !important; font-size: 12px !important; font-weight: 800 !important; text-align: center; border-right: 1px solid rgba(255,255,255,0.1);";
     
-    if (isFreeze5Col && index <= 4) {
-      let leftPx = acumulatedWidths[index] + "px";
-      let wPx = colWidths[index];
-      th.style.cssText = baseStyle + ` background-color: #be123c !important; color: #FFFFFF !important; position: sticky; left: ${leftPx}; top: 0; z-index: 1050; min-width: ${wPx}; max-width: ${wPx}; border-right: 2px solid #f59e0b;`;
+    if (isFreeze2Col && index === 0) {
+      th.style.cssText = baseStyle + ` background-color: #be123c !important; color: #FFFFFF !important; position: sticky; left: 0px; top: 0; z-index: 1050; min-width: ${colWidths[0]}; max-width: ${colWidths[0]}; white-space: normal; word-break: break-word; border-right: 2px solid #f59e0b;`;
+    } else if (isFreeze2Col && index === 1) {
+      th.style.cssText = baseStyle + ` background-color: #be123c !important; color: #FFFFFF !important; position: sticky; left: ${colWidths[0]}; top: 0; z-index: 1050; min-width: ${colWidths[1]}; max-width: ${colWidths[1]}; white-space: normal; word-break: break-word; border-right: 2px solid #f59e0b;`;
     } else {
-        if (index === 0 && !isFreeze5Col) {
-          th.style.cssText = baseStyle + " background-color: #be123c !important; color: #FFFFFF !important; position: sticky; left: 0px; top: 0; z-index: 1050; min-width: 150px; border-right: 2px solid #f59e0b;";
-        } else if (isFreeze2Col && index === 1) {
-          th.style.cssText = baseStyle + " background-color: #be123c !important; color: #FFFFFF !important; position: sticky; left: 150px; top: 0; z-index: 1050; min-width: 200px; border-right: 2px solid #f59e0b;";
-        } else {
-          let bgStyle = "background-color: #1e293b !important; color: #FFFFFF !important;";
-          if (txt.includes("IM3") || txt.includes("PREPAID")) bgStyle = "background-color: #f59e0b !important; color: #000 !important;";
-          else if (txt.includes("MTD") || txt.includes("REV")) bgStyle = "background-color: #e11d48 !important; color: #FFF !important;";
-          else if (txt.includes("LMTD") || txt.includes("PRIMARY")) bgStyle = "background-color: #0891b2 !important; color: #FFF !important;";
-          th.style.cssText = baseStyle + " " + bgStyle + " position: sticky; top: 0; z-index: 900; min-width: 140px;";
-        }
+      let bgStyle = "background-color: #1e293b !important; color: #FFFFFF !important;";
+      if (txt.includes("IM3") || txt.includes("PREPAID")) bgStyle = "background-color: #f59e0b !important; color: #000 !important;";
+      else if (txt.includes("MTD") || txt.includes("REV")) bgStyle = "background-color: #e11d48 !important; color: #FFF !important;";
+      else if (txt.includes("LMTD") || txt.includes("PRIMARY")) bgStyle = "background-color: #0891b2 !important; color: #FFF !important;";
+      th.style.cssText = baseStyle + " " + bgStyle + " position: sticky; top: 0; z-index: 900; min-width: 140px; white-space: nowrap;";
     }
     trHead.appendChild(th);
   });
@@ -1540,8 +1502,10 @@ function renderTable(tableId, header, data) {
   table.appendChild(thead);
 
   const tbody = document.createElement("tbody");
-  activeData.forEach((baris) => {
+  activeData.forEach((baris, rowIndex) => {
     const tr = document.createElement("tr");
+    if (rowIndex % 2 === 1) tr.style.backgroundColor = "#f8fafc";
+    
     baris.forEach((nilai, index) => {
       const td = document.createElement("td");
       const judulKolom = String(activeHeader[index] || "").trim().toUpperCase();
@@ -1568,26 +1532,26 @@ function renderTable(tableId, header, data) {
       }
 
       if (tableId === "dataTableDO" && numVal === 0 && rawStr !== "" && !isNaN(Number(rawStr)) && !judulKolom.includes("ID") && !judulKolom.includes("NAME") && !judulKolom.includes("CODE")) {
-        td.innerHTML = `<span class="text-red">${valDisplay}</span>`;
+        td.innerHTML = `<span class="text-red" style="font-weight:700;">${valDisplay}</span>`;
       } else {
-        td.innerHTML = valDisplay;
-      }
-      let tdStyle = "padding: 10px 16px !important; font-size: 12.5px !important; text-align: center; white-space: nowrap;";
-      if (isPercent) {
-        if (pctVal > 0) tdStyle += " background-color: #dcfce7 !important; color: #15803d !important; font-weight: 700;";
-        else if (pctVal < 0) tdStyle += " background-color: #fee2e2 !important; color: #b91c1c !important; font-weight: 700;";
+        td.innerHTML = `<span style="font-weight:700;">${valDisplay}</span>`;
       }
 
-      if (isFreeze5Col && index <= 4) {
-          let leftPx = acumulatedWidths[index] + "px";
-          let wPx = colWidths[index];
-          td.style.cssText = tdStyle + ` position: sticky; left: ${leftPx}; font-weight: 700; z-index: 500; border-right: 2px solid #f59e0b; background-color: #f8fafc; min-width: ${wPx}; max-width: ${wPx}; overflow: hidden; text-overflow: ellipsis;`;
-      } else if (index === 0 && !isFreeze5Col) {
-          td.style.cssText = tdStyle + " position: sticky; left: 0px; font-weight: 700; z-index: 500; border-right: 2px solid #f59e0b; background-color: #f8fafc; min-width: 150px;";
-      } else if (isFreeze2Col && index === 1) {
-          td.style.cssText = tdStyle + " position: sticky; left: 150px; font-weight: 700; z-index: 500; border-right: 2px solid #f59e0b; background-color: #f8fafc; min-width: 200px;";
+      let tdStyle = "padding: 10px 16px !important; font-size: 12.5px !important; font-weight: 700 !important;";
+      if (isPercent) {
+        if (pctVal > 0) tdStyle += " background-color: #dcfce7 !important; color: #15803d !important; font-weight: 800; text-align: center;";
+        else if (pctVal < 0) tdStyle += " background-color: #fee2e2 !important; color: #b91c1c !important; font-weight: 800; text-align: center;";
+        else tdStyle += " text-align: center;";
       } else {
-          td.style.cssText = tdStyle + " min-width: 140px;";
+        tdStyle += (index <= 1 && isFreeze2Col) ? " text-align: left;" : " text-align: center;";
+      }
+
+      if (isFreeze2Col && index === 0) {
+          td.style.cssText = tdStyle + ` position: sticky; left: 0px; font-weight: 850; z-index: 500; border-right: 2px solid #f59e0b; background-color: #ffffff; min-width: ${colWidths[0]}; max-width: ${colWidths[0]}; white-space: normal; word-break: break-word;`;
+      } else if (isFreeze2Col && index === 1) {
+          td.style.cssText = tdStyle + ` position: sticky; left: ${colWidths[0]}; font-weight: 850; z-index: 500; border-right: 2px solid #f59e0b; background-color: #ffffff; min-width: ${colWidths[1]}; max-width: ${colWidths[1]}; white-space: normal; word-break: break-word;`;
+      } else {
+          td.style.cssText = tdStyle + " min-width: 140px; white-space: nowrap;";
       }
 
       tr.appendChild(td);
@@ -1600,7 +1564,7 @@ function renderTable(tableId, header, data) {
 function switchReport(reportId, btnObj) {
   currentActiveTabId = reportId;
   document.querySelectorAll('.report-content').forEach(c => c.style.display = 'none');
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.sidebar-menu button').forEach(b => b.classList.remove('active'));
 
   const activeContent = document.getElementById(reportId);
   if (activeContent) activeContent.style.display = 'block';
@@ -1612,8 +1576,6 @@ function switchReport(reportId, btnObj) {
       updateDashboardDaily();
   } else if (reportId === 'partner-performance') {
       updateDashboardPP();
-  } else if (reportId === 'ms-week-30') {
-      updateDashboardW30();
   }
   if (btnObj) btnObj.classList.add('active');
 }
@@ -1624,7 +1586,6 @@ document.addEventListener("input", function (e) {
   if (e.target.id.includes("DO") || e.target.id === "columnFilterValDO") updateDashboardDO();
   if (e.target.id.includes("Daily")) updateDashboardDaily();
   if (e.target.id.includes("PP")) updateDashboardPP();
-  if (e.target.id === "searchInputW30") updateDashboardW30();
 });
 
 document.addEventListener("change", function (e) {
