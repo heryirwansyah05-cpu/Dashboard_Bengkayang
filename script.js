@@ -1,3 +1,6 @@
+let chartPstRevLineInstance = null;
+let chartPstVlrLineInstance = null;
+let chartPstTertiaryLineInstance = null;
 let globalHeaderMS = [], globalDataMS = [];
 let globalHeaderSM = [], globalDataSM = [];
 let globalHeaderDO = [], globalDataDO = [];
@@ -534,93 +537,8 @@ function updateDashboardMS() {
   updateGrowthBadge("kpiVlrGrowthPST", totalVlrMtd, totalVlrLmtd);
 
   document.getElementById("stickyRev").innerText = "Rp " + Math.round(totalRevMtd).toLocaleString("id-ID");
-  renderKecamatanTopBottomLeaderboards(filteredRows);
+  renderPstMainLineChart(filteredRows);
   renderTable("dataTable", globalHeaderMS, filteredRows);
-}
-
-function renderKecamatanTopBottomLeaderboards(rows) {
-    let idxKec = 0;
-    let idxRevGrowth = globalHeaderMS.findIndex(h => h.toUpperCase() === "GROWTH" || h.toUpperCase().includes("GROWTH"));
-    let idxRevMtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("REVENUE MTD"));
-    let idxRevLmtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("REVENUE LMTD"));
-    let idxVlrMtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("VLR SUBS MTD"));
-    let idxVlrLmtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("VLR SUBS LMTD"));
-    let idxVlrGrowth = globalHeaderMS.findIndex(h => h.toUpperCase().includes("VLR") && h.toUpperCase().includes("GROWTH"));
-    let idxTertMtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("TERTIARY B# MTD"));
-    let idxTertLmtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("TERTIARY B# LMTD"));
-    let idxTertGrowth = globalHeaderMS.findIndex(h => h.toUpperCase().includes("TERTIARY") && h.toUpperCase().includes("GROWTH"));
-
-    let dataList = rows.map(r => {
-        let revM = parseNum(r[idxRevMtd !== -1 ? idxRevMtd : 2]);
-        let revL = parseNum(r[idxRevLmtd !== -1 ? idxRevLmtd : 3]);
-        let revG = idxRevGrowth !== -1 ? parseNum(r[idxRevGrowth]) : (revL > 0 ? (revM - revL) / revL : 0);
-        let vlrM = parseNum(r[idxVlrMtd !== -1 ? idxVlrMtd : 17]);
-        let vlrL = parseNum(r[idxVlrLmtd !== -1 ? idxVlrLmtd : 18]);
-        let vlrG = idxVlrGrowth !== -1 ? parseNum(r[idxVlrGrowth]) : (vlrL > 0 ? (vlrM - vlrL) / vlrL : 0);
-        let tertM = parseNum(r[idxTertMtd !== -1 ? idxTertMtd : 11]);
-        let tertL = parseNum(r[idxTertLmtd !== -1 ? idxTertLmtd : 12]);
-        let tertG = idxTertGrowth !== -1 ? parseNum(r[idxTertGrowth]) : (tertL > 0 ? (tertM - tertL) / tertL : 0);
-        return {
-            kec: String(r[idxKec] || "Kecamatan").trim(),
-            revMtd: revM, revLmtd: revL, revGrowth: revG,
-            vlrMtd: vlrM, vlrLmtd: vlrL, vlrGrowth: vlrG,
-            tertMtd: tertM, tertLmtd: tertL, tertGrowth: tertG
-        };
-    });
-
-    function makeDetailedListHtml(arr, mtdKey, lmtdKey, growthKey, isCurrency = false) {
-        let sorted = [...arr].sort((a,b) => b[growthKey] - a[growthKey]);
-        let top3 = sorted.slice(0, 3);
-        let bot3 = sorted.slice(-3).reverse();
-        let html = `<div style="font-size:11px; font-weight:800; color:#15803d; margin-bottom:4px;">TOP 3 KECAMATAN</div>`;
-        top3.forEach((item, idx) => {
-            let mtdStr = isCurrency ? "Rp " + Math.round(item[mtdKey]).toLocaleString('id-ID') : Math.round(item[mtdKey]).toLocaleString('id-ID');
-            let lmtdStr = isCurrency ? "Rp " + Math.round(item[lmtdKey]).toLocaleString('id-ID') : Math.round(item[lmtdKey]).toLocaleString('id-ID');
-            let gVal = item[growthKey] * 100;
-            let gStr = (gVal >= 0 ? "+" : "") + gVal.toFixed(2) + "%";
-            let gColor = gVal >= 0 ? "#15803d" : "#be123c";
-            html += `
-              <div style="font-size:11px; padding:4px 0; border-bottom:1px dashed #f1f5f9;">
-                <div style="display:flex; justify-content:space-between; font-weight:700;">
-                  <span>${idx+1}. ${item.kec}</span>
-                  <span style="color:${gColor};">${gStr}</span>
-                </div>
-                <div style="display:flex; justify-content:space-between; font-size:10px; color:#64748b; margin-top:2px;">
-                  <span>MTD: ${mtdStr}</span>
-                  <span>LMTD: ${lmtdStr}</span>
-                </div>
-              </div>
-            `;
-        });
-        html += `<div style="font-size:11px; font-weight:800; color:#be123c; margin-top:8px; margin-bottom:4px;">BOTTOM 3 KECAMATAN</div>`;
-        bot3.forEach((item, idx) => {
-            let mtdStr = isCurrency ? "Rp " + Math.round(item[mtdKey]).toLocaleString('id-ID') : Math.round(item[mtdKey]).toLocaleString('id-ID');
-            let lmtdStr = isCurrency ? "Rp " + Math.round(item[lmtdKey]).toLocaleString('id-ID') : Math.round(item[lmtdKey]).toLocaleString('id-ID');
-            let gVal = item[growthKey] * 100;
-            let gStr = (gVal >= 0 ? "+" : "") + gVal.toFixed(2) + "%";
-            let gColor = gVal >= 0 ? "#15803d" : "#be123c";
-            html += `
-              <div style="font-size:11px; padding:4px 0; border-bottom:1px dashed #f1f5f9;">
-                <div style="display:flex; justify-content:space-between; font-weight:700;">
-                  <span>${idx+1}. ${item.kec}</span>
-                  <span style="color:${gColor};">${gStr}</span>
-                </div>
-                <div style="display:flex; justify-content:space-between; font-size:10px; color:#64748b; margin-top:2px;">
-                  <span>MTD: ${mtdStr}</span>
-                  <span>LMTD: ${lmtdStr}</span>
-                </div>
-              </div>
-            `;
-        });
-        return html;
-    }
-
-    let elRev = document.getElementById("topBottomRevGrowthList");
-    let elVlr = document.getElementById("topBottomVlrList");
-    let elTert = document.getElementById("topBottomTertiaryList");
-    if (elRev) elRev.innerHTML = makeDetailedListHtml(dataList, 'revMtd', 'revLmtd', 'revGrowth', true);
-    if (elVlr) elVlr.innerHTML = makeDetailedListHtml(dataList, 'vlrMtd', 'vlrLmtd', 'vlrGrowth', false);
-    if (elTert) elTert.innerHTML = makeDetailedListHtml(dataList, 'tertMtd', 'tertLmtd', 'tertGrowth', true);
 }
 
 function updateDashboardSM() {
@@ -936,7 +854,6 @@ function updateDashboardDO() {
   const selHari = document.getElementById("hariFilterDO")?.value.toUpperCase() || "ALL";
   const searchKeyword = document.getElementById("searchInputDO")?.value.toLowerCase().trim() || "";
   const colFilterIdx = document.getElementById("columnFilterDO")?.value || "ALL";
-  const colFilterVal = parseNum(document.getElementById("columnFilterValDO")?.value);
 
   let colIdxHari = selHari !== "ALL" ? globalHeaderDO.findIndex(h => h.toUpperCase() === selHari) : -1;
 
@@ -955,9 +872,17 @@ function updateDashboardDO() {
     }
 
     let matchColFilter = true;
-    if (colFilterIdx !== "ALL" && !isNaN(colFilterVal)) {
+    const rawInputVal = document.getElementById("columnFilterValDO")?.value.trim();
+
+    if (colFilterIdx !== "ALL" && rawInputVal !== "" && rawInputVal !== undefined) {
+        let inputNum = parseNum(rawInputVal);
         let cellVal = parseNum(r[parseInt(colFilterIdx)]);
-        matchColFilter = (cellVal >= colFilterVal);
+
+        if (inputNum === 0) {
+            matchColFilter = (cellVal === 0);
+        } else {
+            matchColFilter = (cellVal >= inputNum);
+        }
     }
 
     return (selDse === "ALL" || String(r[2] || "").trim() === selDse) &&
@@ -1630,3 +1555,139 @@ document.addEventListener("change", function (e) {
   if (e.target.id.includes("PP")) updateDashboardPP();
   if (e.target.id === "execDseFilter" || e.target.id === "execHariFilter") updateExecutiveSummaryNew();
 });
+
+let currentPstMetric = 'revenue';
+let chartPstMainLineInstance = null;
+let currentPstFilteredRows = [];
+
+function switchPstMetric(metricKey) {
+    currentPstMetric = metricKey;
+    const btnMap = {
+        'revenue': 'btnPstRevenue',
+        'primary': 'btnPstPrimary',
+        'secondary': 'btnPstSecondary',
+        'tertiary': 'btnPstTertiary',
+        'trade': 'btnPstTrade',
+        'vlr': 'btnPstVlr'
+    };
+    
+    Object.keys(btnMap).forEach(key => {
+        const btn = document.getElementById(btnMap[key]);
+        if (btn) {
+            if (key === metricKey) {
+                btn.style.background = '#ffffff';
+                btn.style.color = '#0f172a';
+                btn.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+            } else {
+                btn.style.background = 'transparent';
+                btn.style.color = '#64748b';
+                btn.style.boxShadow = 'none';
+            }
+        }
+    });
+
+    renderPstMainLineChart(currentPstFilteredRows);
+}
+
+function renderPstMainLineChart(rows) {
+    currentPstFilteredRows = rows;
+    let labels = [];
+    let mtdArr = [];
+    let lmtdArr = [];
+
+    let idxKec = 0;
+    let idxMtd = -1;
+    let idxLmtd = -1;
+    let isCurrency = true;
+
+    if (currentPstMetric === 'revenue') {
+        idxMtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("REVENUE MTD"));
+        idxLmtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("REVENUE LMTD"));
+    } else if (currentPstMetric === 'primary') {
+        idxMtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("PRIMARY MTD"));
+        idxLmtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("PRIMARY LMTD"));
+    } else if (currentPstMetric === 'secondary') {
+        idxMtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("SECONDARY MTD"));
+        idxLmtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("SECONDARY LMTD"));
+    } else if (currentPstMetric === 'tertiary') {
+        idxMtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("TERTIARY B# MTD"));
+        idxLmtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("TERTIARY B# LMTD"));
+    } else if (currentPstMetric === 'trade') {
+        idxMtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("TRADE SUPPLY MTD"));
+        idxLmtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("TRADE SUPPLY LMTD"));
+    } else if (currentPstMetric === 'vlr') {
+        idxMtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("VLR SUBS MTD"));
+        idxLmtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("VLR SUBS LMTD"));
+        isCurrency = false;
+    }
+
+    rows.forEach(r => {
+        let kecName = String(r[idxKec] || '').trim().replace('|BENGKAYANG', '');
+        if (kecName && kecName.toUpperCase() !== 'KECAMATAN' && !kecName.toUpperCase().includes('TOTAL')) {
+            labels.push(kecName);
+            mtdArr.push(parseNum(r[idxMtd]));
+            lmtdArr.push(parseNum(r[idxLmtd]));
+        }
+    });
+
+    if (chartPstMainLineInstance) chartPstMainLineInstance.destroy();
+    const canvas = document.getElementById('chartPstMainLineCanvas');
+    if (!canvas) return;
+
+    chartPstMainLineInstance = new Chart(canvas.getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'MTD (Bulan Ini)',
+                    data: mtdArr,
+                    borderColor: '#e11d48',
+                    backgroundColor: 'rgba(225, 29, 72, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    fill: true
+                },
+                {
+                    label: 'LMTD (Bulan Lalu)',
+                    data: lmtdArr,
+                    borderColor: '#0284c7',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    tension: 0.3,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    fill: false
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: true, position: 'top', labels: { font: { size: 11, weight: 'bold' } } },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let val = context.raw || 0;
+                            let prefix = isCurrency ? "Rp " : "";
+                            return context.dataset.label + ": " + prefix + Math.round(val).toLocaleString("id-ID");
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: { ticks: { font: { size: 10, weight: 'bold' }, color: '#0f172a' } },
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        font: { size: 10 },
+                        callback: function(v) { return isCurrency ? 'Rp ' + Math.round(v/1e6) + 'Jt' : Math.round(v).toLocaleString('id-ID'); }
+                    }
+                }
+            }
+        }
+    });
+}
