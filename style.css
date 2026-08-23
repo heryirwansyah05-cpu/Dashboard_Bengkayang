@@ -309,3 +309,54 @@ tbody tr:hover td { background-color: #fdf2f2 !important; border-left: 3px solid
     display: inline-block !important;
     border: 1px solid #fecdd3 !important;
 }
+
+/* ==========================================================
+   STYLING GARIS TABEL & HEADER BERWARNA (PENAMBAHAN BARU)
+   ========================================================== */
+
+/* Header Tabel Warna Gradient Modern */
+.mini-table-wrapper table thead th,
+.table-container table thead th {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+    color: #ffffff !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.15) !important;
+    padding: 12px 14px !important;
+    font-size: 11.5px !important;
+    font-weight: 800 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: center;
+}
+
+/* Garis Border Grid Tabel Eksekutif & Daily GAP */
+#execDailyOsaTableBody tr,
+#execDailySpTableBody tr,
+#nonKpiTableBody tr,
+.mini-exec-table tr {
+    border-bottom: 1px solid #cbd5e1 !important;
+}
+
+#execDailyOsaTableBody td,
+#execDailySpTableBody td,
+#nonKpiTableBody td,
+.mini-exec-table td {
+    border-right: 1px solid #cbd5e1 !important;
+    padding: 10px 12px !important;
+    vertical-align: middle;
+}
+
+#execDailyOsaTableBody td:last-child,
+#execDailySpTableBody td:last-child,
+#nonKpiTableBody td:last-child,
+.mini-exec-table td:last-child {
+    border-right: none !important;
+}
+
+/* Hover Effect Interaktif Baris Tabel */
+#execDailyOsaTableBody tr:hover,
+#execDailySpTableBody tr:hover,
+#nonKpiTableBody tr:hover,
+.mini-exec-table tr:hover {
+    background-color: #f1f5f9 !important;
+    transition: background-color 0.2s ease;
+}

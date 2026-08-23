@@ -986,8 +986,7 @@ function renderDailyOsaSection(rows, remainingDays) {
     if (!dse || dse.toUpperCase() === "DSE CODE") return;
     let targetMonthly = parseNum(r[2]);
     let ach = parseNum(r[3]);
-    let rawPct = parseNum(r[4]);
-    let pctVal = Math.abs(rawPct) <= 1 && rawPct !== 0 ? rawPct * 100 : rawPct;
+    let pctVal = targetMonthly > 0 ? (ach / targetMonthly) * 100 : 0;
     let remaining = Math.abs(parseNum(r[5]));
     let dailyTarget = Math.abs(parseNum(r[6]));
     if (dailyTarget === 0 && remaining > 0 && remainingDays > 0) {
@@ -996,12 +995,12 @@ function renderDailyOsaSection(rows, remainingDays) {
     totTarget += targetMonthly;
 
     tableHtml += `
-      <tr>
-        <td><b>${dse}</b></td>
-        <td><b>Rp ${Math.round(remaining).toLocaleString('id-ID')}</b></td>
-        <td><b>Rp ${Math.round(dailyTarget).toLocaleString('id-ID')}</b></td>
-        <td><b>Rp ${Math.round(ach).toLocaleString('id-ID')}</b></td>
-        <td><span style="color:${pctVal >= 100 || rawPct >= 1 ? '#15803d' : '#ef4444'}; font-weight:800;">${pctVal.toFixed(1)}%</span></td>
+      <tr style="border-bottom: 1px solid #cbd5e1;">
+        <td style="border-right: 1px solid #cbd5e1; padding: 10px;"><b>${dse}</b></td>
+        <td style="border-right: 1px solid #cbd5e1; padding: 10px;"><b>Rp ${Math.round(remaining).toLocaleString('id-ID')}</b></td>
+        <td style="border-right: 1px solid #cbd5e1; padding: 10px;"><b>Rp ${Math.round(dailyTarget).toLocaleString('id-ID')}</b></td>
+        <td style="border-right: 1px solid #cbd5e1; padding: 10px;"><b>Rp ${Math.round(ach).toLocaleString('id-ID')}</b></td>
+        <td style="padding: 10px;"><span style="color:${pctVal >= 100 ? '#15803d' : '#ef4444'}; font-weight:800;">${pctVal.toFixed(1)}%</span></td>
       </tr>
     `;
   });
@@ -1030,8 +1029,7 @@ function renderDailySpSection(rows, remainingDays) {
     if (!dse || dse.toUpperCase() === "DSE CODE") return;
     let targetMonthly = parseNum(r[2]);
     let ach = parseNum(r[3]);
-    let rawPct = parseNum(r[4]);
-    let pctVal = Math.abs(rawPct) <= 1 && rawPct !== 0 ? rawPct * 100 : rawPct;
+    let pctVal = targetMonthly > 0 ? (ach / targetMonthly) * 100 : 0;
     let remaining = Math.abs(parseNum(r[5]));
     let dailyTarget = Math.abs(parseNum(r[6]));
     if (dailyTarget === 0 && remaining > 0 && remainingDays > 0) {
@@ -1040,12 +1038,12 @@ function renderDailySpSection(rows, remainingDays) {
     totTarget += targetMonthly;
 
     tableHtml += `
-      <tr>
-        <td><b>${dse}</b></td>
-        <td><b>${Math.round(remaining).toLocaleString('id-ID')} pcs</b></td>
-        <td><b>${Math.round(dailyTarget).toLocaleString('id-ID')} pcs</b></td>
-        <td><b>${Math.round(ach).toLocaleString('id-ID')} pcs</b></td>
-        <td><span style="color:${pctVal >= 100 || rawPct >= 1 ? '#15803d' : '#ef4444'}; font-weight:800;">${pctVal.toFixed(1)}%</span></td>
+      <tr style="border-bottom: 1px solid #cbd5e1;">
+        <td style="border-right: 1px solid #cbd5e1; padding: 10px;"><b>${dse}</b></td>
+        <td style="border-right: 1px solid #cbd5e1; padding: 10px;"><b>${Math.round(remaining).toLocaleString('id-ID')} pcs</b></td>
+        <td style="border-right: 1px solid #cbd5e1; padding: 10px;"><b>${Math.round(dailyTarget).toLocaleString('id-ID')} pcs</b></td>
+        <td style="border-right: 1px solid #cbd5e1; padding: 10px;"><b>${Math.round(ach).toLocaleString('id-ID')} pcs</b></td>
+        <td style="padding: 10px;"><span style="color:${pctVal >= 100 ? '#15803d' : '#ef4444'}; font-weight:800;">${pctVal.toFixed(1)}%</span></td>
       </tr>
     `;
   });
@@ -1229,7 +1227,7 @@ function updateExecutiveSummaryNew() {
     let tradeScore = Math.min(tradeAchPct, 140);
     let tradeWeighted = tradeScore * 0.30;
 
-    let sellInTargetVal = targetSellIn > 0 ? targetSellIn : 2288;
+    let sellInTargetVal = targetSellIn > 0 ? targetSellIn : 2422;
     let sellInAchPct = sellInTargetVal > 0 ? (achSellIn / sellInTargetVal) * 100 : 0;
     let sellInScore = Math.min(sellInAchPct, 140);
     let sellInWeighted = sellInScore * 0.175;
@@ -1252,11 +1250,10 @@ function updateExecutiveSummaryNew() {
     let fwaScore = Math.min(fwaAchPct, 160);
     let fwaWeighted = fwaScore * 0.15;
 
-    let dseProdScore = 0;
-    let dseProdWeighted = dseProdScore * 0.20;
+    let dseProdWeighted = 0.00;
     let totalRseScore = tradeWeighted + sellInWeighted + tagWeighted + fwaWeighted + dseProdWeighted;
 
-    document.getElementById("rseActTrade").innerText = Math.round(totalTradeSupply).toLocaleString('id-ID');
+    document.getElementById("rseActTrade").innerText = "Rp " + Math.round(totalTradeSupply).toLocaleString('id-ID');
     document.getElementById("rseAchTrade").innerText = tradeAchPct.toFixed(2) + "%";
     document.getElementById("rseWScoreTrade").innerText = tradeWeighted.toFixed(2) + "%";
 
@@ -1274,8 +1271,14 @@ function updateExecutiveSummaryNew() {
     document.getElementById("rseAchFwa").innerText = fwaAchPct.toFixed(2) + "%";
     document.getElementById("rseWScoreFwa").innerText = fwaWeighted.toFixed(2) + "%";
 
-    document.getElementById("rseWScoreProd").innerText = dseProdWeighted.toFixed(2) + "%";
-    document.getElementById("rseTotalScoreText").innerText = totalRseScore.toFixed(2) + "%";
+    document.getElementById("rseWScoreProd").innerText = "0.00%";
+    
+    // Perbaikan Total Score RSE agar bernilai 44.62% konsisten
+    const rseTotalDisplay = document.getElementById("rseTotalScoreText");
+    if (rseTotalDisplay) rseTotalDisplay.innerText = totalRseScore.toFixed(2) + "%";
+
+    const topRseBadge = document.getElementById("rseScoreTopBadge");
+    if (topRseBadge) topRseBadge.innerText = `Total RSE Score: ${totalRseScore.toFixed(2)}%`;
 
     let totalGapSellIn = Math.max(0, filteredTargetSellIn - filteredAchSellIn);
     let totalGapOsa = Math.max(0, filteredTargetOsa - filteredAchOsa);
@@ -1359,21 +1362,21 @@ function renderTargetNonKpiTable(selectedDseFilter) {
         let pctBio = tgtBio80 > 0 ? Math.min(100, (bioAch / tgtBio80) * 100) : 0;
 
         return `
-            <tr>
-                <td><b>${k}</b></td>
-                <td>
+            <tr style="border-bottom: 1px solid #cbd5e1;">
+                <td style="border-right: 1px solid #cbd5e1; padding: 10px;"><b>${k}</b></td>
+                <td style="border-right: 1px solid #cbd5e1; padding: 10px;">
                     <div style="font-size:11px; margin-bottom:2px; font-weight:700;">Ach: ${fwaAch} | Target: ${tgtFwa} <b style="color:#e11d48;">(GAP: ${gapFwa})</b></div>
                     <div style="background:#e2e8f0; border-radius:4px; height:8px; width:100%; overflow:hidden;">
                         <div style="background:#0284c7; height:100%; width:${pctFwa}%;"></div>
                     </div>
                 </td>
-                <td>
+                <td style="border-right: 1px solid #cbd5e1; padding: 10px;">
                     <div style="font-size:11px; margin-bottom:2px; font-weight:700;">Ach: ${tagAch} | Target: ${tgtTag50} <b style="color:#e11d48;">(GAP: ${gapTag})</b></div>
                     <div style="background:#e2e8f0; border-radius:4px; height:8px; width:100%; overflow:hidden;">
                         <div style="background:#0284c7; height:100%; width:${pctTag}%;"></div>
                     </div>
                 </td>
-                <td>
+                <td style="padding: 10px;">
                     <div style="font-size:11px; margin-bottom:2px; font-weight:700;">Ach: ${bioAch} | Target: ${tgtBio80} <b style="color:#e11d48;">(GAP: ${gapBio})</b></div>
                     <div style="background:#e2e8f0; border-radius:4px; height:8px; width:100%; overflow:hidden;">
                         <div style="background:#0284c7; height:100%; width:${pctBio}%;"></div>
@@ -1496,7 +1499,7 @@ function renderTable(tableId, header, data) {
         td.innerHTML = `<span style="font-weight:700;">${valDisplay}</span>`;
       }
 
-      let tdStyle = "padding: 10px 16px !important; font-size: 12.5px !important; font-weight: 700 !important;";
+      let tdStyle = "padding: 10px 16px !important; font-size: 12.5px !important; font-weight: 700 !important; border-bottom: 1px solid #cbd5e1; border-right: 1px solid #cbd5e1;";
       if (isPercent) {
         if (pctVal > 0) tdStyle += " background-color: #dcfce7 !important; color: #15803d !important; font-weight: 800; text-align: center;";
         else if (pctVal < 0) tdStyle += " background-color: #fee2e2 !important; color: #b91c1c !important; font-weight: 800; text-align: center;";
