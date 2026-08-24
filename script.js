@@ -156,36 +156,76 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-// ================= SNAPSHOT / SCREENSHOT FUNCTIONS =================
+// ================= ULTRA HD SNAPSHOT ENGINE (FIX RESOLUTION & NO OFFSET) =================
 function takeScreenshot() {
     const container = document.querySelector(".container");
     if (!container) return;
-    html2canvas(container, { scale: 2, useCORS: true }).then(canvas => {
+    
+    // Hide all snapshot buttons temporarily
+    const snapBtns = document.querySelectorAll(".btn-snapshot-section, .btn-snapshot-table");
+    snapBtns.forEach(btn => btn.style.visibility = "hidden");
+
+    html2canvas(container, {
+        scale: 3,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: "#f8fafc",
+        logging: false,
+        windowWidth: 1300
+    }).then(canvas => {
+        snapBtns.forEach(btn => btn.style.visibility = "visible");
         let link = document.createElement('a');
-        link.download = `Dashboard-MC-Bengkayang-${new Date().toISOString().slice(0,10)}.png`;
-        link.href = canvas.toDataURL("image/png");
+        link.download = `Dashboard-Full-HD-${new Date().toISOString().slice(0,10)}.png`;
+        link.href = canvas.toDataURL("image/png", 1.0);
         link.click();
-    }).catch(err => console.error("Snapshot error:", err));
+    }).catch(err => {
+        snapBtns.forEach(btn => btn.style.visibility = "visible");
+        console.error("Snapshot error:", err);
+    });
 }
 
 function takeSectionSnapshot(sectionId) {
     const section = document.getElementById(sectionId);
     if (!section) return;
-    html2canvas(section, { scale: 2, useCORS: true }).then(canvas => {
+
+    // Sembunyikan tombol-tombol snapshot di dalam section agar tidak terfoto/geser
+    const snapBtns = section.querySelectorAll(".btn-snapshot-section, .btn-snapshot-table");
+    snapBtns.forEach(btn => btn.style.visibility = "hidden");
+
+    html2canvas(section, {
+        scale: 3,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+        scrollX: 0,
+        scrollY: -window.scrollY
+    }).then(canvas => {
+        snapBtns.forEach(btn => btn.style.visibility = "visible");
         let link = document.createElement('a');
-        link.download = `Snapshot-${sectionId}-${new Date().toISOString().slice(0,10)}.png`;
-        link.href = canvas.toDataURL("image/png");
+        link.download = `Snapshot-HD-${sectionId}-${new Date().toISOString().slice(0,10)}.png`;
+        link.href = canvas.toDataURL("image/png", 1.0);
         link.click();
-    }).catch(err => console.error("Section snapshot error:", err));
+    }).catch(err => {
+        snapBtns.forEach(btn => btn.style.visibility = "visible");
+        console.error("Section snapshot error:", err);
+    });
 }
 
 function takeTableSnapshotDO() {
     const tableContainer = document.querySelector("#detail-outlet .table-container");
     if (!tableContainer) return;
-    html2canvas(tableContainer, { scale: 2, useCORS: true }).then(canvas => {
+
+    html2canvas(tableContainer, {
+        scale: 3,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: "#ffffff",
+        logging: false
+    }).then(canvas => {
         let link = document.createElement('a');
-        link.download = `Snapshot-Detail-Outlet-${new Date().toISOString().slice(0,10)}.png`;
-        link.href = canvas.toDataURL("image/png");
+        link.download = `Snapshot-Detail-Outlet-Table-HD-${new Date().toISOString().slice(0,10)}.png`;
+        link.href = canvas.toDataURL("image/png", 1.0);
         link.click();
     }).catch(err => console.error("Table snapshot error:", err));
 }
@@ -1006,7 +1046,6 @@ function renderDailyOsaSection(rows, remainingDays) {
   });
 
   tbody.innerHTML = tableHtml || `<tr><td colspan="5" style="text-align:center;">Tidak ada data OSA</td></tr>`;
-  document.getElementById("dashOsaTitle").innerText = "Monitoring Target Full Month, Gap Bulanan & Harian Target OSA";
   document.getElementById("weeklyOsaKpiContainer").innerHTML = `
     <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0;">
       <span><b>Total Target Full Month MC Bengkayang:</b> Rp ${Math.round(totTarget).toLocaleString('id-ID')}</span>
@@ -1030,6 +1069,7 @@ function renderDailySpSection(rows, remainingDays) {
     let targetMonthly = parseNum(r[2]);
     let ach = parseNum(r[3]);
     let pctVal = targetMonthly > 0 ? (ach / targetMonthly) * 100 : 0;
+    
     let remaining = Math.abs(parseNum(r[5]));
     let dailyTarget = Math.abs(parseNum(r[6]));
     if (dailyTarget === 0 && remaining > 0 && remainingDays > 0) {
@@ -1049,7 +1089,6 @@ function renderDailySpSection(rows, remainingDays) {
   });
 
   tbody.innerHTML = tableHtml || `<tr><td colspan="5" style="text-align:center;">Tidak ada data SP Sell In</td></tr>`;
-  document.getElementById("dashSpTitle").innerText = "Monitoring Target Full Month, Gap Bulanan & Harian Target SP Sell In";
   document.getElementById("weeklySpKpiContainer").innerHTML = `
     <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0;">
       <span><b>Total Target Full Month MC Bengkayang:</b> ${Math.round(totTarget).toLocaleString('id-ID')} pcs</span>
@@ -1273,12 +1312,13 @@ function updateExecutiveSummaryNew() {
 
     document.getElementById("rseWScoreProd").innerText = "0.00%";
     
-    // Perbaikan Total Score RSE agar bernilai 44.62% konsisten
+    const formattedTotalScore = totalRseScore.toFixed(2) + "%";
+    
     const rseTotalDisplay = document.getElementById("rseTotalScoreText");
-    if (rseTotalDisplay) rseTotalDisplay.innerText = totalRseScore.toFixed(2) + "%";
+    if (rseTotalDisplay) rseTotalDisplay.innerText = formattedTotalScore;
 
-    const topRseBadge = document.getElementById("rseScoreTopBadge");
-    if (topRseBadge) topRseBadge.innerText = `Total RSE Score: ${totalRseScore.toFixed(2)}%`;
+    const rseFooterDisplay = document.getElementById("rseFooterTotal");
+    if (rseFooterDisplay) rseFooterDisplay.innerText = formattedTotalScore;
 
     let totalGapSellIn = Math.max(0, filteredTargetSellIn - filteredAchSellIn);
     let totalGapOsa = Math.max(0, filteredTargetOsa - filteredAchOsa);
@@ -1310,7 +1350,7 @@ function updateExecutiveSummaryNew() {
     document.getElementById("exMissionTagUnach").innerText = mUnachTagFiltered.toLocaleString('id-ID') + " Outlet";
 
     let hariLabelStr = selHari !== "ALL" ? `${selHari.charAt(0) + selHari.slice(1).toLowerCase()}` : `Hari`;
-    document.getElementById("pjpDisplayLabel").innerHTML = `<i class="fa-solid fa-route"></i> PJP ${hariLabelStr} : ${missionRows.length} Outlet`;
+    document.getElementById("pjpDisplayLabel").innerText = `PJP ${hariLabelStr} : ${missionRows.length} Outlet`;
 
     document.getElementById("exTotalGapSelIn").innerText = `GAP Total: ${Math.round(totalGapSellIn).toLocaleString('id-ID')} pcs`;
     document.getElementById("exTotalGapOsa").innerText = `GAP Total: Rp ${Math.round(totalGapOsa).toLocaleString('id-ID')}`;
@@ -1526,7 +1566,7 @@ function renderTable(tableId, header, data) {
 function switchReport(reportId, btnObj) {
   currentActiveTabId = reportId;
   document.querySelectorAll('.report-content').forEach(c => c.style.display = 'none');
-  document.querySelectorAll('.sidebar-menu button').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.report-tabs button').forEach(b => b.classList.remove('active'));
 
   const activeContent = document.getElementById(reportId);
   if (activeContent) activeContent.style.display = 'block';

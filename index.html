@@ -303,84 +303,90 @@
 
     <!-- ================= TAB 2: PST ================= -->
     <div id="ms-bengkayang" class="report-content" style="display: none;">
-        <div class="kpi-grid" style="grid-template-columns: repeat(6, minmax(0, 1fr));">
-            <div class="card card-red">
-                <div class="icon"><i class="fa-solid fa-chart-line"></i></div>
-                <div class="card-body">
-                    <h3>TOTAL REVENUE MTD</h3>
-                    <div class="kpi-main-val" id="kpiRevenuePST" style="font-size:14px;">Rp 0</div>
-                    <div class="kpi-compare-row">LMTD: <span id="kpiRevLmtdPST">0</span></div>
-                    <div class="kpi-growth-row">Growth: <span id="kpiRevGrowthPST" class="growth-badge">0%</span></div>
-                </div>
+        <div id="snapshotPstDashboard">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h2 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0;"><i class="fa-solid fa-chart-pie color-red"></i> PST PERFORMANCE DASHBOARD</h2>
+                <button class="btn-snapshot-section" onclick="takeSectionSnapshot('snapshotPstDashboard')"><i class="fa-solid fa-camera"></i> Snapshot PST Dashboard</button>
             </div>
-            <div class="card card-yellow">
-                <div class="icon"><i class="fa-solid fa-network-wired"></i></div>
-                <div class="card-body">
-                    <h3>TOTAL PRIMARY MTD</h3>
-                    <div class="kpi-main-val" id="kpiPrimaryPST" style="font-size:14px;">0</div>
-                    <div class="kpi-compare-row">LMTD: <span id="kpiPrimaryLmtdPST">0</span></div>
-                    <div class="kpi-growth-row">Growth: <span id="kpiPrimaryGrowthPST" class="growth-badge">0%</span></div>
-                </div>
-            </div>
-            <div class="card card-magenta">
-                <div class="icon"><i class="fa-solid fa-boxes-stacked"></i></div>
-                <div class="card-body">
-                    <h3>TOTAL SECONDARY MTD</h3>
-                    <div class="kpi-main-val" id="kpiSecondaryPST" style="font-size:14px;">0</div>
-                    <div class="kpi-compare-row">LMTD: <span id="kpiSecondaryLmtdPST">0</span></div>
-                    <div class="kpi-growth-row">Growth: <span id="kpiSecondaryGrowthPST" class="growth-badge">0%</span></div>
-                </div>
-            </div>
-            <div class="card card-cyan">
-                <div class="icon"><i class="fa-solid fa-warehouse"></i></div>
-                <div class="card-body">
-                    <h3>TOTAL TERTIARY B#</h3>
-                    <div class="kpi-main-val" id="kpiTertiaryPST" style="font-size:14px;">0</div>
-                    <div class="kpi-compare-row">LMTD: <span id="kpiTertiaryLmtdPST">0</span></div>
-                    <div class="kpi-growth-row">Growth: <span id="kpiTertiaryGrowthPST" class="growth-badge">0%</span></div>
-                </div>
-            </div>
-            <div class="card card-red">
-                <div class="icon"><i class="fa-solid fa-truck-ramp-box"></i></div>
-                <div class="card-body">
-                    <h3>TOTAL TRADE SUPPLY</h3>
-                    <div class="kpi-main-val" id="kpiTradeSupplyPST" style="font-size:14px;">0</div>
-                    <div class="kpi-compare-row">LMTD: <span id="kpiTradeLmtdPST">0</span></div>
-                    <div class="kpi-growth-row">Growth: <span id="kpiTradeGrowthPST" class="growth-badge">0%</span></div>
-                </div>
-            </div>
-            <div class="card card-purple">
-                <div class="icon"><i class="fa-solid fa-users"></i></div>
-                <div class="card-body">
-                    <h3>TOTAL VLR SUBS</h3>
-                    <div class="kpi-main-val" id="kpiVlrPST" style="font-size:14px;">0</div>
-                    <div class="kpi-compare-row">LMTD: <span id="kpiVlrLmtdPST">0</span></div>
-                    <div class="kpi-growth-row">Growth: <span id="kpiVlrGrowthPST" class="growth-badge">0%</span></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 1 GRAFIK LINE UTAMA PERFORMANCE TREND (MTD VS LMTD) WITH METRIC SWITCHER -->
-        <div style="background: #ffffff; padding: 20px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); margin-bottom: 20px;">
-            <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px;">
-                <div>
-                    <div style="font-size: 14px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px;">
-                        <i class="fa-solid fa-chart-line color-red"></i> PERFORMANCE TREND — MTD vs LMTD per Kecamatan
+            <div class="kpi-grid" style="grid-template-columns: repeat(6, minmax(0, 1fr));">
+                <div class="card card-red">
+                    <div class="icon"><i class="fa-solid fa-chart-line"></i></div>
+                    <div class="card-body">
+                        <h3>TOTAL REVENUE MTD</h3>
+                        <div class="kpi-main-val" id="kpiRevenuePST" style="font-size:14px;">Rp 0</div>
+                        <div class="kpi-compare-row">LMTD: <span id="kpiRevLmtdPST">0</span></div>
+                        <div class="kpi-growth-row">Growth: <span id="kpiRevGrowthPST" class="growth-badge">0%</span></div>
                     </div>
-                    <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Pilih metric di sebelah kanan untuk melihat grafik tren perbandingan MTD vs LMTD</div>
                 </div>
-                <!-- METRIC SWITCHER BUTTONS -->
-                <div style="display: flex; flex-wrap: wrap; gap: 6px; background: #f1f5f9; padding: 4px; border-radius: 10px;" id="pstMetricButtonsGroup">
-                    <button onclick="switchPstMetric('revenue')" id="btnPstRevenue" class="pst-metric-btn active" style="padding: 6px 12px; border-radius: 8px; border: none; font-size: 11px; font-weight: 800; cursor: pointer; background: #ffffff; color: #0f172a; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">Revenue</button>
-                    <button onclick="switchPstMetric('primary')" id="btnPstPrimary" class="pst-metric-btn" style="padding: 6px 12px; border-radius: 8px; border: none; font-size: 11px; font-weight: 800; cursor: pointer; background: transparent; color: #64748b;">Primary</button>
-                    <button onclick="switchPstMetric('secondary')" id="btnPstSecondary" class="pst-metric-btn" style="padding: 6px 12px; border-radius: 8px; border: none; font-size: 11px; font-weight: 800; cursor: pointer; background: transparent; color: #64748b;">Secondary</button>
-                    <button onclick="switchPstMetric('tertiary')" id="btnPstTertiary" class="pst-metric-btn" style="padding: 6px 12px; border-radius: 8px; border: none; font-size: 11px; font-weight: 800; cursor: pointer; background: transparent; color: #64748b;">Tertiary B#</button>
-                    <button onclick="switchPstMetric('trade')" id="btnPstTrade" class="pst-metric-btn" style="padding: 6px 12px; border-radius: 8px; border: none; font-size: 11px; font-weight: 800; cursor: pointer; background: transparent; color: #64748b;">Trade Supply</button>
-                    <button onclick="switchPstMetric('vlr')" id="btnPstVlr" class="pst-metric-btn" style="padding: 6px 12px; border-radius: 8px; border: none; font-size: 11px; font-weight: 800; cursor: pointer; background: transparent; color: #64748b;">VLR Subs</button>
+                <div class="card card-yellow">
+                    <div class="icon"><i class="fa-solid fa-network-wired"></i></div>
+                    <div class="card-body">
+                        <h3>TOTAL PRIMARY MTD</h3>
+                        <div class="kpi-main-val" id="kpiPrimaryPST" style="font-size:14px;">0</div>
+                        <div class="kpi-compare-row">LMTD: <span id="kpiPrimaryLmtdPST">0</span></div>
+                        <div class="kpi-growth-row">Growth: <span id="kpiPrimaryGrowthPST" class="growth-badge">0%</span></div>
+                    </div>
+                </div>
+                <div class="card card-magenta">
+                    <div class="icon"><i class="fa-solid fa-boxes-stacked"></i></div>
+                    <div class="card-body">
+                        <h3>TOTAL SECONDARY MTD</h3>
+                        <div class="kpi-main-val" id="kpiSecondaryPST" style="font-size:14px;">0</div>
+                        <div class="kpi-compare-row">LMTD: <span id="kpiSecondaryLmtdPST">0</span></div>
+                        <div class="kpi-growth-row">Growth: <span id="kpiSecondaryGrowthPST" class="growth-badge">0%</span></div>
+                    </div>
+                </div>
+                <div class="card card-cyan">
+                    <div class="icon"><i class="fa-solid fa-warehouse"></i></div>
+                    <div class="card-body">
+                        <h3>TOTAL TERTIARY B#</h3>
+                        <div class="kpi-main-val" id="kpiTertiaryPST" style="font-size:14px;">0</div>
+                        <div class="kpi-compare-row">LMTD: <span id="kpiTertiaryLmtdPST">0</span></div>
+                        <div class="kpi-growth-row">Growth: <span id="kpiTertiaryGrowthPST" class="growth-badge">0%</span></div>
+                    </div>
+                </div>
+                <div class="card card-red">
+                    <div class="icon"><i class="fa-solid fa-truck-ramp-box"></i></div>
+                    <div class="card-body">
+                        <h3>TOTAL TRADE SUPPLY</h3>
+                        <div class="kpi-main-val" id="kpiTradeSupplyPST" style="font-size:14px;">0</div>
+                        <div class="kpi-compare-row">LMTD: <span id="kpiTradeLmtdPST">0</span></div>
+                        <div class="kpi-growth-row">Growth: <span id="kpiTradeGrowthPST" class="growth-badge">0%</span></div>
+                    </div>
+                </div>
+                <div class="card card-purple">
+                    <div class="icon"><i class="fa-solid fa-users"></i></div>
+                    <div class="card-body">
+                        <h3>TOTAL VLR SUBS</h3>
+                        <div class="kpi-main-val" id="kpiVlrPST" style="font-size:14px;">0</div>
+                        <div class="kpi-compare-row">LMTD: <span id="kpiVlrLmtdPST">0</span></div>
+                        <div class="kpi-growth-row">Growth: <span id="kpiVlrGrowthPST" class="growth-badge">0%</span></div>
+                    </div>
                 </div>
             </div>
-            <div style="height: 280px; position: relative;">
-                <canvas id="chartPstMainLineCanvas"></canvas>
+
+            <!-- 1 GRAFIK LINE UTAMA PERFORMANCE TREND (MTD VS LMTD) WITH METRIC SWITCHER -->
+            <div style="background: #ffffff; padding: 20px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); margin-bottom: 20px;">
+                <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px;">
+                    <div>
+                        <div style="font-size: 14px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-chart-line color-red"></i> PERFORMANCE TREND — MTD vs LMTD per Kecamatan
+                        </div>
+                        <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Pilih metric di sebelah kanan untuk melihat grafik tren perbandingan MTD vs LMTD</div>
+                    </div>
+                    <!-- METRIC SWITCHER BUTTONS -->
+                    <div style="display: flex; flex-wrap: wrap; gap: 6px; background: #f1f5f9; padding: 4px; border-radius: 10px;" id="pstMetricButtonsGroup">
+                        <button onclick="switchPstMetric('revenue')" id="btnPstRevenue" class="pst-metric-btn active" style="padding: 6px 12px; border-radius: 8px; border: none; font-size: 11px; font-weight: 800; cursor: pointer; background: #ffffff; color: #0f172a; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">Revenue</button>
+                        <button onclick="switchPstMetric('primary')" id="btnPstPrimary" class="pst-metric-btn" style="padding: 6px 12px; border-radius: 8px; border: none; font-size: 11px; font-weight: 800; cursor: pointer; background: transparent; color: #64748b;">Primary</button>
+                        <button onclick="switchPstMetric('secondary')" id="btnPstSecondary" class="pst-metric-btn" style="padding: 6px 12px; border-radius: 8px; border: none; font-size: 11px; font-weight: 800; cursor: pointer; background: transparent; color: #64748b;">Secondary</button>
+                        <button onclick="switchPstMetric('tertiary')" id="btnPstTertiary" class="pst-metric-btn" style="padding: 6px 12px; border-radius: 8px; border: none; font-size: 11px; font-weight: 800; cursor: pointer; background: transparent; color: #64748b;">Tertiary B#</button>
+                        <button onclick="switchPstMetric('trade')" id="btnPstTrade" class="pst-metric-btn" style="padding: 6px 12px; border-radius: 8px; border: none; font-size: 11px; font-weight: 800; cursor: pointer; background: transparent; color: #64748b;">Trade Supply</button>
+                        <button onclick="switchPstMetric('vlr')" id="btnPstVlr" class="pst-metric-btn" style="padding: 6px 12px; border-radius: 8px; border: none; font-size: 11px; font-weight: 800; cursor: pointer; background: transparent; color: #64748b;">VLR Subs</button>
+                    </div>
+                </div>
+                <div style="height: 280px; position: relative;">
+                    <canvas id="chartPstMainLineCanvas"></canvas>
+                </div>
             </div>
         </div>
 
@@ -395,58 +401,64 @@
 
     <!-- ================= TAB 3: SITE MONITORING ================= -->
     <div id="outlet-mc" class="report-content" style="display: none;">
-        <div class="kpi-grid" style="grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: 20px;">
-            <div class="card card-red">
-                <div class="icon"><i class="fa-solid fa-chart-line"></i></div>
-                <div class="card-body">
-                    <h3>TOTAL REVENUE MTD</h3>
-                    <div class="kpi-main-val" id="kpiRevMTDMC" style="font-size:14px;">Rp 0</div>
-                    <div class="kpi-compare-row">LMTD: <span id="kpiRevLmtdMC">0</span></div>
-                    <div class="kpi-growth-row">Growth: <span id="kpiRevGrowthMC" class="growth-badge">0%</span></div>
+        <div id="snapshotSmDashboard">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h2 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0;"><i class="fa-solid fa-desktop color-blue"></i> SITE MONITORING DASHBOARD</h2>
+                <button class="btn-snapshot-section" onclick="takeSectionSnapshot('snapshotSmDashboard')"><i class="fa-solid fa-camera"></i> Snapshot Site Monitoring</button>
+            </div>
+            <div class="kpi-grid" style="grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: 20px;">
+                <div class="card card-red">
+                    <div class="icon"><i class="fa-solid fa-chart-line"></i></div>
+                    <div class="card-body">
+                        <h3>TOTAL REVENUE MTD</h3>
+                        <div class="kpi-main-val" id="kpiRevMTDMC" style="font-size:14px;">Rp 0</div>
+                        <div class="kpi-compare-row">LMTD: <span id="kpiRevLmtdMC">0</span></div>
+                        <div class="kpi-growth-row">Growth: <span id="kpiRevGrowthMC" class="growth-badge">0%</span></div>
+                    </div>
+                </div>
+                <div class="card card-cyan">
+                    <div class="icon"><i class="fa-solid fa-users"></i></div>
+                    <div class="card-body">
+                        <h3>TOTAL VLR MTD</h3>
+                        <div class="kpi-main-val" id="kpiVlrMTDMC" style="font-size:14px;">0</div>
+                        <div class="kpi-compare-row">LMTD: <span id="kpiVlrLmtdMC">0</span></div>
+                        <div class="kpi-growth-row">Growth: <span id="kpiVlrGrowthMC" class="growth-badge">0%</span></div>
+                    </div>
+                </div>
+                <div class="card card-yellow">
+                    <div class="icon"><i class="fa-solid fa-calendar-days"></i></div>
+                    <div class="card-body">
+                        <h3>90D SUBS</h3>
+                        <div class="kpi-main-val" id="kpi90DMC" style="font-size:14px;">0</div>
+                        <div class="kpi-compare-row">LMTD: <span id="kpi90DLmtdMC">0</span></div>
+                        <div class="kpi-growth-row">Growth: <span id="kpi90DGrowthMC" class="growth-badge">0%</span></div>
+                    </div>
+                </div>
+                <div class="card card-magenta">
+                    <div class="icon"><i class="fa-solid fa-user-plus"></i></div>
+                    <div class="card-body">
+                        <h3>RGU GA MTD</h3>
+                        <div class="kpi-main-val" id="kpiRguGaMTDMC" style="font-size:14px;">0</div>
+                        <div class="kpi-compare-row">Site Nol: <span id="kpiZeroRguSiteCountMC">0</span></div>
+                        <div class="kpi-row-info" id="zeroRguSiteSmallList" style="margin-top:4px; max-height:42px; overflow-y:auto; font-size:9.5px; line-height:1.2; color:#475569;">-</div>
+                    </div>
                 </div>
             </div>
-            <div class="card card-cyan">
-                <div class="icon"><i class="fa-solid fa-users"></i></div>
-                <div class="card-body">
-                    <h3>TOTAL VLR MTD</h3>
-                    <div class="kpi-main-val" id="kpiVlrMTDMC" style="font-size:14px;">0</div>
-                    <div class="kpi-compare-row">LMTD: <span id="kpiVlrLmtdMC">0</span></div>
-                    <div class="kpi-growth-row">Growth: <span id="kpiVlrGrowthMC" class="growth-badge">0%</span></div>
-                </div>
-            </div>
-            <div class="card card-yellow">
-                <div class="icon"><i class="fa-solid fa-calendar-days"></i></div>
-                <div class="card-body">
-                    <h3>90D SUBS</h3>
-                    <div class="kpi-main-val" id="kpi90DMC" style="font-size:14px;">0</div>
-                    <div class="kpi-compare-row">LMTD: <span id="kpi90DLmtdMC">0</span></div>
-                    <div class="kpi-growth-row">Growth: <span id="kpi90DGrowthMC" class="growth-badge">0%</span></div>
-                </div>
-            </div>
-            <div class="card card-magenta">
-                <div class="icon"><i class="fa-solid fa-user-plus"></i></div>
-                <div class="card-body">
-                    <h3>RGU GA MTD</h3>
-                    <div class="kpi-main-val" id="kpiRguGaMTDMC" style="font-size:14px;">0</div>
-                    <div class="kpi-compare-row">Site Nol: <span id="kpiZeroRguSiteCountMC">0</span></div>
-                    <div class="kpi-row-info" id="zeroRguSiteSmallList" style="margin-top:4px; max-height:42px; overflow-y:auto; font-size:9.5px; line-height:1.2; color:#475569;">-</div>
-                </div>
-            </div>
-        </div>
 
-        <!-- TOP / BOTTOM 3 SITE LEADERBOARDS -->
-        <div class="leaderboard-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 20px;">
-            <div class="leaderboard-card">
-                <div class="lb-header"><i class="fa-solid fa-chart-line"></i> Top/Bottom Growth Revenue (3 Site)</div>
-                <div class="lb-list" id="topBottomRevGrowthSiteList"></div>
-            </div>
-            <div class="leaderboard-card">
-                <div class="lb-header"><i class="fa-solid fa-users"></i> Top/Bottom VLR Subs (3 Site)</div>
-                <div class="lb-list" id="topBottomVlrSiteList"></div>
-            </div>
-            <div class="leaderboard-card">
-                <div class="lb-header"><i class="fa-solid fa-calendar-days"></i> Top/Bottom 90D Subs (3 Site)</div>
-                <div class="lb-list" id="topBottom90DSiteList"></div>
+            <!-- TOP / BOTTOM 3 SITE LEADERBOARDS -->
+            <div class="leaderboard-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 20px;">
+                <div class="leaderboard-card">
+                    <div class="lb-header"><i class="fa-solid fa-chart-line"></i> Top/Bottom Growth Revenue (3 Site)</div>
+                    <div class="lb-list" id="topBottomRevGrowthSiteList"></div>
+                </div>
+                <div class="leaderboard-card">
+                    <div class="lb-header"><i class="fa-solid fa-users"></i> Top/Bottom VLR Subs (3 Site)</div>
+                    <div class="lb-list" id="topBottomVlrSiteList"></div>
+                </div>
+                <div class="leaderboard-card">
+                    <div class="lb-header"><i class="fa-solid fa-calendar-days"></i> Top/Bottom 90D Subs (3 Site)</div>
+                    <div class="lb-list" id="topBottom90DSiteList"></div>
+                </div>
             </div>
         </div>
 
@@ -462,53 +474,59 @@
 
     <!-- ================= TAB 4: DETAIL OUTLET ================= -->
     <div id="detail-outlet" class="report-content" style="display: none;">
-        <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));">
-            <div class="card card-cyan">
-                <div class="icon"><i class="fa-solid fa-cart-shopping"></i></div>
-                <div class="card-body">
-                    <div class="card-header-flex"><h3>SELL IN PERFORMANCE</h3><span class="status-badge" id="badgeSellInDO">-</span></div>
-                    <div class="kpi-main-val"><span id="kpiPctSellInDO">0.0%</span></div>
-                    <div class="kpi-compare-row">Target: <span id="kpiTargetSellInDO">0</span> | Ach: <span id="kpiSellInDO">0</span></div>
-                    <div class="kpi-row-info"><span class="gap-item">GAP: <span id="kpiGapSellInDO">0</span> pcs</span></div>
-                    <div class="progress-bar-bg"><div class="progress-bar-fill fill-cyan" id="progressSellInDO"></div></div>
-                </div>
+        <div id="snapshotDoDashboard" style="margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h2 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0;"><i class="fa-solid fa-store color-cyan"></i> DETAIL OUTLET DASHBOARD SUMMARY</h2>
+                <button class="btn-snapshot-section" onclick="takeSectionSnapshot('snapshotDoDashboard')"><i class="fa-solid fa-camera"></i> Snapshot Dashboard Outlet</button>
             </div>
-            <div class="card card-red">
-                <div class="icon"><i class="fa-solid fa-bullseye"></i></div>
-                <div class="card-body">
-                    <div class="card-header-flex"><h3>OSA PERFORMANCE</h3><span class="status-badge" id="badgeOsaDO">-</span></div>
-                    <div class="kpi-main-val"><span id="kpiPctOsaDO">0.0%</span></div>
-                    <div class="kpi-compare-row">Target: <span id="kpiTargetOsaDO">0</span> | Ach: <span id="kpiAchOsaDO">0</span></div>
-                    <div class="kpi-row-info"><span class="gap-item">GAP: <span id="kpiGapOsaDO">0</span></span></div>
-                    <div class="progress-bar-bg"><div class="progress-bar-fill fill-red" id="gaugeOsaFill"></div></div>
+            <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));">
+                <div class="card card-cyan">
+                    <div class="icon"><i class="fa-solid fa-cart-shopping"></i></div>
+                    <div class="card-body">
+                        <div class="card-header-flex"><h3>SELL IN PERFORMANCE</h3><span class="status-badge" id="badgeSellInDO">-</span></div>
+                        <div class="kpi-main-val"><span id="kpiPctSellInDO">0.0%</span></div>
+                        <div class="kpi-compare-row">Target: <span id="kpiTargetSellInDO">0</span> | Ach: <span id="kpiSellInDO">0</span></div>
+                        <div class="kpi-row-info"><span class="gap-item">GAP: <span id="kpiGapSellInDO">0</span> pcs</span></div>
+                        <div class="progress-bar-bg"><div class="progress-bar-fill fill-cyan" id="progressSellInDO"></div></div>
+                    </div>
                 </div>
-            </div>
-            <div class="card card-yellow">
-                <div class="icon"><i class="fa-solid fa-fingerprint"></i></div>
-                <div class="card-body">
-                    <div class="card-header-flex"><h3>BIOMETRIX GA OUTLET</h3><span class="status-badge" id="badgeBiometrixDO">-</span></div>
-                    <div class="kpi-main-val"><span id="kpiPctBiometrixDO">0.0%</span></div>
-                    <div class="kpi-compare-row">Ach: <span id="kpiBiometrixOutletDO">0</span> / Total: <span id="kpiTotalOutletBioDO">0</span> Outlet</div>
-                    <div class="progress-bar-bg"><div class="progress-bar-fill fill-yellow" id="progressBiometrixDO"></div></div>
+                <div class="card card-red">
+                    <div class="icon"><i class="fa-solid fa-bullseye"></i></div>
+                    <div class="card-body">
+                        <div class="card-header-flex"><h3>OSA PERFORMANCE</h3><span class="status-badge" id="badgeOsaDO">-</span></div>
+                        <div class="kpi-main-val"><span id="kpiPctOsaDO">0.0%</span></div>
+                        <div class="kpi-compare-row">Target: <span id="kpiTargetOsaDO">0</span> | Ach: <span id="kpiAchOsaDO">0</span></div>
+                        <div class="kpi-row-info"><span class="gap-item">GAP: <span id="kpiGapOsaDO">0</span></span></div>
+                        <div class="progress-bar-bg"><div class="progress-bar-fill fill-red" id="gaugeOsaFill"></div></div>
+                    </div>
                 </div>
-            </div>
-            <div class="card card-magenta">
-                <div class="icon"><i class="fa-solid fa-tags"></i></div>
-                <div class="card-body">
-                    <div class="card-header-flex"><h3>TAGGING 3PCS</h3><span class="status-badge" id="badgeTaggingDO">-</span></div>
-                    <div class="kpi-main-val"><span id="kpiPctTaggingDO">0.0%</span></div>
-                    <div class="kpi-compare-row">Ach: <span id="kpiTagging3pcsDO">0</span> / Total: <span id="kpiTotalOutletTagDO">0</span> Outlet</div>
-                    <div class="progress-bar-bg"><div class="progress-bar-fill fill-magenta" id="progressTaggingDO"></div></div>
+                <div class="card card-yellow">
+                    <div class="icon"><i class="fa-solid fa-fingerprint"></i></div>
+                    <div class="card-body">
+                        <div class="card-header-flex"><h3>BIOMETRIX GA OUTLET</h3><span class="status-badge" id="badgeBiometrixDO">-</span></div>
+                        <div class="kpi-main-val"><span id="kpiPctBiometrixDO">0.0%</span></div>
+                        <div class="kpi-compare-row">Ach: <span id="kpiBiometrixOutletDO">0</span> / Total: <span id="kpiTotalOutletBioDO">0</span> Outlet</div>
+                        <div class="progress-bar-bg"><div class="progress-bar-fill fill-yellow" id="progressBiometrixDO"></div></div>
+                    </div>
                 </div>
-            </div>
-            <div class="card card-purple" style="border-left: 5px solid #8b5cf6;">
-                <div class="icon" style="background: #ede9fe; color: #8b5cf6;"><i class="fa-solid fa-chart-pie"></i></div>
-                <div class="card-body">
-                    <div class="card-header-flex"><h3>RGUGA BIOMETRIX MTD</h3><span class="status-badge" id="badgeRgugaBioDO">-</span></div>
-                    <div class="kpi-main-val"><span id="kpiPctRgugaBioDO">0.0%</span></div>
-                    <div class="kpi-compare-row">Target: <span id="kpiTargetRgugaBioDO">0</span> | Ach: <span id="kpiAchRgugaBioDO">0</span></div>
-                    <div class="kpi-row-info"><span class="gap-item" style="color:#8b5cf6;">GAP: <span id="kpiGapRgugaBioDO">0</span> pcs</span></div>
-                    <div class="progress-bar-bg"><div class="progress-bar-fill" style="background:linear-gradient(90deg, #c4b5fd, #8b5cf6);" id="progressRgugaBioDO"></div></div>
+                <div class="card card-magenta">
+                    <div class="icon"><i class="fa-solid fa-tags"></i></div>
+                    <div class="card-body">
+                        <div class="card-header-flex"><h3>TAGGING 3PCS</h3><span class="status-badge" id="badgeTaggingDO">-</span></div>
+                        <div class="kpi-main-val"><span id="kpiPctTaggingDO">0.0%</span></div>
+                        <div class="kpi-compare-row">Ach: <span id="kpiTagging3pcsDO">0</span> / Total: <span id="kpiTotalOutletTagDO">0</span> Outlet</div>
+                        <div class="progress-bar-bg"><div class="progress-bar-fill fill-magenta" id="progressTaggingDO"></div></div>
+                    </div>
+                </div>
+                <div class="card card-purple" style="border-left: 5px solid #8b5cf6;">
+                    <div class="icon" style="background: #ede9fe; color: #8b5cf6;"><i class="fa-solid fa-chart-pie"></i></div>
+                    <div class="card-body">
+                        <div class="card-header-flex"><h3>RGUGA BIOMETRIX MTD</h3><span class="status-badge" id="badgeRgugaBioDO">-</span></div>
+                        <div class="kpi-main-val"><span id="kpiPctRgugaBioDO">0.0%</span></div>
+                        <div class="kpi-compare-row">Target: <span id="kpiTargetRgugaBioDO">0</span> | Ach: <span id="kpiAchRgugaBioDO">0</span></div>
+                        <div class="kpi-row-info"><span class="gap-item" style="color:#8b5cf6;">GAP: <span id="kpiGapRgugaBioDO">0</span> pcs</span></div>
+                        <div class="progress-bar-bg"><div class="progress-bar-fill" style="background:linear-gradient(90deg, #c4b5fd, #8b5cf6);" id="progressRgugaBioDO"></div></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -616,89 +634,98 @@
     <!-- ================= TAB 6: PARTNER PERFORMANCE ================= -->
     <div id="partner-performance" class="report-content" style="display: none;">
         
-        <div class="pp-dashboard-grid">
-            <div class="card card-red pp-card-interactive">
-                <div class="card-body">
-                    <h3>TOTAL PARTNERS</h3>
-                    <div class="kpi-main-val" id="kpiTotalPartnersPP">0</div>
-                    <div class="pp-card-sub" id="ppPartnerSubText">Distribusi Partner Aktif</div>
-                </div>
-                <div class="pp-mini-chart-container"><canvas id="chartPartnerPP"></canvas></div>
+        <div id="snapshotPpDashboard" style="margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h2 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0;"><i class="fa-solid fa-chart-line color-red"></i> PARTNER PERFORMANCE DASHBOARD CARDS</h2>
+                <button class="btn-snapshot-section" onclick="takeSectionSnapshot('snapshotPpDashboard')"><i class="fa-solid fa-camera"></i> Snapshot Dashboard Cards</button>
             </div>
-
-            <div class="card card-yellow pp-card-interactive">
-                <div class="card-body">
-                    <h3>TOTAL PREPAID REV (JAN - JUN)</h3>
-                    <div class="kpi-main-val" id="kpiPrepaidRevPP">Rp 0</div>
-                    <div class="kpi-sub-avg" id="avgPrepaidRevPP">Rata-rata: Rp 0</div>
-                    <div class="kpi-growth-row">Growth (Mei vs Juni): <span id="ppRevGrowthBadge" class="growth-badge">0%</span></div>
+            <div class="pp-dashboard-grid">
+                <div class="card card-red pp-card-interactive">
+                    <div class="card-body">
+                        <h3>TOTAL PARTNERS</h3>
+                        <div class="kpi-main-val" id="kpiTotalPartnersPP">0</div>
+                        <div class="pp-card-sub" id="ppPartnerSubText">Distribusi Partner Aktif</div>
+                    </div>
+                    <div class="pp-mini-chart-container"><canvas id="chartPartnerPP"></canvas></div>
                 </div>
-                <div class="pp-mini-chart-container"><canvas id="chartPrepaidRevPP"></canvas></div>
-            </div>
 
-            <div class="card card-cyan pp-card-interactive">
-                <div class="card-body">
-                    <h3>TOTAL PRIMARY (JAN - JUN)</h3>
-                    <div class="kpi-main-val" id="kpiPrimaryPP">0</div>
-                    <div class="kpi-sub-avg" id="avgPrimaryPP">Rata-rata: 0</div>
-                    <div class="kpi-growth-row">Growth (Mei vs Juni): <span id="ppPrimaryGrowthBadge" class="growth-badge">0%</span></div>
+                <div class="card card-yellow pp-card-interactive">
+                    <div class="card-body">
+                        <h3>TOTAL PREPAID REV (JAN - JUN)</h3>
+                        <div class="kpi-main-val" id="kpiPrepaidRevPP">Rp 0</div>
+                        <div class="kpi-sub-avg" id="avgPrepaidRevPP">Rata-rata: Rp 0</div>
+                        <div class="kpi-growth-row">Growth (Mei vs Juni): <span id="ppRevGrowthBadge" class="growth-badge">0%</span></div>
+                    </div>
+                    <div class="pp-mini-chart-container"><canvas id="chartPrepaidRevPP"></canvas></div>
                 </div>
-                <div class="pp-mini-chart-container"><canvas id="chartPrimaryPP"></canvas></div>
-            </div>
 
-            <div class="card card-magenta pp-card-interactive">
-                <div class="card-body">
-                    <h3>TOTAL SECONDARY (JAN - JUN)</h3>
-                    <div class="kpi-main-val" id="kpiSecondaryPP">0</div>
-                    <div class="kpi-sub-avg" id="avgSecondaryPP">Rata-rata: 0</div>
-                    <div class="kpi-growth-row">Growth (Mei vs Juni): <span id="ppSecondaryGrowthBadge" class="growth-badge">0%</span></div>
+                <div class="card card-cyan pp-card-interactive">
+                    <div class="card-body">
+                        <h3>TOTAL PRIMARY (JAN - JUN)</h3>
+                        <div class="kpi-main-val" id="kpiPrimaryPP">0</div>
+                        <div class="kpi-sub-avg" id="avgPrimaryPP">Rata-rata: 0</div>
+                        <div class="kpi-growth-row">Growth (Mei vs Juni): <span id="ppPrimaryGrowthBadge" class="growth-badge">0%</span></div>
+                    </div>
+                    <div class="pp-mini-chart-container"><canvas id="chartPrimaryPP"></canvas></div>
                 </div>
-                <div class="pp-mini-chart-container"><canvas id="chartSecondaryPP"></canvas></div>
-            </div>
 
-            <div class="card card-red pp-card-interactive">
-                <div class="card-body">
-                    <h3>TOTAL TERTIARY B# (JAN - JUN)</h3>
-                    <div class="kpi-main-val" id="kpiTertiaryPP">0</div>
-                    <div class="kpi-sub-avg" id="avgTertiaryPP">Rata-rata: 0</div>
-                    <div class="kpi-growth-row">Growth (Mei vs Juni): <span id="ppTertiaryGrowthBadge" class="growth-badge">0%</span></div>
+                <div class="card card-magenta pp-card-interactive">
+                    <div class="card-body">
+                        <h3>TOTAL SECONDARY (JAN - JUN)</h3>
+                        <div class="kpi-main-val" id="kpiSecondaryPP">0</div>
+                        <div class="kpi-sub-avg" id="avgSecondaryPP">Rata-rata: 0</div>
+                        <div class="kpi-growth-row">Growth (Mei vs Juni): <span id="ppSecondaryGrowthBadge" class="growth-badge">0%</span></div>
+                    </div>
+                    <div class="pp-mini-chart-container"><canvas id="chartSecondaryPP"></canvas></div>
                 </div>
-                <div class="pp-mini-chart-container"><canvas id="chartTertiaryPP"></canvas></div>
-            </div>
 
-            <div class="card card-yellow pp-card-interactive">
-                <div class="card-body">
-                    <h3>TOTAL TRADE SUPPLY (JAN - JUN)</h3>
-                    <div class="kpi-main-val" id="kpiTradePP">Rp 0</div>
-                    <div class="kpi-sub-avg" id="avgTradePP">Rata-rata: Rp 0</div>
-                    <div class="kpi-growth-row">Growth (Mei vs Juni): <span id="ppTradeGrowthBadge" class="growth-badge">0%</span></div>
+                <div class="card card-red pp-card-interactive">
+                    <div class="card-body">
+                        <h3>TOTAL TERTIARY B# (JAN - JUN)</h3>
+                        <div class="kpi-main-val" id="kpiTertiaryPP">0</div>
+                        <div class="kpi-sub-avg" id="avgTertiaryPP">Rata-rata: 0</div>
+                        <div class="kpi-growth-row">Growth (Mei vs Juni): <span id="ppTertiaryGrowthBadge" class="growth-badge">0%</span></div>
+                    </div>
+                    <div class="pp-mini-chart-container"><canvas id="chartTertiaryPP"></canvas></div>
                 </div>
-                <div class="pp-mini-chart-container"><canvas id="chartTradePP"></canvas></div>
-            </div>
 
-            <div class="card card-cyan pp-card-interactive">
-                <div class="card-body">
-                    <h3>TOTAL RGU GA TRADE (JAN - JUN)</h3>
-                    <div class="kpi-main-val" id="kpiRguTradePP">0</div>
-                    <div class="kpi-sub-avg" id="avgRguTradePP">Rata-rata: 0</div>
-                    <div class="kpi-growth-row">Growth (Mei vs Juni): <span id="ppRguTradeGrowthBadge" class="growth-badge">0%</span></div>
+                <div class="card card-yellow pp-card-interactive">
+                    <div class="card-body">
+                        <h3>TOTAL TRADE SUPPLY (JAN - JUN)</h3>
+                        <div class="kpi-main-val" id="kpiTradePP">Rp 0</div>
+                        <div class="kpi-sub-avg" id="avgTradePP">Rata-rata: Rp 0</div>
+                        <div class="kpi-growth-row">Growth (Mei vs Juni): <span id="ppTradeGrowthBadge" class="growth-badge">0%</span></div>
+                    </div>
+                    <div class="pp-mini-chart-container"><canvas id="chartTradePP"></canvas></div>
                 </div>
-                <div class="pp-mini-chart-container"><canvas id="chartRguTradePP"></canvas></div>
-            </div>
 
-            <div class="card card-magenta pp-card-interactive">
-                <div class="card-body">
-                    <h3>TOTAL VLR SUBS (JAN - JUN)</h3>
-                    <div class="kpi-main-val" id="kpiVlrSubsPP">0</div>
-                    <div class="kpi-sub-avg" id="avgVlrSubsPP">Rata-rata: 0</div>
-                    <div class="kpi-growth-row">Growth (Mei vs Juni): <span id="ppVlrGrowthBadge" class="growth-badge">0%</span></div>
+                <div class="card card-cyan pp-card-interactive">
+                    <div class="card-body">
+                        <h3>TOTAL RGU GA TRADE (JAN - JUN)</h3>
+                        <div class="kpi-main-val" id="kpiRguTradePP">0</div>
+                        <div class="kpi-sub-avg" id="avgRguTradePP">Rata-rata: 0</div>
+                        <div class="kpi-growth-row">Growth (Mei vs Juni): <span id="ppRguTradeGrowthBadge" class="growth-badge">0%</span></div>
+                    </div>
+                    <div class="pp-mini-chart-container"><canvas id="chartRguTradePP"></canvas></div>
                 </div>
-                <div class="pp-mini-chart-container"><canvas id="chartVlrSubsPP"></canvas></div>
+
+                <div class="card card-magenta pp-card-interactive">
+                    <div class="card-body">
+                        <h3>TOTAL VLR SUBS (JAN - JUN)</h3>
+                        <div class="kpi-main-val" id="kpiVlrSubsPP">0</div>
+                        <div class="kpi-sub-avg" id="avgVlrSubsPP">Rata-rata: 0</div>
+                        <div class="kpi-growth-row">Growth (Mei vs Juni): <span id="ppVlrGrowthBadge" class="growth-badge">0%</span></div>
+                    </div>
+                    <div class="pp-mini-chart-container"><canvas id="chartVlrSubsPP"></canvas></div>
+                </div>
             </div>
         </div>
 
-        <div class="exec-card-panel border-top-yellow" style="margin-bottom: 20px;">
-            <div class="exec-panel-header"><i class="fa-solid fa-chart-column color-yellow"></i> RANGKUMAN BULANAN (JANUARI - JUNI) KESELURUHAN</div>
+        <div class="exec-card-panel border-top-yellow" id="snapshotPpSummary" style="margin-bottom: 20px;">
+            <div class="exec-panel-header-flex">
+                <div class="exec-panel-header"><i class="fa-solid fa-chart-column color-yellow"></i> RANGKUMAN BULANAN (JANUARI - JUNI) KESELURUHAN</div>
+                <button class="btn-snapshot-section" onclick="takeSectionSnapshot('snapshotPpSummary')"><i class="fa-solid fa-camera"></i> Snapshot Rangkuman Bulanan</button>
+            </div>
             <div class="mini-table-wrapper">
                 <table class="mini-exec-table" id="tablePpSummaryMonthly">
                     <thead>
