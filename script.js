@@ -156,12 +156,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-// ================= ULTRA HD SNAPSHOT ENGINE (FIX RESOLUTION & NO OFFSET) =================
+// ================= ULTRA HD SNAPSHOT ENGINE =================
 function takeScreenshot() {
     const container = document.querySelector(".container");
     if (!container) return;
-    
-    // Hide all snapshot buttons temporarily
+
     const snapBtns = document.querySelectorAll(".btn-snapshot-section, .btn-snapshot-table");
     snapBtns.forEach(btn => btn.style.visibility = "hidden");
 
@@ -188,7 +187,6 @@ function takeSectionSnapshot(sectionId) {
     const section = document.getElementById(sectionId);
     if (!section) return;
 
-    // Sembunyikan tombol-tombol snapshot di dalam section agar tidak terfoto/geser
     const snapBtns = section.querySelectorAll(".btn-snapshot-section, .btn-snapshot-table");
     snapBtns.forEach(btn => btn.style.visibility = "hidden");
 
@@ -212,22 +210,42 @@ function takeSectionSnapshot(sectionId) {
     });
 }
 
+// FIX: PERBAIKAN SNAPSHOT TABEL OUTLET FULL WIDTH (TIDAK TERPOTONG)
 function takeTableSnapshotDO() {
     const tableContainer = document.querySelector("#detail-outlet .table-container");
-    if (!tableContainer) return;
+    const table = document.getElementById("dataTableDO");
+    if (!tableContainer || !table) return;
 
-    html2canvas(tableContainer, {
+    const origContainerStyle = tableContainer.getAttribute("style") || "";
+    const origTableStyle = table.getAttribute("style") || "";
+
+    // Buka penuh lebar & tinggi tabel secara temporer
+    tableContainer.style.overflow = "visible";
+    tableContainer.style.maxHeight = "none";
+    tableContainer.style.width = "auto";
+    table.style.width = table.scrollWidth + "px";
+
+    html2canvas(table, {
         scale: 3,
         useCORS: true,
         allowTaint: true,
         backgroundColor: "#ffffff",
-        logging: false
+        logging: false,
+        windowWidth: table.scrollWidth + 100
     }).then(canvas => {
+        // Kembalikan tampilan tabel ke ukuran normal
+        tableContainer.setAttribute("style", origContainerStyle);
+        table.setAttribute("style", origTableStyle);
+
         let link = document.createElement('a');
-        link.download = `Snapshot-Detail-Outlet-Table-HD-${new Date().toISOString().slice(0,10)}.png`;
+        link.download = `Snapshot-Detail-Outlet-Table-Full-HD-${new Date().toISOString().slice(0,10)}.png`;
         link.href = canvas.toDataURL("image/png", 1.0);
         link.click();
-    }).catch(err => console.error("Table snapshot error:", err));
+    }).catch(err => {
+        tableContainer.setAttribute("style", origContainerStyle);
+        table.setAttribute("style", origTableStyle);
+        console.error("Table snapshot error:", err);
+    });
 }
 
 function getRemainingWorkingDaysInfo() {
