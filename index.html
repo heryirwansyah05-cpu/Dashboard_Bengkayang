@@ -217,7 +217,7 @@
                 </div>
             </div>
 
-            <!-- SECTION 4: KPI RSE PERFORMANCE SCORECARD (HIDDEN FOR DSE USERS) -->
+            <!-- SECTION 4: KPI RSE PERFORMANCE SCORECARD -->
             <div class="exec-card-panel border-top-red" id="snapshotSectionRse">
                 <div class="exec-panel-header-flex">
                     <div class="exec-panel-header"><i class="fa-solid fa-square-poll-vertical color-red"></i> KPI RSE PERFORMANCE SCORECARD (AUG 2026)</div>
@@ -308,7 +308,9 @@
                 <h2 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0;"><i class="fa-solid fa-chart-pie color-red"></i> PST PERFORMANCE DASHBOARD</h2>
                 <button class="btn-snapshot-section" onclick="takeSectionSnapshot('snapshotPstDashboard')"><i class="fa-solid fa-camera"></i> Snapshot PST Dashboard</button>
             </div>
-            <div class="kpi-grid" style="grid-template-columns: repeat(6, minmax(0, 1fr));">
+            
+            <!-- UPDATE: 7 Kolom untuk menambahkan RGUGA TRADE -->
+            <div class="kpi-grid" style="grid-template-columns: repeat(7, minmax(0, 1fr));">
                 <div class="card card-red">
                     <div class="icon"><i class="fa-solid fa-chart-line"></i></div>
                     <div class="card-body">
@@ -363,9 +365,19 @@
                         <div class="kpi-growth-row">Growth: <span id="kpiVlrGrowthPST" class="growth-badge">0%</span></div>
                     </div>
                 </div>
+                <!-- KARTU BARU: TOTAL RGUGA TRADE -->
+                <div class="card card-orange">
+                    <div class="icon"><i class="fa-solid fa-tags"></i></div>
+                    <div class="card-body">
+                        <h3>TOTAL RGUGA TRADE</h3>
+                        <div class="kpi-main-val" id="kpiRguTradePST" style="font-size:14px;">0</div>
+                        <div class="kpi-compare-row">LMTD: <span id="kpiRguTradeLmtdPST">0</span></div>
+                        <div class="kpi-growth-row">Growth: <span id="kpiRguTradeGrowthPST" class="growth-badge">0%</span></div>
+                    </div>
+                </div>
             </div>
 
-            <!-- 1 GRAFIK LINE UTAMA PERFORMANCE TREND (MTD VS LMTD) WITH METRIC SWITCHER -->
+            <!-- GRAFIK LINE UTAMA PERFORMANCE TREND (MTD VS LMTD) -->
             <div style="background: #ffffff; padding: 20px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); margin-bottom: 20px;">
                 <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px;">
                     <div>
@@ -374,7 +386,7 @@
                         </div>
                         <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Pilih metric di sebelah kanan untuk melihat grafik tren perbandingan MTD vs LMTD</div>
                     </div>
-                    <!-- METRIC SWITCHER BUTTONS -->
+                    <!-- METRIC SWITCHER BUTTONS (Added RGUGA Trade) -->
                     <div style="display: flex; flex-wrap: wrap; gap: 6px; background: #f1f5f9; padding: 4px; border-radius: 10px;" id="pstMetricButtonsGroup">
                         <button onclick="switchPstMetric('revenue')" id="btnPstRevenue" class="pst-metric-btn active" style="padding: 6px 12px; border-radius: 8px; border: none; font-size: 11px; font-weight: 800; cursor: pointer; background: #ffffff; color: #0f172a; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">Revenue</button>
                         <button onclick="switchPstMetric('primary')" id="btnPstPrimary" class="pst-metric-btn" style="padding: 6px 12px; border-radius: 8px; border: none; font-size: 11px; font-weight: 800; cursor: pointer; background: transparent; color: #64748b;">Primary</button>
@@ -382,6 +394,7 @@
                         <button onclick="switchPstMetric('tertiary')" id="btnPstTertiary" class="pst-metric-btn" style="padding: 6px 12px; border-radius: 8px; border: none; font-size: 11px; font-weight: 800; cursor: pointer; background: transparent; color: #64748b;">Tertiary B#</button>
                         <button onclick="switchPstMetric('trade')" id="btnPstTrade" class="pst-metric-btn" style="padding: 6px 12px; border-radius: 8px; border: none; font-size: 11px; font-weight: 800; cursor: pointer; background: transparent; color: #64748b;">Trade Supply</button>
                         <button onclick="switchPstMetric('vlr')" id="btnPstVlr" class="pst-metric-btn" style="padding: 6px 12px; border-radius: 8px; border: none; font-size: 11px; font-weight: 800; cursor: pointer; background: transparent; color: #64748b;">VLR Subs</button>
+                        <button onclick="switchPstMetric('rguga')" id="btnPstRguga" class="pst-metric-btn" style="padding: 6px 12px; border-radius: 8px; border: none; font-size: 11px; font-weight: 800; cursor: pointer; background: transparent; color: #64748b;">RGUGA Trade</button>
                     </div>
                 </div>
                 <div style="height: 280px; position: relative;">
@@ -395,6 +408,7 @@
             <select id="kecamatanFilter"><option value="ALL">Semua Kecamatan</option></select>
             <input type="text" id="searchInput" placeholder="🔍 Cari Kecamatan / Site / Partner...">
             <button class="reset-btn" onclick="resetFilters('ms-bengkayang')"><i class="fa-solid fa-rotate-left"></i> Reset Filter</button>
+            <button class="btn-snapshot-table" onclick="takeTableSnapshotPST()"><i class="fa-solid fa-camera"></i> Snapshot Tabel PST</button>
         </div>
         <div class="table-container"><table id="dataTable"></table></div>
     </div>

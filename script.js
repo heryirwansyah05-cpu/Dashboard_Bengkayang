@@ -210,7 +210,7 @@ function takeSectionSnapshot(sectionId) {
     });
 }
 
-// FIX: PERBAIKAN SNAPSHOT TABEL OUTLET FULL WIDTH (TIDAK TERPOTONG)
+// SNAPSHOT TABEL OUTLET FULL WIDTH
 function takeTableSnapshotDO() {
     const tableContainer = document.querySelector("#detail-outlet .table-container");
     const table = document.getElementById("dataTableDO");
@@ -219,7 +219,6 @@ function takeTableSnapshotDO() {
     const origContainerStyle = tableContainer.getAttribute("style") || "";
     const origTableStyle = table.getAttribute("style") || "";
 
-    // Buka penuh lebar & tinggi tabel secara temporer
     tableContainer.style.overflow = "visible";
     tableContainer.style.maxHeight = "none";
     tableContainer.style.width = "auto";
@@ -233,7 +232,6 @@ function takeTableSnapshotDO() {
         logging: false,
         windowWidth: table.scrollWidth + 100
     }).then(canvas => {
-        // Kembalikan tampilan tabel ke ukuran normal
         tableContainer.setAttribute("style", origContainerStyle);
         table.setAttribute("style", origTableStyle);
 
@@ -245,6 +243,42 @@ function takeTableSnapshotDO() {
         tableContainer.setAttribute("style", origContainerStyle);
         table.setAttribute("style", origTableStyle);
         console.error("Table snapshot error:", err);
+    });
+}
+
+// SNAPSHOT TABEL PST FULL WIDTH
+function takeTableSnapshotPST() {
+    const tableContainer = document.querySelector("#ms-bengkayang .table-container");
+    const table = document.getElementById("dataTable");
+    if (!tableContainer || !table) return;
+
+    const origContainerStyle = tableContainer.getAttribute("style") || "";
+    const origTableStyle = table.getAttribute("style") || "";
+
+    tableContainer.style.overflow = "visible";
+    tableContainer.style.maxHeight = "none";
+    tableContainer.style.width = "auto";
+    table.style.width = table.scrollWidth + "px";
+
+    html2canvas(table, {
+        scale: 3,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+        windowWidth: table.scrollWidth + 100
+    }).then(canvas => {
+        tableContainer.setAttribute("style", origContainerStyle);
+        table.setAttribute("style", origTableStyle);
+
+        let link = document.createElement('a');
+        link.download = `Snapshot-PST-Table-Full-HD-${new Date().toISOString().slice(0,10)}.png`;
+        link.href = canvas.toDataURL("image/png", 1.0);
+        link.click();
+    }).catch(err => {
+        tableContainer.setAttribute("style", origContainerStyle);
+        table.setAttribute("style", origTableStyle);
+        console.error("PST Table snapshot error:", err);
     });
 }
 
@@ -519,6 +553,7 @@ function updateGrowthBadge(elemId, currentVal, prevVal) {
     else elem.className = "growth-badge growth-negative";
 }
 
+// FIX: PENGHAPUSAN TEKS "Rp " PADA COUNTER CARD KEBANYAKAN DAN MENCEGAH OVERLAY
 function updateDashboardMS() {
   const currentUser = localStorage.getItem("logged_in_user");
   const userInfo = ALLOWED_USERS[currentUser];
@@ -542,6 +577,8 @@ function updateDashboardMS() {
   let idxTradeLmtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("TRADE SUPPLY LMTD"));
   let idxVlrMtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("VLR SUBS MTD"));
   let idxVlrLmtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("VLR SUBS LMTD"));
+  let idxRguMtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("RGUGA TRADE MTD"));
+  let idxRguLmtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("RGUGA TRADE LMTD"));
 
   const filteredRows = globalDataMS.filter((r) => {
     const kecName = String(r[idxKec] || "").trim();
@@ -557,6 +594,7 @@ function updateDashboardMS() {
   let totalTertiaryMtd = 0, totalTertiaryLmtd = 0;
   let totalTradeMtd = 0, totalTradeLmtd = 0;
   let totalVlrMtd = 0, totalVlrLmtd = 0;
+  let totalRguMtd = 0, totalRguLmtd = 0;
 
   filteredRows.forEach((r) => {
     if (idxRevMtd !== -1) totalRevMtd += parseNum(r[idxRevMtd]);
@@ -571,14 +609,18 @@ function updateDashboardMS() {
     if (idxTradeLmtd !== -1) totalTradeLmtd += parseNum(r[idxTradeLmtd]);
     if (idxVlrMtd !== -1) totalVlrMtd += parseNum(r[idxVlrMtd]);
     if (idxVlrLmtd !== -1) totalVlrLmtd += parseNum(r[idxVlrLmtd]);
+    if (idxRguMtd !== -1) totalRguMtd += parseNum(r[idxRguMtd]);
+    if (idxRguLmtd !== -1) totalRguLmtd += parseNum(r[idxRguLmtd]);
   });
 
-  animateCounter("kpiRevenuePST", totalRevMtd, true);
+  // Hapus parameter isCurrency=true agar teks "Rp " tidak menutupi box
+  animateCounter("kpiRevenuePST", totalRevMtd, false);
   animateCounter("kpiPrimaryPST", totalPrimaryMtd);
   animateCounter("kpiSecondaryPST", totalSecondaryMtd);
   animateCounter("kpiTertiaryPST", totalTertiaryMtd);
-  animateCounter("kpiTradeSupplyPST", totalTradeMtd, true);
+  animateCounter("kpiTradeSupplyPST", totalTradeMtd, false);
   animateCounter("kpiVlrPST", totalVlrMtd);
+  animateCounter("kpiRguTradePST", totalRguMtd);
 
   document.getElementById("kpiRevLmtdPST").innerText = Math.round(totalRevLmtd).toLocaleString("id-ID");
   document.getElementById("kpiPrimaryLmtdPST").innerText = Math.round(totalPrimaryLmtd).toLocaleString("id-ID");
@@ -586,6 +628,7 @@ function updateDashboardMS() {
   document.getElementById("kpiTertiaryLmtdPST").innerText = Math.round(totalTertiaryLmtd).toLocaleString("id-ID");
   document.getElementById("kpiTradeLmtdPST").innerText = Math.round(totalTradeLmtd).toLocaleString("id-ID");
   document.getElementById("kpiVlrLmtdPST").innerText = Math.round(totalVlrLmtd).toLocaleString("id-ID");
+  document.getElementById("kpiRguTradeLmtdPST").innerText = Math.round(totalRguLmtd).toLocaleString("id-ID");
 
   updateGrowthBadge("kpiRevGrowthPST", totalRevMtd, totalRevLmtd);
   updateGrowthBadge("kpiPrimaryGrowthPST", totalPrimaryMtd, totalPrimaryLmtd);
@@ -593,6 +636,7 @@ function updateDashboardMS() {
   updateGrowthBadge("kpiTertiaryGrowthPST", totalTertiaryMtd, totalTertiaryLmtd);
   updateGrowthBadge("kpiTradeGrowthPST", totalTradeMtd, totalTradeLmtd);
   updateGrowthBadge("kpiVlrGrowthPST", totalVlrMtd, totalVlrLmtd);
+  updateGrowthBadge("kpiRguTradeGrowthPST", totalRguMtd, totalRguLmtd);
 
   document.getElementById("stickyRev").innerText = "Rp " + Math.round(totalRevMtd).toLocaleString("id-ID");
   renderPstMainLineChart(filteredRows);
@@ -1032,6 +1076,7 @@ function updateDashboardDaily() {
   renderDailySpSection(filteredSpRows, hkInfo.remainingDays);
 }
 
+// FIX: PERBAIKAN FORMULA PEMBAGIAN PRESISI TARGET DAILY = GAP MONTHLY / SISA HK
 function renderDailyOsaSection(rows, remainingDays) {
   const tbody = document.getElementById("execDailyOsaTableBody");
   if (!tbody) return;
@@ -1045,18 +1090,17 @@ function renderDailyOsaSection(rows, remainingDays) {
     let targetMonthly = parseNum(r[2]);
     let ach = parseNum(r[3]);
     let pctVal = targetMonthly > 0 ? (ach / targetMonthly) * 100 : 0;
+    
     let remaining = Math.abs(parseNum(r[5]));
-    let dailyTarget = Math.abs(parseNum(r[6]));
-    if (dailyTarget === 0 && remaining > 0 && remainingDays > 0) {
-        dailyTarget = remaining / remainingDays;
-    }
+    let dailyTarget = remainingDays > 0 ? (remaining / remainingDays) : remaining;
+    
     totTarget += targetMonthly;
 
     tableHtml += `
       <tr style="border-bottom: 1px solid #cbd5e1;">
         <td style="border-right: 1px solid #cbd5e1; padding: 10px;"><b>${dse}</b></td>
         <td style="border-right: 1px solid #cbd5e1; padding: 10px;"><b>Rp ${Math.round(remaining).toLocaleString('id-ID')}</b></td>
-        <td style="border-right: 1px solid #cbd5e1; padding: 10px;"><b>Rp ${Math.round(dailyTarget).toLocaleString('id-ID')}</b></td>
+        <td style="border-right: 1px solid #cbd5e1; padding: 10px; background-color: #fef2f2; color: #b91c1c;"><b>Rp ${Math.round(dailyTarget).toLocaleString('id-ID')}</b></td>
         <td style="border-right: 1px solid #cbd5e1; padding: 10px;"><b>Rp ${Math.round(ach).toLocaleString('id-ID')}</b></td>
         <td style="padding: 10px;"><span style="color:${pctVal >= 100 ? '#15803d' : '#ef4444'}; font-weight:800;">${pctVal.toFixed(1)}%</span></td>
       </tr>
@@ -1089,17 +1133,15 @@ function renderDailySpSection(rows, remainingDays) {
     let pctVal = targetMonthly > 0 ? (ach / targetMonthly) * 100 : 0;
     
     let remaining = Math.abs(parseNum(r[5]));
-    let dailyTarget = Math.abs(parseNum(r[6]));
-    if (dailyTarget === 0 && remaining > 0 && remainingDays > 0) {
-        dailyTarget = remaining / remainingDays;
-    }
+    let dailyTarget = remainingDays > 0 ? (remaining / remainingDays) : remaining;
+
     totTarget += targetMonthly;
 
     tableHtml += `
       <tr style="border-bottom: 1px solid #cbd5e1;">
         <td style="border-right: 1px solid #cbd5e1; padding: 10px;"><b>${dse}</b></td>
         <td style="border-right: 1px solid #cbd5e1; padding: 10px;"><b>${Math.round(remaining).toLocaleString('id-ID')} pcs</b></td>
-        <td style="border-right: 1px solid #cbd5e1; padding: 10px;"><b>${Math.round(dailyTarget).toLocaleString('id-ID')} pcs</b></td>
+        <td style="border-right: 1px solid #cbd5e1; padding: 10px; background-color: #fef2f2; color: #b91c1c;"><b>${Math.round(dailyTarget).toLocaleString('id-ID')} pcs</b></td>
         <td style="border-right: 1px solid #cbd5e1; padding: 10px;"><b>${Math.round(ach).toLocaleString('id-ID')} pcs</b></td>
         <td style="padding: 10px;"><span style="color:${pctVal >= 100 ? '#15803d' : '#ef4444'}; font-weight:800;">${pctVal.toFixed(1)}%</span></td>
       </tr>
@@ -1629,7 +1671,8 @@ function switchPstMetric(metricKey) {
         'secondary': 'btnPstSecondary',
         'tertiary': 'btnPstTertiary',
         'trade': 'btnPstTrade',
-        'vlr': 'btnPstVlr'
+        'vlr': 'btnPstVlr',
+        'rguga': 'btnPstRguga'
     };
     
     Object.keys(btnMap).forEach(key => {
@@ -1679,6 +1722,10 @@ function renderPstMainLineChart(rows) {
     } else if (currentPstMetric === 'vlr') {
         idxMtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("VLR SUBS MTD"));
         idxLmtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("VLR SUBS LMTD"));
+        isCurrency = false;
+    } else if (currentPstMetric === 'rguga') {
+        idxMtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("RGUGA TRADE MTD"));
+        idxLmtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("RGUGA TRADE LMTD"));
         isCurrency = false;
     }
 
