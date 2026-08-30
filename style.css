@@ -24,7 +24,6 @@ body.dark-mode {
     margin: 0 auto;
 }
 
-/* HEADER UTAMA */
 .header {
     background: #ffffff;
     padding: 16px 20px;
@@ -151,7 +150,6 @@ body.dark-mode .btn-export {
     cursor: pointer;
 }
 
-/* TOP NAV BAR */
 .top-nav-bar {
     display: flex;
     justify-content: space-between;
@@ -201,7 +199,6 @@ body.dark-mode .top-nav-bar {
     font-weight: 700;
 }
 
-/* FIX: STYLING KPI CARD RINGKAS & PAS DALAM 1 BOX TANPA TERPOTONG */
 .kpi-grid {
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -282,7 +279,6 @@ body.dark-mode .kpi-main-val {
     color: #b91c1c;
 }
 
-/* WARNA BORDER CARD */
 .card-red { border-top: 4px solid #e11d48; }
 .card-yellow { border-top: 4px solid #f59e0b; }
 .card-magenta { border-top: 4px solid #d946ef; }
@@ -290,7 +286,18 @@ body.dark-mode .kpi-main-val {
 .card-purple { border-top: 4px solid #8b5cf6; }
 .card-orange { border-top: 4px solid #f97316; }
 
-/* EXECUTIVE SUMMARY PANEL */
+/* PARTNER PERFORMANCE 2-COLUMN GRID */
+.pp-dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+.pp-mini-chart-container {
+    height: 120px;
+    position: relative;
+    margin-top: 8px;
+}
+
 .exec-summary-wrapper {
     background: #ffffff;
     padding: 20px;
@@ -372,7 +379,6 @@ body.dark-mode .exec-summary-wrapper {
 .box-purple { border-left: 4px solid #8b5cf6; }
 .box-orange { border-left: 4px solid #f97316; }
 
-/* PANELS & TABLES */
 .exec-card-panel {
     background: #f8fafc;
     padding: 16px;
@@ -436,7 +442,6 @@ body.dark-mode .exec-card-panel {
 .m-val { font-size: 16px; font-weight: 900; margin-top: 4px; display: block; }
 .m-sub { font-size: 10px; color: #e11d48; font-weight: 700; margin-top: 2px; display: block; }
 
-/* TABEL UTAMA & TOOLBAR */
 .toolbar {
     display: flex;
     gap: 8px;
@@ -484,7 +489,6 @@ table {
     font-size: 12px;
 }
 
-/* MINI TABLES */
 .mini-table-wrapper {
     overflow-x: auto;
 }
@@ -510,7 +514,6 @@ table {
     border-bottom: 1px solid #e2e8f0;
 }
 
-/* LEADERBOARD GRID */
 .leaderboard-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -531,7 +534,6 @@ table {
     margin-bottom: 8px;
 }
 
-/* FOOTER */
 .dashboard-footer {
     display: flex;
     justify-content: space-between;
@@ -571,7 +573,6 @@ table {
     cursor: pointer;
 }
 
-/* LOADER */
 #loading {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;

@@ -309,7 +309,6 @@
                 <button class="btn-snapshot-section" onclick="takeSectionSnapshot('snapshotPstDashboard')"><i class="fa-solid fa-camera"></i> Snapshot PST Dashboard</button>
             </div>
             
-            <!-- UPDATE: 7 Kolom untuk menambahkan RGUGA TRADE -->
             <div class="kpi-grid" style="grid-template-columns: repeat(7, minmax(0, 1fr));">
                 <div class="card card-red">
                     <div class="icon"><i class="fa-solid fa-chart-line"></i></div>
@@ -365,7 +364,6 @@
                         <div class="kpi-growth-row">Growth: <span id="kpiVlrGrowthPST" class="growth-badge">0%</span></div>
                     </div>
                 </div>
-                <!-- KARTU BARU: TOTAL RGUGA TRADE -->
                 <div class="card card-orange">
                     <div class="icon"><i class="fa-solid fa-tags"></i></div>
                     <div class="card-body">
@@ -377,7 +375,6 @@
                 </div>
             </div>
 
-            <!-- GRAFIK LINE UTAMA PERFORMANCE TREND (MTD VS LMTD) -->
             <div style="background: #ffffff; padding: 20px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); margin-bottom: 20px;">
                 <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px;">
                     <div>
@@ -386,7 +383,6 @@
                         </div>
                         <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Pilih metric di sebelah kanan untuk melihat grafik tren perbandingan MTD vs LMTD</div>
                     </div>
-                    <!-- METRIC SWITCHER BUTTONS (Added RGUGA Trade) -->
                     <div style="display: flex; flex-wrap: wrap; gap: 6px; background: #f1f5f9; padding: 4px; border-radius: 10px;" id="pstMetricButtonsGroup">
                         <button onclick="switchPstMetric('revenue')" id="btnPstRevenue" class="pst-metric-btn active" style="padding: 6px 12px; border-radius: 8px; border: none; font-size: 11px; font-weight: 800; cursor: pointer; background: #ffffff; color: #0f172a; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">Revenue</button>
                         <button onclick="switchPstMetric('primary')" id="btnPstPrimary" class="pst-metric-btn" style="padding: 6px 12px; border-radius: 8px; border: none; font-size: 11px; font-weight: 800; cursor: pointer; background: transparent; color: #64748b;">Primary</button>
@@ -459,7 +455,6 @@
                 </div>
             </div>
 
-            <!-- TOP / BOTTOM 3 SITE LEADERBOARDS -->
             <div class="leaderboard-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 20px;">
                 <div class="leaderboard-card">
                     <div class="lb-header"><i class="fa-solid fa-chart-line"></i> Top/Bottom Growth Revenue (3 Site)</div>
@@ -651,84 +646,79 @@
         <div id="snapshotPpDashboard" style="margin-bottom: 20px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                 <h2 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0;"><i class="fa-solid fa-chart-line color-red"></i> PARTNER PERFORMANCE DASHBOARD CARDS</h2>
-                <button class="btn-snapshot-section" onclick="takeSectionSnapshot('snapshotPpDashboard')"><i class="fa-solid fa-camera"></i> Snapshot Dashboard Cards</button>
-            </div>
-            <div class="pp-dashboard-grid">
-                <div class="card card-red pp-card-interactive">
-                    <div class="card-body">
-                        <h3>TOTAL PARTNERS</h3>
-                        <div class="kpi-main-val" id="kpiTotalPartnersPP">0</div>
-                        <div class="pp-card-sub" id="ppPartnerSubText">Distribusi Partner Aktif</div>
-                    </div>
-                    <div class="pp-mini-chart-container"><canvas id="chartPartnerPP"></canvas></div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <select id="partnerFilterPP" style="padding: 6px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 11px; font-weight: 700; background: #ffffff;"><option value="ALL">Semua PT Partner</option></select>
+                    <button class="btn-snapshot-section" onclick="takeSectionSnapshot('snapshotPpDashboard')"><i class="fa-solid fa-camera"></i> Snapshot Dashboard Cards</button>
                 </div>
-
+            </div>
+            
+            <div class="pp-dashboard-grid">
                 <div class="card card-yellow pp-card-interactive">
                     <div class="card-body">
-                        <h3>TOTAL PREPAID REV (JAN - JUN)</h3>
+                        <h3>TOTAL PREPAID REV (JAN - JUL)</h3>
                         <div class="kpi-main-val" id="kpiPrepaidRevPP">Rp 0</div>
                         <div class="kpi-sub-avg" id="avgPrepaidRevPP">Rata-rata: Rp 0</div>
-                        <div class="kpi-growth-row">Growth (Mei vs Juni): <span id="ppRevGrowthBadge" class="growth-badge">0%</span></div>
+                        <div class="kpi-growth-row">Growth (Juni vs Juli): <span id="ppRevGrowthBadge" class="growth-badge">0%</span></div>
                     </div>
                     <div class="pp-mini-chart-container"><canvas id="chartPrepaidRevPP"></canvas></div>
                 </div>
 
                 <div class="card card-cyan pp-card-interactive">
                     <div class="card-body">
-                        <h3>TOTAL PRIMARY (JAN - JUN)</h3>
+                        <h3>TOTAL PRIMARY (JAN - JUL)</h3>
                         <div class="kpi-main-val" id="kpiPrimaryPP">0</div>
                         <div class="kpi-sub-avg" id="avgPrimaryPP">Rata-rata: 0</div>
-                        <div class="kpi-growth-row">Growth (Mei vs Juni): <span id="ppPrimaryGrowthBadge" class="growth-badge">0%</span></div>
+                        <div class="kpi-growth-row">Growth (Juni vs Juli): <span id="ppPrimaryGrowthBadge" class="growth-badge">0%</span></div>
                     </div>
                     <div class="pp-mini-chart-container"><canvas id="chartPrimaryPP"></canvas></div>
                 </div>
 
                 <div class="card card-magenta pp-card-interactive">
                     <div class="card-body">
-                        <h3>TOTAL SECONDARY (JAN - JUN)</h3>
+                        <h3>TOTAL SECONDARY (JAN - JUL)</h3>
                         <div class="kpi-main-val" id="kpiSecondaryPP">0</div>
                         <div class="kpi-sub-avg" id="avgSecondaryPP">Rata-rata: 0</div>
-                        <div class="kpi-growth-row">Growth (Mei vs Juni): <span id="ppSecondaryGrowthBadge" class="growth-badge">0%</span></div>
+                        <div class="kpi-growth-row">Growth (Juni vs Juli): <span id="ppSecondaryGrowthBadge" class="growth-badge">0%</span></div>
                     </div>
                     <div class="pp-mini-chart-container"><canvas id="chartSecondaryPP"></canvas></div>
                 </div>
 
                 <div class="card card-red pp-card-interactive">
                     <div class="card-body">
-                        <h3>TOTAL TERTIARY B# (JAN - JUN)</h3>
+                        <h3>TOTAL TERTIARY B# (JAN - JUL)</h3>
                         <div class="kpi-main-val" id="kpiTertiaryPP">0</div>
                         <div class="kpi-sub-avg" id="avgTertiaryPP">Rata-rata: 0</div>
-                        <div class="kpi-growth-row">Growth (Mei vs Juni): <span id="ppTertiaryGrowthBadge" class="growth-badge">0%</span></div>
+                        <div class="kpi-growth-row">Growth (Juni vs Juli): <span id="ppTertiaryGrowthBadge" class="growth-badge">0%</span></div>
                     </div>
                     <div class="pp-mini-chart-container"><canvas id="chartTertiaryPP"></canvas></div>
                 </div>
 
                 <div class="card card-yellow pp-card-interactive">
                     <div class="card-body">
-                        <h3>TOTAL TRADE SUPPLY (JAN - JUN)</h3>
+                        <h3>TOTAL TRADE SUPPLY (JAN - JUL)</h3>
                         <div class="kpi-main-val" id="kpiTradePP">Rp 0</div>
                         <div class="kpi-sub-avg" id="avgTradePP">Rata-rata: Rp 0</div>
-                        <div class="kpi-growth-row">Growth (Mei vs Juni): <span id="ppTradeGrowthBadge" class="growth-badge">0%</span></div>
+                        <div class="kpi-growth-row">Growth (Juni vs Juli): <span id="ppTradeGrowthBadge" class="growth-badge">0%</span></div>
                     </div>
                     <div class="pp-mini-chart-container"><canvas id="chartTradePP"></canvas></div>
                 </div>
 
                 <div class="card card-cyan pp-card-interactive">
                     <div class="card-body">
-                        <h3>TOTAL RGU GA TRADE (JAN - JUN)</h3>
+                        <h3>TOTAL RGU GA TRADE (JAN - JUL)</h3>
                         <div class="kpi-main-val" id="kpiRguTradePP">0</div>
                         <div class="kpi-sub-avg" id="avgRguTradePP">Rata-rata: 0</div>
-                        <div class="kpi-growth-row">Growth (Mei vs Juni): <span id="ppRguTradeGrowthBadge" class="growth-badge">0%</span></div>
+                        <div class="kpi-growth-row">Growth (Juni vs Juli): <span id="ppRguTradeGrowthBadge" class="growth-badge">0%</span></div>
                     </div>
                     <div class="pp-mini-chart-container"><canvas id="chartRguTradePP"></canvas></div>
                 </div>
 
                 <div class="card card-magenta pp-card-interactive">
                     <div class="card-body">
-                        <h3>TOTAL VLR SUBS (JAN - JUN)</h3>
+                        <h3>TOTAL VLR SUBS (JAN - JUL)</h3>
                         <div class="kpi-main-val" id="kpiVlrSubsPP">0</div>
                         <div class="kpi-sub-avg" id="avgVlrSubsPP">Rata-rata: 0</div>
-                        <div class="kpi-growth-row">Growth (Mei vs Juni): <span id="ppVlrGrowthBadge" class="growth-badge">0%</span></div>
+                        <div class="kpi-growth-row">Growth (Juni vs Juli): <span id="ppVlrGrowthBadge" class="growth-badge">0%</span></div>
                     </div>
                     <div class="pp-mini-chart-container"><canvas id="chartVlrSubsPP"></canvas></div>
                 </div>
@@ -737,7 +727,7 @@
 
         <div class="exec-card-panel border-top-yellow" id="snapshotPpSummary" style="margin-bottom: 20px;">
             <div class="exec-panel-header-flex">
-                <div class="exec-panel-header"><i class="fa-solid fa-chart-column color-yellow"></i> RANGKUMAN BULANAN (JANUARI - JUNI) KESELURUHAN</div>
+                <div class="exec-panel-header"><i class="fa-solid fa-chart-column color-yellow"></i> RANGKUMAN BULANAN (JANUARI - JULI) KESELURUHAN</div>
                 <button class="btn-snapshot-section" onclick="takeSectionSnapshot('snapshotPpSummary')"><i class="fa-solid fa-camera"></i> Snapshot Rangkuman Bulanan</button>
             </div>
             <div class="mini-table-wrapper">
@@ -760,7 +750,6 @@
         </div>
 
         <div class="toolbar">
-            <select id="partnerFilterPP"><option value="ALL">Semua PT Partner</option></select>
             <input type="text" id="searchInputPP" placeholder="🔍 Cari Data Partner...">
             <button class="reset-btn" onclick="resetFilters('partner-performance')"><i class="fa-solid fa-rotate-left"></i> Reset Filter</button>
         </div>

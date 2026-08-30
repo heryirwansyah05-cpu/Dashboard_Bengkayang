@@ -8,7 +8,6 @@ let globalHeaderDailyOSA = [], globalDataDailyOSA = [];
 let globalHeaderDailySP = [], globalDataDailySP = [];
 
 let globalHeaderPP = [], globalDataPP = [];
-let chartPartnerPPInstance = null;
 let chartPrepaidRevPPInstance = null;
 let chartPrimaryPPInstance = null;
 let chartSecondaryPPInstance = null;
@@ -210,7 +209,6 @@ function takeSectionSnapshot(sectionId) {
     });
 }
 
-// SNAPSHOT TABEL OUTLET FULL WIDTH
 function takeTableSnapshotDO() {
     const tableContainer = document.querySelector("#detail-outlet .table-container");
     const table = document.getElementById("dataTableDO");
@@ -246,7 +244,6 @@ function takeTableSnapshotDO() {
     });
 }
 
-// SNAPSHOT TABEL PST FULL WIDTH
 function takeTableSnapshotPST() {
     const tableContainer = document.querySelector("#ms-bengkayang .table-container");
     const table = document.getElementById("dataTable");
@@ -553,7 +550,6 @@ function updateGrowthBadge(elemId, currentVal, prevVal) {
     else elem.className = "growth-badge growth-negative";
 }
 
-// FIX: PENGHAPUSAN TEKS "Rp " PADA COUNTER CARD KEBANYAKAN DAN MENCEGAH OVERLAY
 function updateDashboardMS() {
   const currentUser = localStorage.getItem("logged_in_user");
   const userInfo = ALLOWED_USERS[currentUser];
@@ -613,7 +609,6 @@ function updateDashboardMS() {
     if (idxRguLmtd !== -1) totalRguLmtd += parseNum(r[idxRguLmtd]);
   });
 
-  // Hapus parameter isCurrency=true agar teks "Rp " tidak menutupi box
   animateCounter("kpiRevenuePST", totalRevMtd, false);
   animateCounter("kpiPrimaryPST", totalPrimaryMtd);
   animateCounter("kpiSecondaryPST", totalSecondaryMtd);
@@ -810,25 +805,22 @@ function updateDashboardPP() {
       return (selPT === "ALL" || ptName === selPT) && r.join(" ").toLowerCase().includes(search);
   });
 
-  let uniquePartners = [...new Set(filteredRows.map(r => String(r[idxPtName]).trim()))].filter(p => p.toUpperCase() !== "NAMA PARTNER" && p.toUpperCase() !== "PT NAME");
-  document.getElementById("kpiTotalPartnersPP").innerText = uniquePartners.length;
-
-  const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni"];
+  const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli"];
   const colsMap = {
-      rev: [2, 3, 4, 5, 6, 7],
-      primary: [8, 9, 10, 11, 12, 13],
-      secondary: [26, 27, 28, 29, 30, 31],
-      tertiary: [32, 33, 34, 35, 36, 37],
-      trade: [38, 39, 40, 41, 42, 43],
-      rguTrade: [20, 21, 22, 23, 24, 25],
-      vlr: [44, 45, 46, 47, 48, 49]
+      rev: [2, 3, 4, 5, 6, 7, 8],
+      primary: [9, 10, 11, 12, 13, 14, 15],
+      secondary: [30, 31, 32, 33, 34, 35, 36],
+      tertiary: [37, 38, 39, 40, 41, 42, 43],
+      trade: [44, 45, 46, 47, 48, 49, 50],
+      rguTrade: [23, 24, 25, 26, 27, 28, 29],
+      vlr: [51, 52, 53, 54, 55, 56, 57]
   };
 
-  let mRev = [0,0,0,0,0,0], mPrimary = [0,0,0,0,0,0], mSecondary = [0,0,0,0,0,0];
-  let mTertiary = [0,0,0,0,0,0], mTrade = [0,0,0,0,0,0], mRguTrade = [0,0,0,0,0,0], mVlr = [0,0,0,0,0,0];
+  let mRev = [0,0,0,0,0,0,0], mPrimary = [0,0,0,0,0,0,0], mSecondary = [0,0,0,0,0,0,0];
+  let mTertiary = [0,0,0,0,0,0,0], mTrade = [0,0,0,0,0,0,0], mRguTrade = [0,0,0,0,0,0,0], mVlr = [0,0,0,0,0,0,0];
 
   filteredRows.forEach(r => {
-      for(let i=0; i<6; i++) {
+      for(let i=0; i<7; i++) {
           mRev[i] += parseNum(r[colsMap.rev[i]]);
           mPrimary[i] += parseNum(r[colsMap.primary[i]]);
           mSecondary[i] += parseNum(r[colsMap.secondary[i]]);
@@ -839,13 +831,13 @@ function updateDashboardPP() {
       }
   });
 
-  let totRev = mRev.reduce((a,b)=>a+b,0), avgRev = totRev / 6;
-  let totPrimary = mPrimary.reduce((a,b)=>a+b,0), avgPrimary = totPrimary / 6;
-  let totSecondary = mSecondary.reduce((a,b)=>a+b,0), avgSecondary = totSecondary / 6;
-  let totTertiary = mTertiary.reduce((a,b)=>a+b,0), avgTertiary = totTertiary / 6;
-  let totTrade = mTrade.reduce((a,b)=>a+b,0), avgTrade = totTrade / 6;
-  let totRguTrade = mRguTrade.reduce((a,b)=>a+b,0), avgRguTrade = totRguTrade / 6;
-  let totVlr = mVlr.reduce((a,b)=>a+b,0), avgVlr = totVlr / 6;
+  let totRev = mRev.reduce((a,b)=>a+b,0), avgRev = totRev / 7;
+  let totPrimary = mPrimary.reduce((a,b)=>a+b,0), avgPrimary = totPrimary / 7;
+  let totSecondary = mSecondary.reduce((a,b)=>a+b,0), avgSecondary = totSecondary / 7;
+  let totTertiary = mTertiary.reduce((a,b)=>a+b,0), avgTertiary = totTertiary / 7;
+  let totTrade = mTrade.reduce((a,b)=>a+b,0), avgTrade = totTrade / 7;
+  let totRguTrade = mRguTrade.reduce((a,b)=>a+b,0), avgRguTrade = totRguTrade / 7;
+  let totVlr = mVlr.reduce((a,b)=>a+b,0), avgVlr = totVlr / 7;
 
   animateCounter("kpiPrepaidRevPP", totRev, true);
   document.getElementById("avgPrepaidRevPP").innerText = "Rata-rata: Rp " + Math.round(avgRev).toLocaleString('id-ID');
@@ -868,18 +860,18 @@ function updateDashboardPP() {
   animateCounter("kpiVlrSubsPP", totVlr);
   document.getElementById("avgVlrSubsPP").innerText = "Rata-rata: " + Math.round(avgVlr).toLocaleString('id-ID');
 
-  updateGrowthBadge("ppRevGrowthBadge", mRev[5], mRev[4]);
-  updateGrowthBadge("ppPrimaryGrowthBadge", mPrimary[5], mPrimary[4]);
-  updateGrowthBadge("ppSecondaryGrowthBadge", mSecondary[5], mSecondary[4]);
-  updateGrowthBadge("ppTertiaryGrowthBadge", mTertiary[5], mTertiary[4]);
-  updateGrowthBadge("ppTradeGrowthBadge", mTrade[5], mTrade[4]);
-  updateGrowthBadge("ppRguTradeGrowthBadge", mRguTrade[5], mRguTrade[4]);
-  updateGrowthBadge("ppVlrGrowthBadge", mVlr[5], mVlr[4]);
+  updateGrowthBadge("ppRevGrowthBadge", mRev[6], mRev[5]);
+  updateGrowthBadge("ppPrimaryGrowthBadge", mPrimary[6], mPrimary[5]);
+  updateGrowthBadge("ppSecondaryGrowthBadge", mSecondary[6], mSecondary[5]);
+  updateGrowthBadge("ppTertiaryGrowthBadge", mTertiary[6], mTertiary[5]);
+  updateGrowthBadge("ppTradeGrowthBadge", mTrade[6], mTrade[5]);
+  updateGrowthBadge("ppRguTradeGrowthBadge", mRguTrade[6], mRguTrade[5]);
+  updateGrowthBadge("ppVlrGrowthBadge", mVlr[6], mVlr[5]);
 
   const summaryTbody = document.getElementById("ppMonthlySummaryBody");
   if (summaryTbody) {
       let summaryHtml = "";
-      for (let i = 0; i < 6; i++) {
+      for (let i = 0; i < 7; i++) {
           summaryHtml += `
             <tr>
                 <td><b>${monthNames[i]}</b></td>
@@ -901,26 +893,6 @@ function updateDashboardPP() {
 }
 
 function renderPpItemCharts(labels, rev, primary, secondary, tertiary, trade, rguTrade, vlr, filteredRows) {
-    let partnerCountMap = {};
-    filteredRows.forEach(r => {
-        let pName = String(r[1] || "").trim();
-        if (pName && pName.toUpperCase() !== "NAMA PARTNER" && pName.toUpperCase() !== "PT NAME" && !pName.toUpperCase().includes("BENGKAYANG")) {
-            partnerCountMap[pName] = (partnerCountMap[pName] || 0) + 1;
-        }
-    });
-    if (chartPartnerPPInstance) chartPartnerPPInstance.destroy();
-    let ctxP = document.getElementById("chartPartnerPP")?.getContext('2d');
-    if (ctxP) {
-        chartPartnerPPInstance = new Chart(ctxP, {
-            type: 'bar',
-            data: {
-                labels: Object.keys(partnerCountMap),
-                datasets: [{ label: 'Jumlah Area/Kecamatan', data: Object.values(partnerCountMap), backgroundColor: '#ef4444' }]
-            },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { font: { size: 9 } } }, y: { ticks: { font: { size: 9 } } } } }
-        });
-    }
-
     function makeLineChart(instanceVarName, canvasId, dataArr, color, borderColor) {
         if (window[instanceVarName]) window[instanceVarName].destroy();
         let ctx = document.getElementById(canvasId)?.getContext('2d');
@@ -1076,7 +1048,6 @@ function updateDashboardDaily() {
   renderDailySpSection(filteredSpRows, hkInfo.remainingDays);
 }
 
-// FIX: PERBAIKAN FORMULA PEMBAGIAN PRESISI TARGET DAILY = GAP MONTHLY / SISA HK
 function renderDailyOsaSection(rows, remainingDays) {
   const tbody = document.getElementById("execDailyOsaTableBody");
   if (!tbody) return;
@@ -1538,7 +1509,7 @@ function renderTable(tableId, header, data) {
   const thead = document.createElement("thead");
   const trHead = document.createElement("tr");
   
-  const isFreeze2Col = (tableId === "dataTablePP" || tableId === "dataTableMC" || tableId === "dataTableDO");
+  const isFreeze2Col = (tableId === "dataTablePP" || tableId === "dataTableMC" || tableId === "dataTableDO" || tableId === "dataTable");
   const colWidths = ["150px", "200px"];
 
   activeHeader.forEach((judul, index) => {
@@ -1573,27 +1544,38 @@ function renderTable(tableId, header, data) {
       const judulKolom = String(activeHeader[index] || "").trim().toUpperCase();
       let rawStr = String(nilai !== undefined && nilai !== null ? nilai : "").trim();
       let valDisplay = rawStr;
+
+      // TOP / BOTTOM FORMAT FOR KECAMATAN CONTAINING '|'
+      if ((judulKolom.includes("KECAMATAN") || index === 0) && rawStr.includes("|")) {
+          let parts = rawStr.split("|");
+          valDisplay = `<b>${parts[0]}</b><br><span style="font-size:10px; color:#64748b; font-weight:600;">${parts[1] || ''}</span>`;
+      }
+
       let numVal = parseNum(rawStr);
       let isPercent = false;
       let pctVal = 0;
 
-      if (judulKolom.includes("TARGET SP SELL IN")) valDisplay = Math.ceil(numVal).toLocaleString("id-ID");
-      else if (judulKolom.includes("BIOMETRIX") || judulKolom.includes("RGUGA")) valDisplay = Math.floor(numVal).toLocaleString("id-ID");
-      else if ((judulKolom.includes("ACH OSA") || judulKolom.includes("PREPAID REV") || judulKolom.includes("REVENUE") || judulKolom.includes("TARGET OSA")) && numVal >= 1000) {
-        valDisplay = "Rp " + Math.round(numVal).toLocaleString("id-ID");
-      }
-      else if (judulKolom.includes("%") || judulKolom.includes("ACH %") || judulKolom.includes("MOM") || judulKolom.includes("GROWTH")) {
-        if (rawStr !== "" && !isNaN(Number(rawStr))) {
-          isPercent = true;
-          pctVal = Math.abs(numVal) <= 1 && numVal !== 0 ? numVal * 100 : numVal;
-          let sign = pctVal > 0 ? "+" : "";
-          valDisplay = sign + pctVal.toFixed(2) + "%";
-        }
-      } else if (rawStr !== "" && !isNaN(Number(rawStr)) && !judulKolom.includes("ID") && !judulKolom.includes("CODE") && Math.abs(numVal) >= 1000) {
-        valDisplay = Math.round(numVal).toLocaleString("id-ID");
+      if (!valDisplay.includes("<br>")) {
+          if (judulKolom.includes("TARGET SP SELL IN")) valDisplay = Math.ceil(numVal).toLocaleString("id-ID");
+          else if (judulKolom.includes("BIOMETRIX") || judulKolom.includes("RGUGA")) valDisplay = Math.floor(numVal).toLocaleString("id-ID");
+          else if ((judulKolom.includes("ACH OSA") || judulKolom.includes("PREPAID REV") || judulKolom.includes("REVENUE") || judulKolom.includes("TARGET OSA")) && numVal >= 1000) {
+            valDisplay = "Rp " + Math.round(numVal).toLocaleString("id-ID");
+          }
+          else if (judulKolom.includes("%") || judulKolom.includes("ACH %") || judulKolom.includes("MOM") || judulKolom.includes("GROWTH")) {
+            if (rawStr !== "" && !isNaN(Number(rawStr))) {
+              isPercent = true;
+              pctVal = Math.abs(numVal) <= 1 && numVal !== 0 ? numVal * 100 : numVal;
+              let sign = pctVal > 0 ? "+" : "";
+              valDisplay = sign + pctVal.toFixed(2) + "%";
+            }
+          } else if (rawStr !== "" && !isNaN(Number(rawStr)) && !judulKolom.includes("ID") && !judulKolom.includes("CODE") && Math.abs(numVal) >= 1000) {
+            valDisplay = Math.round(numVal).toLocaleString("id-ID");
+          }
       }
 
-      if (tableId === "dataTableDO" && numVal === 0 && rawStr !== "" && !isNaN(Number(rawStr)) && !judulKolom.includes("ID") && !judulKolom.includes("NAME") && !judulKolom.includes("CODE")) {
+      if (valDisplay.includes("<br>")) {
+          td.innerHTML = valDisplay;
+      } else if (tableId === "dataTableDO" && numVal === 0 && rawStr !== "" && !isNaN(Number(rawStr)) && !judulKolom.includes("ID") && !judulKolom.includes("NAME") && !judulKolom.includes("CODE")) {
         td.innerHTML = `<span class="text-red" style="font-weight:700;">${valDisplay}</span>`;
       } else {
         td.innerHTML = `<span style="font-weight:700;">${valDisplay}</span>`;
@@ -1634,6 +1616,12 @@ function switchReport(reportId, btnObj) {
   updateAutoDateH2();
   if (reportId === 'all-summary-tab') {
       updateExecutiveSummaryNew();
+  } else if (reportId === 'ms-bengkayang') {
+      updateDashboardMS();
+  } else if (reportId === 'outlet-mc') {
+      updateDashboardSM();
+  } else if (reportId === 'detail-outlet') {
+      updateDashboardDO();
   } else if (reportId === 'daily-dse') {
       updateDashboardDaily();
   } else if (reportId === 'partner-performance') {
@@ -1655,7 +1643,7 @@ document.addEventListener("change", function (e) {
   if (e.target.id.includes("MC")) updateDashboardSM();
   if (e.target.id.includes("DO") || e.target.id === "columnFilterDO") updateDashboardDO();
   if (e.target.id.includes("Daily")) updateDashboardDaily();
-  if (e.target.id.includes("PP")) updateDashboardPP();
+  if (e.target.id === "partnerFilterPP") updateDashboardPP();
   if (e.target.id === "execDseFilter" || e.target.id === "execHariFilter") updateExecutiveSummaryNew();
 });
 
