@@ -11,6 +11,65 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="addon-style.css">
+    <style>
+        /* Custom Multi-Select Dropdown Styling */
+        .custom-multiselect {
+            position: relative;
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .multiselect-btn {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            min-width: 160px;
+            color: #0f172a;
+        }
+        .multiselect-dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            z-index: 9999;
+            width: 220px;
+            max-height: 250px;
+            overflow-y: auto;
+            padding: 6px 0;
+            margin-top: 4px;
+        }
+        .multiselect-dropdown.show {
+            display: block;
+        }
+        .multiselect-option {
+            padding: 6px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            color: #334155;
+            transition: background 0.15s;
+        }
+        .multiselect-option:hover {
+            background: #f1f5f9;
+        }
+        .multiselect-option input[type="checkbox"] {
+            cursor: pointer;
+            width: 14px;
+            height: 14px;
+        }
+    </style>
 </head>
 
 <body>
@@ -96,6 +155,7 @@
             <button class="tab-btn" id="navTabOutlet" onclick="switchReport('detail-outlet', this)"><i class="fa-solid fa-store"></i> Detail Outlet</button>
             <button class="tab-btn" id="navTabDaily" onclick="switchReport('daily-dse', this)"><i class="fa-solid fa-calendar-days"></i> GAP Daily KPI DSE</button>
             <button class="tab-btn" id="navTabPartner" onclick="switchReport('partner-performance', this)"><i class="fa-solid fa-chart-line"></i> Partner Performance</button>
+            <button class="tab-btn" id="navTabTodayInstruction" onclick="switchReport('today-instruction-tab', this)" style="background: #e11d48; color: #ffffff;"><i class="fa-solid fa-clipboard-list"></i> Today Instruction</button>
         </div>
         <div class="update">Status: <b>Live Data Active</b></div>
     </div>
@@ -541,7 +601,15 @@
         </div>
 
         <div class="toolbar">
-            <select id="dseFilterDO"><option value="ALL">Semua DSE Code</option></select>
+            <!-- Multi-Select DSE Filter Detail Outlet -->
+            <div class="custom-multiselect" id="multiSelectDseDO">
+                <div class="multiselect-btn" onclick="toggleMultiSelect('multiSelectDropdownDO')">
+                    <span id="multiSelectLabelDO">Semua DSE Code</span>
+                    <i class="fa-solid fa-chevron-down"></i>
+                </div>
+                <div class="multiselect-dropdown" id="multiSelectDropdownDO"></div>
+            </div>
+            
             <select id="categoryFilterDO"><option value="ALL">Semua Category</option></select>
             <select id="isimpleFilterDO"><option value="ALL">Semua ISIMPLE</option></select>
             <select id="hariFilterDO">
@@ -570,7 +638,17 @@
         <div class="exec-card-panel border-top-green" id="snapshotSectionDailyOsa" style="margin-bottom: 25px;">
             <div class="exec-panel-header-flex">
                 <div class="exec-panel-header" id="osaSectionTitleText"><i class="fa-solid fa-bullseye color-green"></i> 1. MONITORING TARGET OSA PER DSE (GAP / SISA HK)</div>
-                <button class="btn-snapshot-section" onclick="takeSectionSnapshot('snapshotSectionDailyOsa')"><i class="fa-solid fa-camera"></i> Snapshot Section OSA</button>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <!-- Multi-Select DSE Filter Daily DSE di Atas -->
+                    <div class="custom-multiselect" id="multiSelectDseDaily">
+                        <div class="multiselect-btn" onclick="toggleMultiSelect('multiSelectDropdownDaily')">
+                            <span id="multiSelectLabelDaily">Semua DSE Code</span>
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </div>
+                        <div class="multiselect-dropdown" id="multiSelectDropdownDaily"></div>
+                    </div>
+                    <button class="btn-snapshot-section" onclick="takeSectionSnapshot('snapshotSectionDailyOsa')"><i class="fa-solid fa-camera"></i> Snapshot Section OSA</button>
+                </div>
             </div>
             
             <div class="card card-yellow" style="margin: 15px 0;">
@@ -634,7 +712,6 @@
         </div>
 
         <div class="toolbar">
-            <select id="dseFilterDaily" style="font-weight:700;"><option value="ALL">Semua DSE Code</option></select>
             <input type="text" id="searchInputDaily" placeholder="🔍 Cari DSE Code / Micro Cluster...">
             <button class="reset-btn" onclick="resetFilters('daily-dse')"><i class="fa-solid fa-rotate-left"></i> Reset Filter</button>
         </div>
@@ -655,70 +732,70 @@
             <div class="pp-dashboard-grid">
                 <div class="card card-yellow pp-card-interactive">
                     <div class="card-body">
-                        <h3>TOTAL PREPAID REV (JAN - JUL)</h3>
+                        <h3>TOTAL PREPAID REV <span class="pp-range-label">(JAN - JUL)</span></h3>
                         <div class="kpi-main-val" id="kpiPrepaidRevPP">Rp 0</div>
                         <div class="kpi-sub-avg" id="avgPrepaidRevPP">Rata-rata: Rp 0</div>
-                        <div class="kpi-growth-row">Growth (Juni vs Juli): <span id="ppRevGrowthBadge" class="growth-badge">0%</span></div>
+                        <div class="kpi-growth-row"><span class="pp-growth-label">Growth: </span><span id="ppRevGrowthBadge" class="growth-badge">0%</span></div>
                     </div>
                     <div class="pp-mini-chart-container"><canvas id="chartPrepaidRevPP"></canvas></div>
                 </div>
 
                 <div class="card card-cyan pp-card-interactive">
                     <div class="card-body">
-                        <h3>TOTAL PRIMARY (JAN - JUL)</h3>
+                        <h3>TOTAL PRIMARY <span class="pp-range-label">(JAN - JUL)</span></h3>
                         <div class="kpi-main-val" id="kpiPrimaryPP">0</div>
                         <div class="kpi-sub-avg" id="avgPrimaryPP">Rata-rata: 0</div>
-                        <div class="kpi-growth-row">Growth (Juni vs Juli): <span id="ppPrimaryGrowthBadge" class="growth-badge">0%</span></div>
+                        <div class="kpi-growth-row"><span class="pp-growth-label">Growth: </span><span id="ppPrimaryGrowthBadge" class="growth-badge">0%</span></div>
                     </div>
                     <div class="pp-mini-chart-container"><canvas id="chartPrimaryPP"></canvas></div>
                 </div>
 
                 <div class="card card-magenta pp-card-interactive">
                     <div class="card-body">
-                        <h3>TOTAL SECONDARY (JAN - JUL)</h3>
+                        <h3>TOTAL SECONDARY <span class="pp-range-label">(JAN - JUL)</span></h3>
                         <div class="kpi-main-val" id="kpiSecondaryPP">0</div>
                         <div class="kpi-sub-avg" id="avgSecondaryPP">Rata-rata: 0</div>
-                        <div class="kpi-growth-row">Growth (Juni vs Juli): <span id="ppSecondaryGrowthBadge" class="growth-badge">0%</span></div>
+                        <div class="kpi-growth-row"><span class="pp-growth-label">Growth: </span><span id="ppSecondaryGrowthBadge" class="growth-badge">0%</span></div>
                     </div>
                     <div class="pp-mini-chart-container"><canvas id="chartSecondaryPP"></canvas></div>
                 </div>
 
                 <div class="card card-red pp-card-interactive">
                     <div class="card-body">
-                        <h3>TOTAL TERTIARY B# (JAN - JUL)</h3>
+                        <h3>TOTAL TERTIARY B# <span class="pp-range-label">(JAN - JUL)</span></h3>
                         <div class="kpi-main-val" id="kpiTertiaryPP">0</div>
                         <div class="kpi-sub-avg" id="avgTertiaryPP">Rata-rata: 0</div>
-                        <div class="kpi-growth-row">Growth (Juni vs Juli): <span id="ppTertiaryGrowthBadge" class="growth-badge">0%</span></div>
+                        <div class="kpi-growth-row"><span class="pp-growth-label">Growth: </span><span id="ppTertiaryGrowthBadge" class="growth-badge">0%</span></div>
                     </div>
                     <div class="pp-mini-chart-container"><canvas id="chartTertiaryPP"></canvas></div>
                 </div>
 
                 <div class="card card-yellow pp-card-interactive">
                     <div class="card-body">
-                        <h3>TOTAL TRADE SUPPLY (JAN - JUL)</h3>
+                        <h3>TOTAL TRADE SUPPLY <span class="pp-range-label">(JAN - JUL)</span></h3>
                         <div class="kpi-main-val" id="kpiTradePP">Rp 0</div>
                         <div class="kpi-sub-avg" id="avgTradePP">Rata-rata: Rp 0</div>
-                        <div class="kpi-growth-row">Growth (Juni vs Juli): <span id="ppTradeGrowthBadge" class="growth-badge">0%</span></div>
+                        <div class="kpi-growth-row"><span class="pp-growth-label">Growth: </span><span id="ppTradeGrowthBadge" class="growth-badge">0%</span></div>
                     </div>
                     <div class="pp-mini-chart-container"><canvas id="chartTradePP"></canvas></div>
                 </div>
 
                 <div class="card card-cyan pp-card-interactive">
                     <div class="card-body">
-                        <h3>TOTAL RGU GA TRADE (JAN - JUL)</h3>
+                        <h3>TOTAL RGU GA TRADE <span class="pp-range-label">(JAN - JUL)</span></h3>
                         <div class="kpi-main-val" id="kpiRguTradePP">0</div>
                         <div class="kpi-sub-avg" id="avgRguTradePP">Rata-rata: 0</div>
-                        <div class="kpi-growth-row">Growth (Juni vs Juli): <span id="ppRguTradeGrowthBadge" class="growth-badge">0%</span></div>
+                        <div class="kpi-growth-row"><span class="pp-growth-label">Growth: </span><span id="ppRguTradeGrowthBadge" class="growth-badge">0%</span></div>
                     </div>
                     <div class="pp-mini-chart-container"><canvas id="chartRguTradePP"></canvas></div>
                 </div>
 
                 <div class="card card-magenta pp-card-interactive">
                     <div class="card-body">
-                        <h3>TOTAL VLR SUBS (JAN - JUL)</h3>
+                        <h3>TOTAL VLR SUBS <span class="pp-range-label">(JAN - JUL)</span></h3>
                         <div class="kpi-main-val" id="kpiVlrSubsPP">0</div>
                         <div class="kpi-sub-avg" id="avgVlrSubsPP">Rata-rata: 0</div>
-                        <div class="kpi-growth-row">Growth (Juni vs Juli): <span id="ppVlrGrowthBadge" class="growth-badge">0%</span></div>
+                        <div class="kpi-growth-row"><span class="pp-growth-label">Growth: </span><span id="ppVlrGrowthBadge" class="growth-badge">0%</span></div>
                     </div>
                     <div class="pp-mini-chart-container"><canvas id="chartVlrSubsPP"></canvas></div>
                 </div>
@@ -727,7 +804,7 @@
 
         <div class="exec-card-panel border-top-yellow" id="snapshotPpSummary" style="margin-bottom: 20px;">
             <div class="exec-panel-header-flex">
-                <div class="exec-panel-header"><i class="fa-solid fa-chart-column color-yellow"></i> RANGKUMAN BULANAN (JANUARI - JULI) KESELURUHAN</div>
+                <div class="exec-panel-header"><i class="fa-solid fa-chart-column color-yellow"></i> RANGKUMAN BULANAN KESELURUHAN</div>
                 <button class="btn-snapshot-section" onclick="takeSectionSnapshot('snapshotPpSummary')"><i class="fa-solid fa-camera"></i> Snapshot Rangkuman Bulanan</button>
             </div>
             <div class="mini-table-wrapper">
@@ -755,6 +832,35 @@
         </div>
         <div class="table-container"><table id="dataTablePP"></table></div>
     </div>
+    <!-- ================= TAB BARU: TODAY INSTRUCTION ================= -->
+<div id="today-instruction-tab" class="report-content" style="display: none;">
+    <div class="exec-summary-wrapper" id="snapshotTodayInstruction">
+        <div class="exec-summary-title-banner" style="background: linear-gradient(90deg, #be123c, #fb7185);">
+            <div>
+                <h2><i class="fa-solid fa-clipboard-list"></i> TODAY INSTRUCTION & CRITICAL OUTLETS</h2>
+                <div class="exec-summary-sub" style="color: #fffbe3;">Monitoring Outlet Kritis per PJP DSE Hari Ini</div>
+            </div>
+            <button class="btn-snapshot-section" onclick="takeSectionSnapshot('snapshotTodayInstruction')"><i class="fa-solid fa-camera"></i> Snapshot All Instruction</button>
+        </div>
+
+        <div class="toolbar" style="margin-bottom: 20px; background: #fff; padding: 12px; border-radius: 12px; border: 1px solid #e2e8f0;">
+            <select id="tiDseFilter" class="exec-select" onchange="renderTodayInstructionAddon()" style="font-weight: 800; padding: 8px 12px;">
+                <option value="ALL">Semua DSE Code</option>
+            </select>
+            <select id="tiHariFilter" class="exec-select" onchange="renderTodayInstructionAddon()" style="font-weight: 800; padding: 8px 12px;">
+                <option value="ALL">Semua Hari Kunjungan</option>
+                <option value="SENIN">Senin</option>
+                <option value="SELASA">Selasa</option>
+                <option value="RABU">Rabu</option>
+                <option value="KAMIS">Kamis</option>
+                <option value="JUMAT">Jumat</option>
+                <option value="SABTU">Sabtu</option>
+            </select>
+        </div>
+
+        <div id="tiDseCardsContainer"></div>
+    </div>
+</div>
 
     <!-- FOOTER -->
     <div class="dashboard-footer">
@@ -779,5 +885,6 @@
 </div>
 
 <script src="script.js"></script>
+<script src="addon-executive.js"></script>
 </body>
 </html>

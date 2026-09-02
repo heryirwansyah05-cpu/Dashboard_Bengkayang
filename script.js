@@ -23,6 +23,10 @@ let quickFilterTypeDO = 'ALL';
 let filterUnachModeDO = false;
 let currentActiveTabId = 'all-summary-tab';
 
+// Selected DSE Sets for Multi-Select
+let selectedDseSetDaily = new Set();
+let selectedDseSetDO = new Set();
+
 // DAFTAR USER YANG DIIZINKAN & ATURAN AKSESNYA
 const ALLOWED_USERS = {
     "HERY IRWANSYAH": { type: "admin" },
@@ -89,21 +93,18 @@ function applyUserSessionPermissions() {
                 execDseSel.value = userInfo.dseCode;
                 execDseSel.disabled = true;
             }
-            const dseDosel = document.getElementById("dseFilterDO");
-            if (dseDosel) {
-                dseDosel.value = userInfo.dseCode;
-                dseDosel.disabled = true;
-            }
             const dseMcsel = document.getElementById("dseFilterMC");
             if (dseMcsel) {
                 dseMcsel.value = userInfo.dseCode;
                 dseMcsel.disabled = true;
             }
-            const dseDailySel = document.getElementById("dseFilterDaily");
-            if (dseDailySel) {
-                dseDailySel.value = userInfo.dseCode;
-                dseDailySel.disabled = true;
-            }
+
+            // Lock Multi-select for DSE
+            selectedDseSetDaily = new Set([userInfo.dseCode]);
+            updateMultiSelectLabel('multiSelectLabelDaily', selectedDseSetDaily);
+            selectedDseSetDO = new Set([userInfo.dseCode]);
+            updateMultiSelectLabel('multiSelectLabelDO', selectedDseSetDO);
+
             updateExecutiveSummaryNew();
             updateDashboardDO();
             updateDashboardSM();
@@ -154,6 +155,110 @@ document.addEventListener("DOMContentLoaded", () => {
         if (modal) modal.style.display = "flex";
     }
 });
+
+// MULTI-SELECT DROPDOWN LOGIC
+function toggleMultiSelect(dropdownId) {
+    const dropdown = document.getElementById(dropdownId);
+    if (!dropdown) return;
+    dropdown.classList.toggle("show");
+}
+
+document.addEventListener("click", function (e) {
+    if (!e.target.closest('.custom-multiselect')) {
+        document.querySelectorAll('.multiselect-dropdown').forEach(d => d.classList.remove('show'));
+    }
+});
+
+function populateMultiSelectDse(dataRows, dropdownId, labelId, setRef, colIdx, callbackUpdate) {
+    const dropdown = document.getElementById(dropdownId);
+    if (!dropdown) return;
+
+    const valSet = new Set();
+    dataRows.forEach((r) => {
+        const val = r[colIdx] !== undefined && r[colIdx] !== null ? String(r[colIdx]).trim() : "";
+        if (val && val !== "undefined" && val.toUpperCase() !== "NAN" && !val.toUpperCase().includes("HEADER") && !val.toUpperCase().includes("DSE CODE")) {
+            valSet.add(val);
+        }
+    });
+
+    const sortedList = Array.from(valSet).sort((a, b) => a.localeCompare(b, 'id', { numeric: true }));
+
+    let html = `
+        <div class="multiselect-option" style="border-bottom: 1px solid #e2e8f0; font-weight: 800;">
+            <input type="checkbox" id="${dropdownId}_ALL" checked onchange="handleMultiSelectSelectAll('${dropdownId}', '${labelId}', this.checked, ${callbackUpdate.name})">
+            <label for="${dropdownId}_ALL">PILIH SEMUA</label>
+        </div>
+    `;
+
+    sortedList.forEach(val => {
+        html += `
+            <div class="multiselect-option">
+                <input type="checkbox" value="${val}" class="item-chk-${dropdownId}" checked onchange="handleMultiSelectChange('${dropdownId}', '${labelId}', ${callbackUpdate.name})">
+                <label>${val}</label>
+            </div>
+        `;
+    });
+
+    dropdown.innerHTML = html;
+    setRef.clear();
+    sortedList.forEach(v => setRef.add(v));
+    updateMultiSelectLabel(labelId, setRef, sortedList.length);
+}
+
+function handleMultiSelectSelectAll(dropdownId, labelId, isChecked, callbackUpdate) {
+    const dropdown = document.getElementById(dropdownId);
+    if (!dropdown) return;
+    const checkboxes = dropdown.querySelectorAll(`.item-chk-${dropdownId}`);
+    
+    let targetSet = dropdownId.includes('Daily') ? selectedDseSetDaily : selectedDseSetDO;
+    targetSet.clear();
+
+    checkboxes.forEach(chk => {
+        chk.checked = isChecked;
+        if (isChecked) targetSet.add(chk.value);
+    });
+
+    updateMultiSelectLabel(labelId, targetSet, checkboxes.length);
+    if (typeof callbackUpdate === "function") callbackUpdate();
+}
+
+function handleMultiSelectChange(dropdownId, labelId, callbackUpdate) {
+    const dropdown = document.getElementById(dropdownId);
+    if (!dropdown) return;
+    const checkboxes = dropdown.querySelectorAll(`.item-chk-${dropdownId}`);
+    const allChk = document.getElementById(`${dropdownId}_ALL`);
+
+    let targetSet = dropdownId.includes('Daily') ? selectedDseSetDaily : selectedDseSetDO;
+    targetSet.clear();
+
+    let checkedCount = 0;
+    checkboxes.forEach(chk => {
+        if (chk.checked) {
+            targetSet.add(chk.value);
+            checkedCount++;
+        }
+    });
+
+    if (allChk) allChk.checked = (checkedCount === checkboxes.length);
+
+    updateMultiSelectLabel(labelId, targetSet, checkboxes.length);
+    if (typeof callbackUpdate === "function") callbackUpdate();
+}
+
+function updateMultiSelectLabel(labelId, setRef, totalCount = 0) {
+    const labelElem = document.getElementById(labelId);
+    if (!labelElem) return;
+
+    if (setRef.size === 0) {
+        labelElem.innerText = "Tidak Ada DSE Pilih";
+    } else if (totalCount > 0 && setRef.size === totalCount) {
+        labelElem.innerText = "Semua DSE Code";
+    } else if (setRef.size === 1) {
+        labelElem.innerText = Array.from(setRef)[0];
+    } else {
+        labelElem.innerText = `${setRef.size} DSE Terpilih`;
+    }
+}
 
 // ================= ULTRA HD SNAPSHOT ENGINE =================
 function takeScreenshot() {
@@ -373,9 +478,7 @@ function resetFilters(tabId) {
     const container = document.getElementById(tabId);
     if (!container) return;
     container.querySelectorAll("select").forEach(s => {
-        if (userInfo && userInfo.type === "dse" && (s.id === "execDseFilter" || s.id === "dseFilterDO" || s.id === "dseFilterMC" || s.id === "dseFilterDaily")) {
-            s.value = userInfo.dseCode;
-        } else if (userInfo && userInfo.type === "sdp" && (s.id === "partnerFilter" || s.id === "partnerFilterMC" || s.id === "partnerFilterPP")) {
+        if (userInfo && userInfo.type === "sdp" && (s.id === "partnerFilter" || s.id === "partnerFilterMC" || s.id === "partnerFilterPP")) {
             s.value = userInfo.filter;
         } else {
             s.value = "ALL";
@@ -386,12 +489,13 @@ function resetFilters(tabId) {
     if (tabId === 'detail-outlet') {
         quickFilterTypeDO = 'ALL';
         filterUnachModeDO = false;
+        handleMultiSelectSelectAll('multiSelectDropdownDO', 'multiSelectLabelDO', true, updateDashboardDO);
+    } else if (tabId === 'daily-dse') {
+        handleMultiSelectSelectAll('multiSelectDropdownDaily', 'multiSelectLabelDaily', true, updateDashboardDaily);
     }
 
     if (tabId === 'ms-bengkayang') updateDashboardMS();
     else if (tabId === 'outlet-mc') updateDashboardSM();
-    else if (tabId === 'detail-outlet') updateDashboardDO();
-    else if (tabId === 'daily-dse') updateDashboardDaily();
     else if (tabId === 'partner-performance') updateDashboardPP();
 }
 
@@ -447,7 +551,7 @@ const p3 = fetch("DETAIL OUTLET.xlsx")
         return newRow;
     });
 
-    populateDropdown(globalDataDO, "dseFilterDO", 2, "Semua DSE Code");
+    populateMultiSelectDse(globalDataDO, "multiSelectDropdownDO", "multiSelectLabelDO", selectedDseSetDO, 2, updateDashboardDO);
     populateDropdown(globalDataDO, "execDseFilter", 2, "Semua DSE Code");
     populateDropdown(globalDataDO, "categoryFilterDO", 3, "Semua Category");
     populateDropdown(globalDataDO, "isimpleFilterDO", 4, "Semua ISIMPLE");
@@ -472,7 +576,7 @@ const p4 = fetch("GAP DAILY KPI DSE.xlsx")
         globalDataDailySP = jsonData.slice(idxSpHeader + 1).filter(r => r && r.some(c => c !== undefined && c !== null && c !== ''));
     }
     let combinedData = globalDataDailyOSA.length > 0 ? globalDataDailyOSA : globalDataDailySP;
-    populateDropdown(combinedData, "dseFilterDaily", 0, "Semua DSE Code");
+    populateMultiSelectDse(combinedData, "multiSelectDropdownDaily", "multiSelectLabelDaily", selectedDseSetDaily, 0, updateDashboardDaily);
     updateDashboardDaily();
   }).catch(e => console.log("GAP DAILY KPI DSE load skip"));
 
@@ -792,6 +896,7 @@ function renderSiteLeaderboards(filteredRows, idxRevMtd, idxRevLmtd, idxVlrMtd, 
     if (el90D) el90D.innerHTML = makeDetailedSiteListHtml(siteArr, 'm90Mtd', 'm90Lmtd', 'm90Growth', false);
 }
 
+// ================= TAB PARTNER PERFORMANCE (DINAMIS OTOMATIS) =================
 function updateDashboardPP() {
   const currentUser = localStorage.getItem("logged_in_user");
   const userInfo = ALLOWED_USERS[currentUser];
@@ -800,44 +905,70 @@ function updateDashboardPP() {
 
   const search = document.getElementById("searchInputPP")?.value.toLowerCase().trim() || "";
   let idxPtName = 1; 
+
   const filteredRows = globalDataPP.filter(r => {
       let ptName = String(r[idxPtName] || "").trim();
       return (selPT === "ALL" || ptName === selPT) && r.join(" ").toLowerCase().includes(search);
   });
 
-  const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli"];
-  const colsMap = {
-      rev: [2, 3, 4, 5, 6, 7, 8],
-      primary: [9, 10, 11, 12, 13, 14, 15],
-      secondary: [30, 31, 32, 33, 34, 35, 36],
-      tertiary: [37, 38, 39, 40, 41, 42, 43],
-      trade: [44, 45, 46, 47, 48, 49, 50],
-      rguTrade: [23, 24, 25, 26, 27, 28, 29],
-      vlr: [51, 52, 53, 54, 55, 56, 57]
-  };
+  const allMonthsList = ["JANUARI", "FEBRUARI", "MARET", "APRIL", "MEI", "JUNI", "JULI", "AGUSTUS", "SEPTEMBER", "OKTOBER", "NOVEMBER", "DESEMBER"];
+  let activeMonthNames = [];
+  let colsMap = { rev: [], primary: [], secondary: [], tertiary: [], trade: [], rguTrade: [], vlr: [] };
 
-  let mRev = [0,0,0,0,0,0,0], mPrimary = [0,0,0,0,0,0,0], mSecondary = [0,0,0,0,0,0,0];
-  let mTertiary = [0,0,0,0,0,0,0], mTrade = [0,0,0,0,0,0,0], mRguTrade = [0,0,0,0,0,0,0], mVlr = [0,0,0,0,0,0,0];
+  if (globalHeaderPP && globalHeaderPP.length > 0) {
+      globalHeaderPP.forEach((h, idx) => {
+          let hUpper = String(h || "").toUpperCase();
+          
+          allMonthsList.forEach(m => {
+              if (hUpper.includes(m) && !activeMonthNames.includes(m)) {
+                  activeMonthNames.push(m);
+              }
+          });
+
+          if (hUpper.includes("PREPAID REV")) colsMap.rev.push(idx);
+          else if (hUpper.includes("PRIMARY") && !hUpper.includes("LMTD")) colsMap.primary.push(idx);
+          else if (hUpper.includes("SECONDARY") && !hUpper.includes("LMTD")) colsMap.secondary.push(idx);
+          else if (hUpper.includes("TERTIARY") && !hUpper.includes("LMTD")) colsMap.tertiary.push(idx);
+          else if (hUpper.includes("TRADE SUPPLY") && !hUpper.includes("LMTD")) colsMap.trade.push(idx);
+          else if (hUpper.includes("RGUGA-TRAD") || hUpper.includes("RGU GA TRADE") || hUpper.includes("RGU TRADE")) colsMap.rguTrade.push(idx);
+          else if (hUpper.includes("VLR")) colsMap.vlr.push(idx);
+      });
+  }
+
+  if (activeMonthNames.length === 0) {
+      activeMonthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli"];
+  }
+
+  let totalMonths = activeMonthNames.length;
+  let formattedMonthLabels = activeMonthNames.map(m => m.charAt(0) + m.slice(1).toLowerCase());
+
+  let mRev = new Array(totalMonths).fill(0);
+  let mPrimary = new Array(totalMonths).fill(0);
+  let mSecondary = new Array(totalMonths).fill(0);
+  let mTertiary = new Array(totalMonths).fill(0);
+  let mTrade = new Array(totalMonths).fill(0);
+  let mRguTrade = new Array(totalMonths).fill(0);
+  let mVlr = new Array(totalMonths).fill(0);
 
   filteredRows.forEach(r => {
-      for(let i=0; i<7; i++) {
-          mRev[i] += parseNum(r[colsMap.rev[i]]);
-          mPrimary[i] += parseNum(r[colsMap.primary[i]]);
-          mSecondary[i] += parseNum(r[colsMap.secondary[i]]);
-          mTertiary[i] += parseNum(r[colsMap.tertiary[i]]);
-          mTrade[i] += parseNum(r[colsMap.trade[i]]);
-          mRguTrade[i] += parseNum(r[colsMap.rguTrade[i]]);
-          mVlr[i] += parseNum(r[colsMap.vlr[i]]);
+      for (let i = 0; i < totalMonths; i++) {
+          if (colsMap.rev[i] !== undefined) mRev[i] += parseNum(r[colsMap.rev[i]]);
+          if (colsMap.primary[i] !== undefined) mPrimary[i] += parseNum(r[colsMap.primary[i]]);
+          if (colsMap.secondary[i] !== undefined) mSecondary[i] += parseNum(r[colsMap.secondary[i]]);
+          if (colsMap.tertiary[i] !== undefined) mTertiary[i] += parseNum(r[colsMap.tertiary[i]]);
+          if (colsMap.trade[i] !== undefined) mTrade[i] += parseNum(r[colsMap.trade[i]]);
+          if (colsMap.rguTrade[i] !== undefined) mRguTrade[i] += parseNum(r[colsMap.rguTrade[i]]);
+          if (colsMap.vlr[i] !== undefined) mVlr[i] += parseNum(r[colsMap.vlr[i]]);
       }
   });
 
-  let totRev = mRev.reduce((a,b)=>a+b,0), avgRev = totRev / 7;
-  let totPrimary = mPrimary.reduce((a,b)=>a+b,0), avgPrimary = totPrimary / 7;
-  let totSecondary = mSecondary.reduce((a,b)=>a+b,0), avgSecondary = totSecondary / 7;
-  let totTertiary = mTertiary.reduce((a,b)=>a+b,0), avgTertiary = totTertiary / 7;
-  let totTrade = mTrade.reduce((a,b)=>a+b,0), avgTrade = totTrade / 7;
-  let totRguTrade = mRguTrade.reduce((a,b)=>a+b,0), avgRguTrade = totRguTrade / 7;
-  let totVlr = mVlr.reduce((a,b)=>a+b,0), avgVlr = totVlr / 7;
+  let totRev = mRev.reduce((a,b)=>a+b,0), avgRev = totalMonths > 0 ? totRev / totalMonths : 0;
+  let totPrimary = mPrimary.reduce((a,b)=>a+b,0), avgPrimary = totalMonths > 0 ? totPrimary / totalMonths : 0;
+  let totSecondary = mSecondary.reduce((a,b)=>a+b,0), avgSecondary = totalMonths > 0 ? totSecondary / totalMonths : 0;
+  let totTertiary = mTertiary.reduce((a,b)=>a+b,0), avgTertiary = totalMonths > 0 ? totTertiary / totalMonths : 0;
+  let totTrade = mTrade.reduce((a,b)=>a+b,0), avgTrade = totalMonths > 0 ? totTrade / totalMonths : 0;
+  let totRguTrade = mRguTrade.reduce((a,b)=>a+b,0), avgRguTrade = totalMonths > 0 ? totRguTrade / totalMonths : 0;
+  let totVlr = mVlr.reduce((a,b)=>a+b,0), avgVlr = totalMonths > 0 ? totVlr / totalMonths : 0;
 
   animateCounter("kpiPrepaidRevPP", totRev, true);
   document.getElementById("avgPrepaidRevPP").innerText = "Rata-rata: Rp " + Math.round(avgRev).toLocaleString('id-ID');
@@ -860,21 +991,32 @@ function updateDashboardPP() {
   animateCounter("kpiVlrSubsPP", totVlr);
   document.getElementById("avgVlrSubsPP").innerText = "Rata-rata: " + Math.round(avgVlr).toLocaleString('id-ID');
 
-  updateGrowthBadge("ppRevGrowthBadge", mRev[6], mRev[5]);
-  updateGrowthBadge("ppPrimaryGrowthBadge", mPrimary[6], mPrimary[5]);
-  updateGrowthBadge("ppSecondaryGrowthBadge", mSecondary[6], mSecondary[5]);
-  updateGrowthBadge("ppTertiaryGrowthBadge", mTertiary[6], mTertiary[5]);
-  updateGrowthBadge("ppTradeGrowthBadge", mTrade[6], mTrade[5]);
-  updateGrowthBadge("ppRguTradeGrowthBadge", mRguTrade[6], mRguTrade[5]);
-  updateGrowthBadge("ppVlrGrowthBadge", mVlr[6], mVlr[5]);
+  let lastIdx = totalMonths - 1;
+  let prevIdx = Math.max(0, totalMonths - 2);
+  let lastMonthName = formattedMonthLabels[lastIdx] || "";
+  let prevMonthName = formattedMonthLabels[prevIdx] || "";
+
+  updateGrowthBadge("ppRevGrowthBadge", mRev[lastIdx], mRev[prevIdx]);
+  updateGrowthBadge("ppPrimaryGrowthBadge", mPrimary[lastIdx], mPrimary[prevIdx]);
+  updateGrowthBadge("ppSecondaryGrowthBadge", mSecondary[lastIdx], mSecondary[prevIdx]);
+  updateGrowthBadge("ppTertiaryGrowthBadge", mTertiary[lastIdx], mTertiary[prevIdx]);
+  updateGrowthBadge("ppTradeGrowthBadge", mTrade[lastIdx], mTrade[prevIdx]);
+  updateGrowthBadge("ppRguTradeGrowthBadge", mRguTrade[lastIdx], mRguTrade[prevIdx]);
+  updateGrowthBadge("ppVlrGrowthBadge", mVlr[lastIdx], mVlr[prevIdx]);
+
+  let rangeLabelText = `(JAN - ${lastMonthName.substring(0,3).toUpperCase()})`;
+  let growthLabelText = `Growth (${prevMonthName} vs ${lastMonthName}): `;
+
+  document.querySelectorAll(".pp-range-label").forEach(el => el.innerText = rangeLabelText);
+  document.querySelectorAll(".pp-growth-label").forEach(el => el.innerText = growthLabelText);
 
   const summaryTbody = document.getElementById("ppMonthlySummaryBody");
   if (summaryTbody) {
       let summaryHtml = "";
-      for (let i = 0; i < 7; i++) {
+      for (let i = 0; i < totalMonths; i++) {
           summaryHtml += `
             <tr>
-                <td><b>${monthNames[i]}</b></td>
+                <td><b>${formattedMonthLabels[i]}</b></td>
                 <td>Rp ${Math.round(mRev[i]).toLocaleString('id-ID')}</td>
                 <td>${Math.round(mPrimary[i]).toLocaleString('id-ID')}</td>
                 <td>${Math.round(mSecondary[i]).toLocaleString('id-ID')}</td>
@@ -888,7 +1030,7 @@ function updateDashboardPP() {
       summaryTbody.innerHTML = summaryHtml;
   }
 
-  renderPpItemCharts(monthNames, mRev, mPrimary, mSecondary, mTertiary, mTrade, mRguTrade, mVlr, filteredRows);
+  renderPpItemCharts(formattedMonthLabels, mRev, mPrimary, mSecondary, mTertiary, mTrade, mRguTrade, mVlr, filteredRows);
   renderTable("dataTablePP", globalHeaderPP, filteredRows);
 }
 
@@ -920,8 +1062,6 @@ function renderPpItemCharts(labels, rev, primary, secondary, tertiary, trade, rg
 function updateDashboardDO() {
   const currentUser = localStorage.getItem("logged_in_user");
   const userInfo = ALLOWED_USERS[currentUser];
-  let selDse = document.getElementById("dseFilterDO")?.value || "ALL";
-  if (userInfo && userInfo.type === "dse") selDse = userInfo.dseCode;
 
   const selCategory = document.getElementById("categoryFilterDO")?.value || "ALL";
   const selIsimple = document.getElementById("isimpleFilterDO")?.value || "ALL";
@@ -932,6 +1072,9 @@ function updateDashboardDO() {
   let colIdxHari = selHari !== "ALL" ? globalHeaderDO.findIndex(h => h.toUpperCase() === selHari) : -1;
 
   const filteredRows = globalDataDO.filter((r) => {
+    let dseVal = String(r[2] || "").trim();
+    let matchDSE = selectedDseSetDO.size === 0 || selectedDseSetDO.has(dseVal);
+
     let matchHari = (colIdxHari === -1 || parseNum(r[colIdxHari]) > 0);
     let matchQuick = true;
     if (filterUnachModeDO) {
@@ -959,7 +1102,7 @@ function updateDashboardDO() {
         }
     }
 
-    return (selDse === "ALL" || String(r[2] || "").trim() === selDse) &&
+    return matchDSE &&
            (selCategory === "ALL" || String(r[3] || "").trim() === selCategory) &&
            (selIsimple === "ALL" || String(r[4] || "").trim() === selIsimple) &&
            matchHari && matchQuick && matchColFilter && r.join(" ").toLowerCase().includes(searchKeyword);
@@ -1024,11 +1167,6 @@ function updateDashboardDO() {
 }
 
 function updateDashboardDaily() {
-  const currentUser = localStorage.getItem("logged_in_user");
-  const userInfo = ALLOWED_USERS[currentUser];
-  let selDSE = document.getElementById("dseFilterDaily")?.value || "ALL";
-  if (userInfo && userInfo.type === "dse") selDSE = userInfo.dseCode;
-
   const searchKeyword = document.getElementById("searchInputDaily")?.value.toLowerCase().trim() || "";
 
   const hkInfo = getRemainingWorkingDaysInfo();
@@ -1038,12 +1176,16 @@ function updateDashboardDaily() {
   document.getElementById("thSpDailyHeader").innerText = `Target Daily (Gap / ${hkInfo.remainingDays} HK)`;
 
   const filteredOsaRows = globalDataDailyOSA.filter((r) => {
-    return (selDSE === "ALL" || String(r[0] || "").trim() === selDSE) && r.join(" ").toLowerCase().includes(searchKeyword);
+    let dseVal = String(r[0] || "").trim();
+    let matchDSE = selectedDseSetDaily.size === 0 || selectedDseSetDaily.has(dseVal);
+    return matchDSE && r.join(" ").toLowerCase().includes(searchKeyword);
   });
   renderDailyOsaSection(filteredOsaRows, hkInfo.remainingDays);
 
   const filteredSpRows = globalDataDailySP.filter((r) => {
-    return (selDSE === "ALL" || String(r[0] || "").trim() === selDSE) && r.join(" ").toLowerCase().includes(searchKeyword);
+    let dseVal = String(r[0] || "").trim();
+    let matchDSE = selectedDseSetDaily.size === 0 || selectedDseSetDaily.has(dseVal);
+    return matchDSE && r.join(" ").toLowerCase().includes(searchKeyword);
   });
   renderDailySpSection(filteredSpRows, hkInfo.remainingDays);
 }
@@ -1417,7 +1559,7 @@ function renderTargetNonKpiTable(selectedDseFilter) {
     }
 
     tbody.innerHTML = dseKeys.map(k => {
-        let tgtFwa = 4; 
+        let tgtFwa = 2; // Target RGUGA FWA Default Per DSE
         let fwaAch = dseMap[k].fwaAch;
         let gapFwa = Math.max(0, tgtFwa - fwaAch);
         let pctFwa = Math.min(100, (fwaAch / tgtFwa) * 100);
@@ -1545,7 +1687,6 @@ function renderTable(tableId, header, data) {
       let rawStr = String(nilai !== undefined && nilai !== null ? nilai : "").trim();
       let valDisplay = rawStr;
 
-      // TOP / BOTTOM FORMAT FOR KECAMATAN CONTAINING '|'
       if ((judulKolom.includes("KECAMATAN") || index === 0) && rawStr.includes("|")) {
           let parts = rawStr.split("|");
           valDisplay = `<b>${parts[0]}</b><br><span style="font-size:10px; color:#64748b; font-weight:600;">${parts[1] || ''}</span>`;
