@@ -1417,7 +1417,7 @@ function renderTargetNonKpiTable(selectedDseFilter) {
     }
 
     tbody.innerHTML = dseKeys.map(k => {
-        let tgtFwa = 2; 
+        let tgtFwa = 4; 
         let fwaAch = dseMap[k].fwaAch;
         let gapFwa = Math.max(0, tgtFwa - fwaAch);
         let pctFwa = Math.min(100, (fwaAch / tgtFwa) * 100);
