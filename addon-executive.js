@@ -1,51 +1,76 @@
 /* ==========================================================================
-   ADD-ON MODULE: TAB TODAY INSTRUCTION (DIRECT VARIABLE INTEGRATION)
+   ADD-ON MODULE: TODAY INSTRUCTION (DIRECT ARRAY INDEX MATCHING FROM SCRIPT.JS)
    ========================================================================== */
 
 document.addEventListener("DOMContentLoaded", () => {
-    let checkInterval = setInterval(() => {
-        if (window.globalDataDO && window.globalDataDO.length > 0) {
+    setupTiEventListeners();
+
+    // Loop otomatis memantau ketersediaan globalDataDO
+    let syncInterval = setInterval(() => {
+        if (typeof globalDataDO !== "undefined" && Array.isArray(globalDataDO) && globalDataDO.length > 0) {
             populateTiDseDropdown();
             renderTodayInstructionAddon();
-            clearInterval(checkInterval);
+            clearInterval(syncInterval);
         }
     }, 300);
 });
 
-// Helper Ambil Data Asli
-function getDODataAddon() {
-    if (typeof globalDataDO !== "undefined" && globalDataDO.length > 0) return globalDataDO;
-    if (window.globalDataDO && window.globalDataDO.length > 0) return window.globalDataDO;
-    return [];
+function setupTiEventListeners() {
+    const dseSelect = document.getElementById("tiDseFilter");
+    const hariSelect = document.getElementById("tiHariFilter");
+
+    if (dseSelect) dseSelect.onchange = () => renderTodayInstructionAddon();
+    if (hariSelect) hariSelect.onchange = () => renderTodayInstructionAddon();
+
+    // Sync otomatis saat tombol Tab Today Instruction diklik
+    const btnTab = document.getElementById("navTabTodayInstruction");
+    if (btnTab) {
+        btnTab.addEventListener("click", () => {
+            setTimeout(() => {
+                populateTiDseDropdown();
+                renderTodayInstructionAddon();
+            }, 100);
+        });
+    }
 }
 
-// Populate Dropdown DSE
+// 1. Populate Dropdown DSE Berdasarkan Index 2 (DSE Code)
 function populateTiDseDropdown() {
     const dseSelect = document.getElementById("tiDseFilter");
-    if (!dseSelect) return;
+    if (!dseSelect || typeof globalDataDO === "undefined" || !globalDataDO || globalDataDO.length === 0) return;
 
-    const data = getDODataAddon();
-    if (data.length === 0) return;
+    const dseSet = new Set();
+    globalDataDO.forEach(r => {
+        let dse = String(r[2] || "").trim();
+        if (dse && dse.toUpperCase() !== "NAN" && dse.toUpperCase() !== "DSE CODE" && !dse.toUpperCase().includes("HEADER")) {
+            dseSet.add(dse);
+        }
+    });
 
-    const dseList = [...new Set(data.map(item => {
-        let val = item['DSE Code'] || item['DSE CODE'] || item['Nama DSE'] || item['DSE'];
-        return (val && String(val).trim() !== '') ? String(val).trim() : null;
-    }).filter(Boolean))].sort();
+    const sortedDse = Array.from(dseSet).sort((a, b) => a.localeCompare(b, 'id', { numeric: true }));
 
+    let currentVal = dseSelect.value;
     let options = '<option value="ALL">Semua DSE Code</option>';
-    dseList.forEach(dse => {
+    sortedDse.forEach(dse => {
         options += `<option value="${dse}">${dse}</option>`;
     });
     dseSelect.innerHTML = options;
+
+    if (currentVal && dseSet.has(currentVal)) {
+        dseSelect.value = currentVal;
+    }
 }
 
+// 2. Render Utama Tab Today Instruction
 function renderTodayInstructionAddon() {
     const container = document.getElementById("tiDseCardsContainer");
     if (!container) return;
 
-    const data = getDODataAddon();
-    if (!data || data.length === 0) {
-        container.innerHTML = `<div style="text-align:center; padding:30px; color:#ef4444; font-weight:800;">⚠️ Data belum siap. Silakan upload file Excel atau tunggu sebentar.</div>`;
+    if (typeof globalDataDO === "undefined" || !globalDataDO || globalDataDO.length === 0) {
+        container.innerHTML = `
+            <div style="text-align:center; padding:40px; color:#ef4444; font-weight:800;">
+                ⚠️ Data Detail Outlet sedang dimuat dari file Excel...
+            </div>`;
         return;
     }
 
@@ -54,34 +79,38 @@ function renderTodayInstructionAddon() {
         populateTiDseDropdown();
     }
 
-    const selectedDse = document.getElementById("tiDseFilter") ? document.getElementById("tiDseFilter").value : "ALL";
-    const selectedHari = document.getElementById("tiHariFilter") ? document.getElementById("tiHariFilter").value : "ALL";
+    const selectedDse = dseSelect ? dseSelect.value : "ALL";
+    const selectedHari = document.getElementById("tiHariFilter") ? document.getElementById("tiHariFilter").value.toUpperCase() : "ALL";
 
-    // Filter Data Berdasarkan DSE dan Hari Kunjungan
-    let filteredDO = data.filter(item => {
-        let dseVal = String(item['DSE Code'] || item['DSE CODE'] || item['Nama DSE'] || item['DSE'] || '').trim();
-        const dseMatch = (selectedDse === "ALL") || (dseVal.toLowerCase() === selectedDse.toLowerCase());
-        
-        let hariMatch = true;
-        if (selectedHari !== "ALL") {
-            let colHari = selectedHari.toUpperCase(); // SENIN, SELASA, RABU, dll
-            if (item[colHari] !== undefined && item[colHari] !== null) {
-                hariMatch = (parseInt(item[colHari]) === 1 || String(item[colHari]).toUpperCase() === 'YES' || String(item[colHari]).toUpperCase() === '1');
-            } else {
-                let hariText = String(item['Hari Kunjungan'] || item['HARI'] || '').toUpperCase();
-                hariMatch = hariText.includes(colHari);
-            }
-        }
-        
+    // Peta Indeks Kolom Hari
+    const hariIndexMap = {
+        'SENIN': 20,
+        'SELASA': 21,
+        'RABU': 22,
+        'KAMIS': 23,
+        'JUMAT': 24,
+        'SABTU': 25
+    };
+
+    let colHariIdx = hariIndexMap[selectedHari] !== undefined ? hariIndexMap[selectedHari] : -1;
+
+    // Filter Baris Data Berdasarkan DSE & Hari
+    let filteredRows = globalDataDO.filter(r => {
+        let dseVal = String(r[2] || "").trim();
+        if (!dseVal || dseVal.toUpperCase() === "DSE CODE" || dseVal.toUpperCase() === "NAN") return false;
+
+        const dseMatch = (selectedDse === "ALL") || (dseVal === selectedDse);
+        const hariMatch = (colHariIdx === -1 || parseNum(r[colHariIdx]) > 0);
+
         return dseMatch && hariMatch;
     });
 
-    // Grouping Berdasarkan DSE
+    // Grouping Data Berdasarkan DSE Code (Index 2)
     const dseGroups = {};
-    filteredDO.forEach(item => {
-        let dse = String(item['DSE Code'] || item['DSE CODE'] || item['Nama DSE'] || item['DSE'] || 'DSE').trim();
+    filteredRows.forEach(r => {
+        let dse = String(r[2] || "DSE UNKNOWN").trim();
         if (!dseGroups[dse]) dseGroups[dse] = [];
-        dseGroups[dse].push(item);
+        dseGroups[dse].push(r);
     });
 
     let html = "";
@@ -95,13 +124,20 @@ function renderTodayInstructionAddon() {
     dseKeys.forEach((dseName, idx) => {
         const outlets = dseGroups[dseName];
         
-        // Filter Outlet Kritis Sesuai Parameter Anda
-        const criticalOutlets = outlets.filter(o => {
-            const bio = parseFloat(o['RGUGA BIOMETRIX MTD'] || o['Biometrik'] || o['BIO'] || 0);
-            const tag = parseFloat(o['SP TAGGING'] || o['TAGGING 3PCS'] || o['Tagging'] || 0);
-            const osa = parseFloat(o['ACH OSA'] || o['OSA Rp'] || o['OSA'] || 0);
-            const sellIn = parseFloat(o['SP SELL IN'] || o['Sell In SP'] || o['SELL_IN'] || 0);
-            return bio === 0 || tag < 3 || osa < 300000 || sellIn < 3;
+        // Filter Outlet Kritis
+        const criticalOutlets = outlets.filter(r => {
+            const sellIn = parseNum(r[8]);      // Index 8: SP SELL IN
+            const osa = parseNum(r[12]);        // Index 12: ACH OSA
+            const tagSp = parseNum(r[15]);     // Index 15: SP TAGGING
+            const tag3Pcs = parseNum(r[16]);   // Index 16: TAGGING 3PCS
+            const bio = parseNum(r[18]);        // Index 18: RGUGA BIOMETRIX MTD
+
+            const isBioKritis = bio < 1;
+            const isTagKritis = (tagSp < 3 && tag3Pcs < 1);
+            const isOsaKritis = osa < 300000;
+            const isSellInKritis = sellIn < 3;
+
+            return isBioKritis || isTagKritis || isOsaKritis || isSellInKritis;
         });
 
         const sectionId = `tiDseCard_${idx}`;
@@ -135,20 +171,20 @@ function renderTodayInstructionAddon() {
                                 </tr>
                             </thead>
                             <tbody>
-                                ${criticalOutlets.map(o => {
-                                    const idOut = o['Outlet Id'] || o['ID Outlet'] || '-';
-                                    const nameOut = o['Outlet Name'] || o['Nama Outlet'] || '-';
-                                    
-                                    const bio = parseFloat(o['RGUGA BIOMETRIX MTD'] || o['Biometrik'] || o['BIO'] || 0);
-                                    const tag = parseFloat(o['SP TAGGING'] || o['TAGGING 3PCS'] || o['Tagging'] || 0);
-                                    const osa = parseFloat(o['ACH OSA'] || o['OSA Rp'] || o['OSA'] || 0);
-                                    const sellIn = parseFloat(o['SP SELL IN'] || o['Sell In SP'] || o['SELL_IN'] || 0);
+                                ${criticalOutlets.map(r => {
+                                    const idOut = r[0] || '-';
+                                    const nameOut = r[1] || '-';
+                                    const sellIn = parseNum(r[8]);
+                                    const osa = parseNum(r[12]);
+                                    const tagSp = parseNum(r[15]);
+                                    const tag3Pcs = parseNum(r[16]);
+                                    const bio = parseNum(r[18]);
 
                                     let notes = [];
-                                    if (bio === 0) notes.push("⚠️ Belum Bio");
-                                    if (tag < 3) notes.push("⚠️ Tag < 3 Pcs");
+                                    if (bio < 1) notes.push("⚠️ Belum Bio");
+                                    if (tagSp < 3 && tag3Pcs < 1) notes.push("⚠️ Tagging < 3 Pcs");
                                     if (osa < 300000) notes.push("⚠️ OSA < 300rb");
-                                    if (sellIn < 3) notes.push("⚠️ SP < 3 Pcs");
+                                    if (sellIn < 3) notes.push("⚠️ SP Sell in < 3 Pcs");
 
                                     return `
                                         <tr style="border-bottom:1px solid #e2e8f0; text-align:center;">
@@ -156,8 +192,8 @@ function renderTodayInstructionAddon() {
                                             <td style="padding:8px; text-align:left; font-weight:700; color:#0f172a;">${nameOut}</td>
                                             <td style="padding:8px;"><b style="color:${sellIn < 3 ? '#e11d48' : '#10b981'};">${sellIn} pcs</b></td>
                                             <td style="padding:8px;"><b style="color:${osa < 300000 ? '#e11d48' : '#10b981'};">Rp ${Math.round(osa).toLocaleString('id-ID')}</b></td>
-                                            <td style="padding:8px;"><b style="color:${bio === 0 ? '#e11d48' : '#10b981'};">${bio}</b></td>
-                                            <td style="padding:8px;"><b style="color:${tag < 3 ? '#e11d48' : '#10b981'};">${tag} pcs</b></td>
+                                            <td style="padding:8px;"><b style="color:${bio < 1 ? '#e11d48' : '#10b981'};">${bio}</b></td>
+                                            <td style="padding:8px;"><b style="color:${(tagSp < 3 && tag3Pcs < 1) ? '#e11d48' : '#10b981'};">${tagSp} pcs</b></td>
                                             <td style="padding:8px; text-align:left; font-weight:800; color:#b91c1c; background:#fff1f2;">${notes.join(', ')}</td>
                                         </tr>
                                     `;
