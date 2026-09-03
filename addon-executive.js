@@ -1,13 +1,11 @@
 /* ==========================================================================
-   ADD-ON MODULE: TODAY INSTRUCTION, HISTORY LOG & DROPDOWN FIX
+   ADD-ON MODULE: TODAY INSTRUCTION (DIRECT ARRAY INDEX MATCHING FROM SCRIPT.JS)
    ========================================================================== */
 
 document.addEventListener("DOMContentLoaded", () => {
-    injectGlobalCleanCSS();
     setupTiEventListeners();
-    initHistoryLogUI();
-    bindExportExcelButton();
 
+    // Loop otomatis memantau ketersediaan globalDataDO
     let syncInterval = setInterval(() => {
         if (typeof globalDataDO !== "undefined" && Array.isArray(globalDataDO) && globalDataDO.length > 0) {
             populateTiDseDropdown();
@@ -15,45 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
             clearInterval(syncInterval);
         }
     }, 300);
-
-    // Tata letak dipasang sekali saja setelah halaman siap agar tidak mengganggu dropdown yang terbuka
-    setTimeout(() => {
-        hideGapTotalTexts();
-        lockPeriodFilterNextToSnapshot();
-    }, 800);
 });
-
-function injectGlobalCleanCSS() {
-    if (document.getElementById("addonCleanStyle")) return;
-    const style = document.createElement("style");
-    style.id = "addonCleanStyle";
-    style.innerHTML = `
-        .exec-select {
-            position: relative !important;
-            z-index: 100 !important;
-            pointer-events: auto !important;
-            cursor: pointer !important;
-        }
-        .header-right-group {
-            display: inline-flex !important;
-            align-items: center !important;
-            gap: 8px !important;
-            margin-left: auto !important;
-            position: relative !important;
-            z-index: 100 !important;
-        }
-    `;
-    document.head.appendChild(style);
-}
-
-function hideGapTotalTexts() {
-    const allDivs = document.querySelectorAll("div, span, p, small");
-    allDivs.forEach(el => {
-        if (el.children.length === 0 && el.textContent.includes("GAP Total:")) {
-            el.style.setProperty("display", "none", "important");
-        }
-    });
-}
 
 function setupTiEventListeners() {
     const dseSelect = document.getElementById("tiDseFilter");
@@ -62,6 +22,7 @@ function setupTiEventListeners() {
     if (dseSelect) dseSelect.onchange = () => renderTodayInstructionAddon();
     if (hariSelect) hariSelect.onchange = () => renderTodayInstructionAddon();
 
+    // Sync otomatis saat tombol Tab Today Instruction diklik
     const btnTab = document.getElementById("navTabTodayInstruction");
     if (btnTab) {
         btnTab.addEventListener("click", () => {
@@ -73,10 +34,7 @@ function setupTiEventListeners() {
     }
 }
 
-/* ==========================================================================
-   1. TODAY INSTRUCTION MODULE
-   ========================================================================== */
-
+// 1. Populate Dropdown DSE Berdasarkan Index 2 (DSE Code)
 function populateTiDseDropdown() {
     const dseSelect = document.getElementById("tiDseFilter");
     if (!dseSelect || typeof globalDataDO === "undefined" || !globalDataDO || globalDataDO.length === 0) return;
@@ -103,6 +61,7 @@ function populateTiDseDropdown() {
     }
 }
 
+// 2. Render Utama Tab Today Instruction
 function renderTodayInstructionAddon() {
     const container = document.getElementById("tiDseCardsContainer");
     if (!container) return;
@@ -123,12 +82,19 @@ function renderTodayInstructionAddon() {
     const selectedDse = dseSelect ? dseSelect.value : "ALL";
     const selectedHari = document.getElementById("tiHariFilter") ? document.getElementById("tiHariFilter").value.toUpperCase() : "ALL";
 
+    // Peta Indeks Kolom Hari
     const hariIndexMap = {
-        'SENIN': 20, 'SELASA': 21, 'RABU': 22, 'KAMIS': 23, 'JUMAT': 24, 'SABTU': 25
+        'SENIN': 20,
+        'SELASA': 21,
+        'RABU': 22,
+        'KAMIS': 23,
+        'JUMAT': 24,
+        'SABTU': 25
     };
 
     let colHariIdx = hariIndexMap[selectedHari] !== undefined ? hariIndexMap[selectedHari] : -1;
 
+    // Filter Baris Data Berdasarkan DSE & Hari
     let filteredRows = globalDataDO.filter(r => {
         let dseVal = String(r[2] || "").trim();
         if (!dseVal || dseVal.toUpperCase() === "DSE CODE" || dseVal.toUpperCase() === "NAN") return false;
@@ -139,6 +105,7 @@ function renderTodayInstructionAddon() {
         return dseMatch && hariMatch;
     });
 
+    // Grouping Data Berdasarkan DSE Code (Index 2)
     const dseGroups = {};
     filteredRows.forEach(r => {
         let dse = String(r[2] || "DSE UNKNOWN").trim();
@@ -157,14 +124,20 @@ function renderTodayInstructionAddon() {
     dseKeys.forEach((dseName, idx) => {
         const outlets = dseGroups[dseName];
         
+        // Filter Outlet Kritis
         const criticalOutlets = outlets.filter(r => {
-            const sellIn = parseNum(r[8]);
-            const osa = parseNum(r[12]);
-            const tagSp = parseNum(r[15]);
-            const tag3Pcs = parseNum(r[16]);
-            const bio = parseNum(r[18]);
+            const sellIn = parseNum(r[8]);      // Index 8: SP SELL IN
+            const osa = parseNum(r[12]);        // Index 12: ACH OSA
+            const tagSp = parseNum(r[15]);     // Index 15: SP TAGGING
+            const tag3Pcs = parseNum(r[16]);   // Index 16: TAGGING 3PCS
+            const bio = parseNum(r[18]);        // Index 18: RGUGA BIOMETRIX MTD
 
-            return bio < 1 || (tagSp < 3 && tag3Pcs < 1) || osa < 300000 || sellIn < 3;
+            const isBioKritis = bio < 1;
+            const isTagKritis = (tagSp < 3 && tag3Pcs < 1);
+            const isOsaKritis = osa < 300000;
+            const isSellInKritis = sellIn < 3;
+
+            return isBioKritis || isTagKritis || isOsaKritis || isSellInKritis;
         });
 
         const sectionId = `tiDseCard_${idx}`;
@@ -176,7 +149,7 @@ function renderTodayInstructionAddon() {
                         <span style="font-size:15px; font-weight:900; color:#0f172a;"><i class="fa-solid fa-user-gear" style="color:#e11d48;"></i> DSE: ${dseName}</span>
                         <div style="font-size:11px; color:#64748b; margin-top:2px;">Total PJP: <b>${outlets.length} Outlet</b> | Kritis: <b style="color:#e11d48;">${criticalOutlets.length} Outlet</b></div>
                     </div>
-                    <button class="btn-snapshot-section" onclick="takeSectionSnapshot('${sectionId}')" style="background:#f59e0b; color:#0f172a; border:none; padding:6px 12px; border-radius:8px; font-size:11px; font-weight:800; cursor:pointer;"><i class="fa-solid fa-camera"></i> Snapshot ${dseName}</button>
+                    <button class="btn-snapshot-section" onclick="takeSectionSnapshot('${sectionId}')" style="background:#f59e0b; color:#0f172a; border:none; padding:6px 12px; border-radius:8px; font-size:11px; font-weight:800; cursor:pointer;"><i class="fa-solid fa-camera"></i> Snapshot DSE ${dseName}</button>
                 </div>
 
                 <div class="mini-table-wrapper">
@@ -234,251 +207,4 @@ function renderTodayInstructionAddon() {
     });
 
     container.innerHTML = html;
-}
-
-/* ==========================================================================
-   2. AUTOMATIC EXPORT EXCEL FUNCTION
-   ========================================================================== */
-
-function bindExportExcelButton() {
-    const exportBtns = document.querySelectorAll("button[onclick*='Export']:not(#btnOpenHistoryLog), .btn-export, #btnExportExcel");
-    exportBtns.forEach(btn => {
-        if (btn.id === "btnOpenHistoryLog") return;
-        btn.onclick = (e) => {
-            e.preventDefault();
-            executeDashboardExcelExport();
-        };
-    });
-}
-
-function executeDashboardExcelExport() {
-    if (typeof XLSX === "undefined") {
-        alert("⚠️ Library XLSX belum siap. Silakan refresh halaman dan coba lagi.");
-        return;
-    }
-
-    let activeTable = document.querySelector(".report-content:not([style*='display: none']) table") || document.querySelector("table");
-
-    if (!activeTable) {
-        alert("⚠️ Tidak ada data tabel yang dapat diekspor di tab ini.");
-        return;
-    }
-
-    let wb = XLSX.utils.table_to_book(activeTable, { sheet: "Export Data" });
-    let dateStr = new Date().toISOString().slice(0, 10);
-    XLSX.writeFile(wb, `Export_Dashboard_Bengkayang_${dateStr}.xlsx`);
-}
-
-/* ==========================================================================
-   3. STABLE HEADER RELOCATION
-   ========================================================================== */
-
-function lockPeriodFilterNextToSnapshot() {
-    const tabConfigs = [
-        { tabId: "ms-bengkayang", filterId: "pstHistoryPeriodFilter" },
-        { tabId: "outlet-mc", filterId: "smHistoryPeriodFilter" },
-        { tabId: "detail-outlet", filterId: "doHistoryPeriodFilter" },
-        { tabId: "daily-dse", filterId: "dailyHistoryPeriodFilter" }
-    ];
-
-    tabConfigs.forEach(cfg => {
-        const filterWrap = document.getElementById(cfg.filterId + "_wrap") || document.getElementById(cfg.filterId);
-        const tabElem = document.getElementById(cfg.tabId);
-        if (!filterWrap || !tabElem) return;
-
-        const snapBtn = tabElem.querySelector("button[onclick*='Snapshot']") || tabElem.querySelector("button[onclick*='snapshot']");
-        if (!snapBtn) return;
-
-        let rightGroup = snapBtn.parentElement.querySelector(".header-right-group");
-        if (!rightGroup) {
-            rightGroup = document.createElement("div");
-            rightGroup.className = "header-right-group";
-            snapBtn.parentElement.insertBefore(rightGroup, snapBtn);
-            rightGroup.appendChild(snapBtn);
-        }
-
-        if (filterWrap.parentElement !== rightGroup) {
-            rightGroup.insertBefore(filterWrap, snapBtn);
-        }
-    });
-}
-
-function initHistoryLogUI() {
-    const exportBtn = document.querySelector("button[onclick*='Export']:not(#btnOpenHistoryLog)") || document.querySelector(".btn-export") || document.getElementById("btnExportExcel");
-    if (exportBtn && exportBtn.parentElement && !document.getElementById("btnOpenHistoryLog")) {
-        const btnLog = document.createElement("button");
-        btnLog.id = "btnOpenHistoryLog";
-        btnLog.className = exportBtn.className || "btn-action";
-        btnLog.style.cssText = "background:#0f172a; color:#ffffff; font-weight:800; padding:6px 12px; font-size:12px; border-radius:8px; border:none; cursor:pointer; margin-left:8px; position:relative; z-index:100;";
-        btnLog.innerHTML = `<i class="fa-solid fa-clock-rotate-left"></i> Log History`;
-        btnLog.onclick = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            openHistoryLogModal();
-        };
-        
-        exportBtn.parentElement.insertBefore(btnLog, exportBtn.nextSibling);
-    }
-
-    injectPeriodFilterToTab("ms-bengkayang", "pstHistoryPeriodFilter");
-    injectPeriodFilterToTab("outlet-mc", "smHistoryPeriodFilter");
-    injectPeriodFilterToTab("detail-outlet", "doHistoryPeriodFilter");
-    injectPeriodFilterToTab("daily-dse", "dailyHistoryPeriodFilter");
-
-    createHistoryLogModalDOM();
-    updateTabHistoryDropdowns();
-}
-
-function injectPeriodFilterToTab(tabId, selectId) {
-    const tabElem = document.getElementById(tabId);
-    if (!tabElem) return;
-
-    if (!document.getElementById(selectId)) {
-        const wrap = document.createElement("div");
-        wrap.id = selectId + "_wrap";
-        wrap.style.cssText = "display:inline-flex; align-items:center; font-size:12px; font-weight:800; position:relative; z-index:100;";
-        wrap.innerHTML = `
-            <label style="color:#0f172a; margin-right:4px; white-space:nowrap;"><i class="fa-solid fa-calendar-days color-red"></i> Periode Update:</label>
-            <select id="${selectId}" class="exec-select" style="padding:6px 10px; font-weight:800; border-radius:8px; border:1px solid #cbd5e1; cursor:pointer;" onchange="handlePeriodFilterChange('${tabId}', this.value)">
-                <option value="LIVE">Live Data Terbaru</option>
-            </select>
-        `;
-
-        const snapBtn = tabElem.querySelector("button[onclick*='Snapshot']") || tabElem.querySelector("button[onclick*='snapshot']");
-        if (snapBtn && snapBtn.parentElement) {
-            snapBtn.parentElement.insertBefore(wrap, snapBtn);
-        }
-    }
-}
-
-function createHistoryLogModalDOM() {
-    if (document.getElementById("historyLogModalOverlay")) return;
-
-    const todayStr = new Date().toISOString().slice(0, 10).split('-').reverse().join('-');
-
-    const modalHtml = `
-        <div id="historyLogModalOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.7); z-index:99999; justify-content:center; align-items:center;">
-            <div style="background:#ffffff; width:90%; max-width:600px; border-radius:16px; padding:24px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.3); position:relative; z-index:100000;">
-                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #e2e8f0; padding-bottom:12px; margin-bottom:16px;">
-                    <h3 style="margin:0; font-weight:900; color:#0f172a;"><i class="fa-solid fa-file-pen color-red"></i> Catatan Log Update File</h3>
-                    <button onclick="closeHistoryLogModal()" style="border:none; background:none; font-size:20px; cursor:pointer; color:#64748b;">&times;</button>
-                </div>
-
-                <div style="font-size:12px; color:#475569; margin-bottom:16px;">
-                    Masukkan tanggal update sesuai format (Contoh: <b>03-09-2026</b>) untuk simpan ke daftar Periode Update.
-                </div>
-
-                <div style="background:#f8fafc; padding:16px; border-radius:12px; border:1px solid #e2e8f0; margin-bottom:16px;">
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; font-size:12px; font-weight:800;">
-                        <div>
-                            <input type="checkbox" id="chkPstUpdate" checked>
-                            <label for="chkPstUpdate">PST (MS Bengkayang)</label>
-                            <input type="text" id="datePstUpdate" value="${todayStr}" placeholder="03-09-2026" style="width:100%; margin-top:4px; padding:6px; border-radius:6px; border:1px solid #cbd5e1; font-weight:700;">
-                        </div>
-                        <div>
-                            <input type="checkbox" id="chkSmUpdate" checked>
-                            <label for="chkSmUpdate">Site Monitoring</label>
-                            <input type="text" id="dateSmUpdate" value="${todayStr}" placeholder="03-09-2026" style="width:100%; margin-top:4px; padding:6px; border-radius:6px; border:1px solid #cbd5e1; font-weight:700;">
-                        </div>
-                        <div>
-                            <input type="checkbox" id="chkDoUpdate" checked>
-                            <label for="chkDoUpdate">Detail Outlet</label>
-                            <input type="text" id="dateDoUpdate" value="${todayStr}" placeholder="03-09-2026" style="width:100%; margin-top:4px; padding:6px; border-radius:6px; border:1px solid #cbd5e1; font-weight:700;">
-                        </div>
-                        <div>
-                            <input type="checkbox" id="chkDailyUpdate" checked>
-                            <label for="chkDailyUpdate">GAP Daily KPI DSE</label>
-                            <input type="text" id="dateDailyUpdate" value="${todayStr}" placeholder="03-09-2026" style="width:100%; margin-top:4px; padding:6px; border-radius:6px; border:1px solid #cbd5e1; font-weight:700;">
-                        </div>
-                    </div>
-                </div>
-
-                <div style="display:flex; justify-content:flex-end; gap:8px;">
-                    <button onclick="closeHistoryLogModal()" style="padding:8px 16px; border-radius:8px; border:1px solid #cbd5e1; background:#fff; font-weight:800; cursor:pointer;">Batal</button>
-                    <button onclick="saveCurrentDataHistoryLog()" style="padding:8px 16px; border-radius:8px; border:none; background:#e11d48; color:#fff; font-weight:800; cursor:pointer;"><i class="fa-solid fa-floppy-disk"></i> Simpan Catatan</button>
-                </div>
-            </div>
-        </div>
-    `;
-
-    document.body.insertAdjacentHTML("beforeend", modalHtml);
-}
-
-function openHistoryLogModal() {
-    const modal = document.getElementById("historyLogModalOverlay");
-    if (modal) modal.style.display = "flex";
-}
-
-function closeHistoryLogModal() {
-    const modal = document.getElementById("historyLogModalOverlay");
-    if (modal) modal.style.display = "none";
-}
-
-function saveCurrentDataHistoryLog() {
-    const chkPst = document.getElementById("chkPstUpdate").checked;
-    const datePst = document.getElementById("datePstUpdate").value.trim();
-
-    const chkSm = document.getElementById("chkSmUpdate").checked;
-    const dateSm = document.getElementById("dateSmUpdate").value.trim();
-
-    const chkDo = document.getElementById("chkDoUpdate").checked;
-    const dateDo = document.getElementById("dateDoUpdate").value.trim();
-
-    const chkDaily = document.getElementById("chkDailyUpdate").checked;
-    const dateDaily = document.getElementById("dateDailyUpdate").value.trim();
-
-    let historyRecords = JSON.parse(localStorage.getItem("app_dashboard_history_records") || "[]");
-
-    const record = {
-        id: Date.now(),
-        timestamp: new Date().toLocaleDateString("id-ID"),
-        pst: chkPst ? datePst : "-",
-        sm: chkSm ? dateSm : "-",
-        do: chkDo ? dateDo : "-",
-        daily: chkDaily ? dateDaily : "-"
-    };
-
-    historyRecords.unshift(record);
-    localStorage.setItem("app_dashboard_history_records", JSON.stringify(historyRecords));
-
-    updateTabHistoryDropdowns();
-    closeHistoryLogModal();
-    alert("✅ Catatan Log Tanggal Berhasil Disimpan!");
-}
-
-function updateTabHistoryDropdowns() {
-    let historyRecords = JSON.parse(localStorage.getItem("app_dashboard_history_records") || "[]");
-
-    const filters = [
-        "pstHistoryPeriodFilter",
-        "smHistoryPeriodFilter",
-        "doHistoryPeriodFilter",
-        "dailyHistoryPeriodFilter"
-    ];
-
-    filters.forEach(filterId => {
-        const select = document.getElementById(filterId);
-        if (!select) return;
-
-        let opts = `<option value="LIVE">Live Data Terbaru</option>`;
-        historyRecords.forEach(rec => {
-            let tagDate = "-";
-            if (filterId.includes("pst") && rec.pst !== "-") tagDate = rec.pst;
-            if (filterId.includes("sm") && rec.sm !== "-") tagDate = rec.sm;
-            if (filterId.includes("do") && rec.do !== "-") tagDate = rec.do;
-            if (filterId.includes("daily") && rec.daily !== "-") tagDate = rec.daily;
-
-            opts += `<option value="${rec.id}">Update Tanggal: ${tagDate}</option>`;
-        });
-
-        select.innerHTML = opts;
-    });
-}
-
-function handlePeriodFilterChange(tabId, val) {
-    if (val === "LIVE") {
-        alert("Menampilkan Live Data Terbaru.");
-    } else {
-        alert("Periode Catatan Log Dipilih.");
-    }
 }
