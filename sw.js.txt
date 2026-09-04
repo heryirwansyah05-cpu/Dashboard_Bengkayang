@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bengkayang-dashboard-v1';
+const CACHE_NAME = 'bengkayang-v2-desktop';
 const urlsToCache = [
   'index.html',
   'style.css',
