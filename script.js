@@ -1559,7 +1559,7 @@ function renderTargetNonKpiTable(selectedDseFilter) {
     }
 
     tbody.innerHTML = dseKeys.map(k => {
-        let tgtFwa = 2; // Target RGUGA FWA Default Per DSE
+        let tgtFwa = 4; // Target RGUGA FWA Default Per DSE
         let fwaAch = dseMap[k].fwaAch;
         let gapFwa = Math.max(0, tgtFwa - fwaAch);
         let pctFwa = Math.min(100, (fwaAch / tgtFwa) * 100);
