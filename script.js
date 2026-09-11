@@ -1434,17 +1434,17 @@ function updateExecutiveSummaryNew() {
     document.getElementById("exKpiBio").innerText = pctBio.toFixed(1) + "%";
     document.getElementById("exKpiTag").innerText = pctTag.toFixed(1) + "%";
 
-    let tradeTargetVal = 1569764247;
+    let tradeTargetVal = 1568441913;
     let tradeAchPct = tradeTargetVal > 0 ? (totalTradeSupply / tradeTargetVal) * 100 : 0;
     let tradeScore = Math.min(tradeAchPct, 140);
     let tradeWeighted = tradeScore * 0.30;
 
-    let sellInTargetVal = targetSellIn > 0 ? targetSellIn : 2422;
+    let sellInTargetVal = 2234;
     let sellInAchPct = sellInTargetVal > 0 ? (achSellIn / sellInTargetVal) * 100 : 0;
     let sellInScore = Math.min(sellInAchPct, 140);
     let sellInWeighted = sellInScore * 0.175;
 
-    let tagTargetVal = 167;
+    let tagTargetVal = 155;
     let tagAchPct = tagTargetVal > 0 ? (globalTagAchCount / tagTargetVal) * 100 : 0;
     let tagScore = Math.min(tagAchPct, 140);
     let tagWeighted = tagScore * 0.175;
