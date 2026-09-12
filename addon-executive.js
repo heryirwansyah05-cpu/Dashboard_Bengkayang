@@ -4435,3 +4435,231 @@ document.addEventListener(
 
     window.addEventListener("load", bootV5);
 })();
+
+/* =========================================================
+   HEADER + KPI GLOBAL ONLY — V1
+   BASE: V6 STABLE
+   ---------------------------------------------------------
+   Scope is intentionally LIMITED to:
+   1) Main header
+   2) Executive Summary KPI Global
+   No other dashboard section is changed here.
+   ========================================================= */
+(function () {
+    "use strict";
+
+    const STYLE_ID = "im3-header-kpi-only-v1";
+
+    function injectHeaderKpiOnlyStyle() {
+        if (document.getElementById(STYLE_ID)) return;
+
+        const style = document.createElement("style");
+        style.id = STYLE_ID;
+        style.textContent = `
+        /* =====================================================
+           HEADER — MATCH THE APPROVED MOCKUP
+           ===================================================== */
+        @media (min-width: 1000px) {
+            body > .container > .header {
+                height: 82px !important;
+                min-height: 82px !important;
+                max-height: 82px !important;
+                padding: 0 14px !important;
+                margin: 0 !important;
+                border-radius: 0 0 18px 18px !important;
+                overflow: visible !important;
+                box-sizing: border-box !important;
+            }
+
+            /* Title / period stay on the left side of the white header */
+            body > .container > .header .header-top-row {
+                position: absolute !important;
+                top: 0 !important;
+                left: 14px !important;
+                right: 14px !important;
+                height: 48px !important;
+                min-height: 48px !important;
+                max-height: 48px !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: flex-end !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                box-sizing: border-box !important;
+            }
+
+            /* Keep the existing left title/brand content where V6 places it. */
+            body > .container > .header .header-left-brand {
+                margin-right: auto !important;
+                min-width: 0 !important;
+            }
+
+            body > .container > .header .header-right-im3 {
+                display: flex !important;
+                align-items: center !important;
+                gap: 8px !important;
+                margin-left: auto !important;
+            }
+
+            /* Action row: compact and aligned to the right */
+            body > .container > .header .header-bottom-row {
+                position: absolute !important;
+                top: 48px !important;
+                right: 14px !important;
+                left: 14px !important;
+                bottom: auto !important;
+                width: auto !important;
+                height: 34px !important;
+                min-height: 34px !important;
+                max-height: 34px !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                border-top: 0 !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: flex-end !important;
+                box-sizing: border-box !important;
+            }
+
+            body > .container > .header .controls-left {
+                margin-right: auto !important;
+                min-width: 0 !important;
+            }
+
+            body > .container > .header .header-actions {
+                display: flex !important;
+                align-items: center !important;
+                justify-content: flex-end !important;
+                gap: 8px !important;
+                margin: 0 !important;
+            }
+
+            body > .container > .header .header-actions .btn-export {
+                height: 34px !important;
+                min-height: 34px !important;
+                padding: 0 13px !important;
+                border-radius: 10px !important;
+                font-size: 10px !important;
+                line-height: 1 !important;
+                white-space: nowrap !important;
+            }
+
+            body > .container > .header .dark-toggle-btn {
+                width: 34px !important;
+                height: 34px !important;
+                min-width: 34px !important;
+                min-height: 34px !important;
+                border-radius: 10px !important;
+            }
+
+            /* Executive Summary starts immediately under the header */
+            #all-summary-tab {
+                margin-top: 0 !important;
+                padding-top: 0 !important;
+            }
+
+            /* =================================================
+               KPI GLOBAL — 7 EQUAL CARDS / SINGLE ROW
+               ================================================= */
+            #snapshotSectionGlobal {
+                margin-top: 0 !important;
+                padding-top: 0 !important;
+            }
+
+            #snapshotSectionGlobal .exec-kpi-global-grid {
+                display: grid !important;
+                grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+                gap: 8px !important;
+                width: 100% !important;
+                align-items: stretch !important;
+                box-sizing: border-box !important;
+            }
+
+            #snapshotSectionGlobal .exec-kpi-box {
+                min-width: 0 !important;
+                width: 100% !important;
+                height: 68px !important;
+                min-height: 68px !important;
+                max-height: 68px !important;
+                padding: 10px 10px 8px !important;
+                margin: 0 !important;
+                border-radius: 13px !important;
+                box-sizing: border-box !important;
+                overflow: hidden !important;
+            }
+
+            #snapshotSectionGlobal .exec-kpi-box .box-title,
+            #snapshotSectionGlobal .exec-kpi-box .kpi-title,
+            #snapshotSectionGlobal .exec-kpi-box .m-title,
+            #snapshotSectionGlobal .exec-kpi-box [class*="label"] {
+                font-size: 8.5px !important;
+                line-height: 1.1 !important;
+                white-space: nowrap !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+            }
+
+            #snapshotSectionGlobal .exec-kpi-box .box-val,
+            #snapshotSectionGlobal .exec-kpi-box .kpi-main-val,
+            #snapshotSectionGlobal .exec-kpi-box .m-val,
+            #snapshotSectionGlobal .exec-kpi-box [class*="value"] {
+                display: block !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                margin-top: 4px !important;
+                font-size: 14px !important;
+                line-height: 1 !important;
+                font-weight: 900 !important;
+                letter-spacing: -0.45px !important;
+                white-space: nowrap !important;
+                overflow: hidden !important;
+                text-overflow: clip !important;
+            }
+
+            #snapshotSectionGlobal .exec-kpi-box .box-growth,
+            #snapshotSectionGlobal .exec-kpi-box .kpi-growth,
+            #snapshotSectionGlobal .exec-kpi-box .m-growth,
+            #snapshotSectionGlobal .exec-kpi-box [class*="growth"],
+            #snapshotSectionGlobal .exec-kpi-box [class*="change"] {
+                margin-top: 4px !important;
+                font-size: 9px !important;
+                line-height: 1 !important;
+                white-space: nowrap !important;
+            }
+
+            /* Revenue / currency cards need a tiny size reduction only
+               when the viewport is narrower, preventing clipping. */
+            #snapshotSectionGlobal .exec-kpi-box.box-red .box-val,
+            #snapshotSectionGlobal .exec-kpi-box.box-yellow .box-val,
+            #snapshotSectionGlobal .exec-kpi-box.box-magenta .box-val,
+            #snapshotSectionGlobal .exec-kpi-box.box-purple .box-val {
+                font-size: 13.5px !important;
+            }
+        }
+
+        /* =====================================================
+           MOBILE — DO NOT CHANGE EXISTING MOBILE LAYOUT
+           ===================================================== */
+        @media (max-width: 999px) {
+            #snapshotSectionGlobal .exec-kpi-global-grid {
+                width: 100% !important;
+                box-sizing: border-box !important;
+            }
+        }
+        `;
+
+        document.head.appendChild(style);
+    }
+
+    function bootHeaderKpiOnly() {
+        injectHeaderKpiOnlyStyle();
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", bootHeaderKpiOnly, { once: true });
+    } else {
+        bootHeaderKpiOnly();
+    }
+
+    window.addEventListener("load", bootHeaderKpiOnly, { once: true });
+})();
