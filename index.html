@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="mobile.css">
     <link rel="stylesheet" href="addon-style.css">
+    <link rel="stylesheet" href="im3-theme.css">
     <style>
         /* Custom Multi-Select Dropdown Styling */
         .custom-multiselect {
@@ -257,6 +258,72 @@
                 </div>
             </div>
 
+                        <!-- SECTION 3: PERFORMANCE TREND + MARKET SHARE -->
+            <div class="exec-analysis-grid" id="snapshotSectionAnalysis">
+
+                <!-- PERFORMANCE TREND -->
+                <div class="exec-card-panel border-top-yellow exec-analysis-card" id="snapshotSectionTrend">
+                    <div class="exec-panel-header-flex">
+                        <div class="exec-panel-header">
+                            <i class="fa-solid fa-chart-line color-yellow"></i>
+                            PERFORMANCE TREND
+                        </div>
+
+                        <button class="btn-snapshot-section"
+                                onclick="takeSectionSnapshot('snapshotSectionTrend')">
+                            <i class="fa-solid fa-camera"></i> Snapshot
+                        </button>
+                    </div>
+
+                    <div class="analysis-subtitle">
+                        Monthly Performance — MTD vs LMTD
+                    </div>
+
+                    <div class="trend-placeholder" id="executiveTrendContainer">
+                        <div class="trend-placeholder-icon">
+                            <i class="fa-solid fa-chart-line"></i>
+                        </div>
+                        <div class="trend-placeholder-title">
+                            Monthly Performance Trend
+                        </div>
+                        <div class="trend-placeholder-text">
+                            Data monthly akan dihubungkan pada langkah berikutnya.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MARKET SHARE -->
+                <div class="exec-card-panel border-top-red exec-analysis-card" id="snapshotSectionMarketShare">
+                    <div class="exec-panel-header-flex">
+                        <div class="exec-panel-header">
+                            <i class="fa-solid fa-chart-pie color-red"></i>
+                            MARKET SHARE
+                        </div>
+
+                        <button class="btn-snapshot-section"
+                                onclick="takeSectionSnapshot('snapshotSectionMarketShare')">
+                            <i class="fa-solid fa-camera"></i> Snapshot
+                        </button>
+                    </div>
+
+                    <div class="analysis-subtitle">
+                        Market Share — MC Bengkayang
+                    </div>
+
+                    <div class="market-share-placeholder" id="executiveMarketShareContainer">
+                        <div class="trend-placeholder-icon">
+                            <i class="fa-solid fa-chart-pie"></i>
+                        </div>
+                        <div class="trend-placeholder-title">
+                            Market Share MC Bengkayang
+                        </div>
+                        <div class="trend-placeholder-text">
+                            Data Market Share akan dihubungkan pada langkah berikutnya.
+                        </div>
+                    </div>
+                </div>
+
+            </div>
             <!-- SECTION NON KPI PANEL -->
             <div class="exec-card-panel border-top-blue" id="snapshotSectionNonKpi">
                 <div class="exec-panel-header-flex">

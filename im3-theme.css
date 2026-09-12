@@ -1,0 +1,1291 @@
+
+/* =========================================================
+   IM3 THEME - VISUAL ONLY
+   Dashboard MC Bengkayang
+   ---------------------------------------------------------
+   Tujuan:
+   - TIDAK mengubah data
+   - TIDAK mengubah ID/class/function JavaScript
+   - TIDAK mengubah struktur KPI
+   - Hanya override tampilan existing dashboard
+   ========================================================= */
+
+/* ---------- 01. DESIGN TOKENS ---------- */
+:root {
+    --im3-yellow: #FFD600;
+    --im3-yellow-dark: #F5B800;
+    --im3-navy: #172236;
+    --im3-navy-2: #202D43;
+    --im3-bg: #F4F7FA;
+    --im3-card: #FFFFFF;
+    --im3-border: #E4EAF1;
+    --im3-text: #172236;
+    --im3-muted: #66758A;
+    --im3-red: #E51B4B;
+    --im3-green: #12A86B;
+    --im3-cyan: #08A9C7;
+    --im3-purple: #8B5CF6;
+    --im3-orange: #F97316;
+    --im3-shadow: 0 8px 24px rgba(23, 34, 54, .07);
+    --im3-shadow-hover: 0 12px 28px rgba(23, 34, 54, .12);
+}
+
+/* ---------- 02. BODY / GLOBAL ---------- */
+body {
+    background:
+        radial-gradient(circle at 0% 0%, rgba(255,214,0,.10), transparent 24%),
+        linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%) !important;
+    color: var(--im3-text) !important;
+}
+
+.container {
+    max-width: 1440px !important;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 9px;
+    height: 9px;
+}
+::-webkit-scrollbar-track {
+    background: #EEF2F6;
+}
+::-webkit-scrollbar-thumb {
+    background: #B7C2D0;
+    border-radius: 20px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #7F8EA3;
+}
+
+/* ---------- 03. HEADER ---------- */
+.header {
+    position: relative;
+    overflow: hidden;
+    background:
+        linear-gradient(120deg, #FFFFFF 0%, #FFFFFF 67%, #FFF9D9 100%) !important;
+    border: 1px solid rgba(23,34,54,.08) !important;
+    border-radius: 20px !important;
+    box-shadow: var(--im3-shadow) !important;
+}
+
+.header::after {
+    content: "";
+    position: absolute;
+    right: -90px;
+    top: -110px;
+    width: 360px;
+    height: 220px;
+    background: linear-gradient(135deg, rgba(255,214,0,.28), rgba(255,214,0,0));
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.header-top-row,
+.header-bottom-row {
+    position: relative;
+    z-index: 1;
+}
+
+.header-top-row {
+    border-bottom-color: #EDF1F5 !important;
+}
+
+.brand-logo-box {
+    border: 1px solid #E7EBF0 !important;
+    border-radius: 14px !important;
+    background: #fff !important;
+    box-shadow: 0 3px 10px rgba(23,34,54,.05);
+}
+
+.header h1 {
+    color: var(--im3-navy) !important;
+    letter-spacing: -.4px;
+}
+
+.sub-header-title {
+    color: var(--im3-muted) !important;
+}
+
+.im3-logo-box {
+    background: #FFF9D6 !important;
+    border: 1px solid #F4D64F !important;
+    box-shadow: 0 4px 12px rgba(255,214,0,.12);
+}
+
+.date-badge-box {
+    background: #FFF8D6 !important;
+    border: 1px solid #F6DD67 !important;
+    color: #8A6500 !important;
+}
+
+.date-badge-box small {
+    color: #A46F00 !important;
+}
+
+/* Header buttons */
+.btn-export {
+    background: #FFFFFF !important;
+    border: 1px solid #D7DEE8 !important;
+    color: var(--im3-navy) !important;
+    box-shadow: 0 3px 9px rgba(23,34,54,.04);
+}
+
+.btn-export:hover {
+    background: #FFF8D6 !important;
+    border-color: #E6C52A !important;
+    transform: translateY(-1px);
+}
+
+.dark-toggle-btn {
+    background: var(--im3-navy) !important;
+    color: #FFFFFF !important;
+    border-color: var(--im3-navy) !important;
+}
+
+/* ---------- 04. TOP NAV ---------- */
+.top-nav-bar {
+    position: sticky;
+    top: 8px;
+    z-index: 1000;
+    background: rgba(255,255,255,.96) !important;
+    border: 1px solid #E0E6EE !important;
+    border-radius: 16px !important;
+    box-shadow: 0 8px 24px rgba(23,34,54,.08) !important;
+    backdrop-filter: blur(12px);
+}
+
+.report-tabs {
+    gap: 5px !important;
+}
+
+.tab-btn {
+    color: #64748B !important;
+    border-radius: 10px !important;
+    transition: all .18s ease !important;
+}
+
+.tab-btn:hover {
+    background: #FFF8D6 !important;
+    color: #172236 !important;
+}
+
+.tab-btn.active,
+.tab-btn.tab-summary-btn.active {
+    background: var(--im3-yellow) !important;
+    color: #111827 !important;
+    box-shadow: 0 4px 10px rgba(255,214,0,.24);
+}
+
+.update {
+    color: var(--im3-green) !important;
+}
+
+/* ---------- 05. GLOBAL CARD ---------- */
+.card {
+    position: relative;
+    overflow: hidden;
+    background: var(--im3-card) !important;
+    border: 1px solid var(--im3-border) !important;
+    border-top-width: 4px !important;
+    border-radius: 15px !important;
+    box-shadow: var(--im3-shadow) !important;
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--im3-shadow-hover) !important;
+}
+
+.card::after {
+    content: "";
+    position: absolute;
+    right: -32px;
+    bottom: -42px;
+    width: 105px;
+    height: 105px;
+    border-radius: 50%;
+    background: rgba(255,214,0,.045);
+    pointer-events: none;
+}
+
+.card h3 {
+    color: #526176 !important;
+    letter-spacing: .15px;
+}
+
+.kpi-main-val {
+    color: var(--im3-navy) !important;
+    letter-spacing: -.35px;
+}
+
+.kpi-compare-row {
+    color: var(--im3-muted) !important;
+}
+
+.growth-positive {
+    background: #DDF7EA !important;
+    color: #087A4B !important;
+}
+
+.growth-negative {
+    background: #FDE3E8 !important;
+    color: #B5123B !important;
+}
+
+/* ---------- 06. KPI ACCENT COLORS ---------- */
+.card-red { border-top-color: var(--im3-red) !important; }
+.card-yellow { border-top-color: var(--im3-yellow-dark) !important; }
+.card-magenta { border-top-color: #C83BE3 !important; }
+.card-cyan { border-top-color: var(--im3-cyan) !important; }
+.card-purple { border-top-color: var(--im3-purple) !important; }
+.card-orange { border-top-color: var(--im3-orange) !important; }
+
+/* ---------- 07. EXECUTIVE SUMMARY ---------- */
+.exec-summary-wrapper {
+    background: #FFFFFF !important;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 20px !important;
+    box-shadow: var(--im3-shadow);
+}
+
+.exec-summary-title-banner {
+    position: relative;
+    overflow: hidden;
+    background:
+        linear-gradient(115deg, #111B2D 0%, #1D2A40 72%, #26344C 100%) !important;
+    border-radius: 15px !important;
+    box-shadow: 0 8px 20px rgba(23,34,54,.12);
+}
+
+.exec-summary-title-banner::after {
+    content: "";
+    position: absolute;
+    right: -70px;
+    top: -80px;
+    width: 260px;
+    height: 190px;
+    border-radius: 50%;
+    background: rgba(255,214,0,.14);
+    pointer-events: none;
+}
+
+.exec-summary-title-banner h2 {
+    letter-spacing: -.2px;
+}
+
+.exec-summary-sub {
+    color: var(--im3-yellow) !important;
+}
+
+/* Executive KPI */
+.exec-kpi-global-grid {
+    gap: 10px !important;
+}
+
+.exec-kpi-box {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(180deg,#FFFFFF 0%,#FAFCFE 100%) !important;
+    border: 1px solid #E4EAF1 !important;
+    border-left-width: 5px !important;
+    border-radius: 14px !important;
+    box-shadow: 0 4px 14px rgba(23,34,54,.055);
+    transition: transform .18s ease, box-shadow .18s ease;
+}
+
+.exec-kpi-box:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 9px 20px rgba(23,34,54,.10);
+}
+
+.exec-kpi-box::after {
+    content: "";
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    right: -38px;
+    top: -38px;
+    border-radius: 50%;
+    background: rgba(255,214,0,.08);
+}
+
+.box-lbl {
+    color: #64748B !important;
+}
+
+.box-val {
+    color: var(--im3-navy) !important;
+}
+
+.box-red { border-left-color: var(--im3-red) !important; }
+.box-yellow { border-left-color: var(--im3-yellow-dark) !important; }
+.box-magenta { border-left-color: #C83BE3 !important; }
+.box-cyan { border-left-color: var(--im3-cyan) !important; }
+.box-green { border-left-color: var(--im3-green) !important; }
+.box-purple { border-left-color: var(--im3-purple) !important; }
+.box-orange { border-left-color: var(--im3-orange) !important; }
+
+/* Executive sections */
+.exec-card-panel {
+    background: linear-gradient(180deg,#F9FBFD 0%,#F5F8FB 100%) !important;
+    border: 1px solid #DEE6EF !important;
+    border-radius: 15px !important;
+    box-shadow: 0 5px 16px rgba(23,34,54,.045);
+}
+
+.exec-panel-header,
+.exec-section-header {
+    color: var(--im3-navy) !important;
+}
+
+.border-top-yellow { border-top-color: var(--im3-yellow-dark) !important; }
+.border-top-blue { border-top-color: #1689C9 !important; }
+.border-top-red { border-top-color: var(--im3-red) !important; }
+.border-top-green { border-top-color: var(--im3-green) !important; }
+.border-top-cyan { border-top-color: var(--im3-cyan) !important; }
+
+.exec-select,
+.toolbar select,
+.toolbar input {
+    background: #FFFFFF !important;
+    border-color: #D5DEE9 !important;
+    color: var(--im3-navy) !important;
+}
+
+.exec-select:focus,
+.toolbar select:focus,
+.toolbar input:focus {
+    outline: none;
+    border-color: #D4AF00 !important;
+    box-shadow: 0 0 0 3px rgba(255,214,0,.18);
+}
+
+.mission-stat-card {
+    background: #FFFFFF !important;
+    border: 1px solid #E1E7EE !important;
+    border-radius: 13px !important;
+    box-shadow: 0 4px 12px rgba(23,34,54,.045);
+}
+
+.mission-stat-card:hover {
+    border-color: #E4C500 !important;
+    box-shadow: 0 8px 18px rgba(23,34,54,.08);
+}
+
+.m-lbl {
+    color: #66758A !important;
+}
+
+.m-val {
+    color: var(--im3-navy) !important;
+}
+
+.m-sub {
+    color: var(--im3-red) !important;
+}
+
+/* ---------- 08. TOOLBAR / FILTER ---------- */
+.toolbar {
+    padding: 9px 10px;
+    background: #FFFFFF;
+    border: 1px solid #E3E9F0;
+    border-radius: 13px;
+    box-shadow: 0 4px 12px rgba(23,34,54,.035);
+}
+
+.reset-btn {
+    background: #FFF4C2 !important;
+    color: #775B00 !important;
+    border: 1px solid #E8C92D !important;
+}
+
+.reset-btn:hover {
+    background: var(--im3-yellow) !important;
+    color: #111827 !important;
+}
+
+/* Custom multi-select */
+.multiselect-btn {
+    background: #FFFFFF !important;
+    border-color: #D5DEE9 !important;
+    color: var(--im3-navy) !important;
+    border-radius: 9px !important;
+}
+
+.multiselect-btn:hover {
+    border-color: #D4AF00 !important;
+    background: #FFFDF0 !important;
+}
+
+.multiselect-dropdown {
+    border-color: #DCE3EB !important;
+    box-shadow: 0 14px 30px rgba(23,34,54,.14) !important;
+    border-radius: 11px !important;
+}
+
+.multiselect-option:hover {
+    background: #FFF8D6 !important;
+}
+
+/* ---------- 09. TABLES ---------- */
+.table-container {
+    background: #FFFFFF !important;
+    border: 1px solid #DFE6EE !important;
+    border-radius: 14px !important;
+    box-shadow: 0 5px 16px rgba(23,34,54,.045);
+}
+
+table {
+    color: var(--im3-text);
+}
+
+table thead th,
+.mini-exec-table th {
+    background: linear-gradient(180deg,#1D2A40 0%,#172236 100%) !important;
+    color: #FFFFFF !important;
+    border-color: #2E3C53 !important;
+    font-weight: 800 !important;
+}
+
+table tbody tr:nth-child(even),
+.mini-exec-table tbody tr:nth-child(even) {
+    background: #FAFCFE;
+}
+
+table tbody tr:hover,
+.mini-exec-table tbody tr:hover {
+    background: #FFFBEA !important;
+}
+
+table td,
+table th,
+.mini-exec-table td {
+    border-color: #E8EDF3 !important;
+}
+
+.mini-exec-table {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.mini-exec-table td {
+    color: #334155;
+}
+
+/* ---------- 10. LEADERBOARD / RANKING ---------- */
+.leaderboard-grid {
+    gap: 14px !important;
+}
+
+.leaderboard-card {
+    background: #FFFFFF !important;
+    border: 1px solid #E0E7EF !important;
+    border-radius: 14px !important;
+    box-shadow: 0 5px 15px rgba(23,34,54,.045);
+}
+
+.leaderboard-card:hover {
+    border-color: #E6C700 !important;
+}
+
+.lb-header {
+    color: var(--im3-navy) !important;
+}
+
+/* ---------- 11. PARTNER PERFORMANCE ---------- */
+.pp-dashboard-grid {
+    gap: 14px !important;
+}
+
+.pp-mini-chart-container {
+    background: linear-gradient(180deg,#FFFFFF,#F8FAFC);
+    border-radius: 11px;
+}
+
+/* ---------- 12. PROGRESS BARS ---------- */
+.progress-bar-bg {
+    background: #E7EDF4 !important;
+    border-radius: 20px !important;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    border-radius: 20px !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.25);
+}
+
+.progress-bar-fill.fill-yellow {
+    background: linear-gradient(90deg,#F4BF00,#FFD600) !important;
+}
+.progress-bar-fill.fill-cyan {
+    background: linear-gradient(90deg,#058EB0,#08B6D0) !important;
+}
+.progress-bar-fill.fill-magenta {
+    background: linear-gradient(90deg,#B832D0,#D946EF) !important;
+}
+.progress-bar-fill.fill-red {
+    background: linear-gradient(90deg,#D41443,#EF4760) !important;
+}
+
+/* ---------- 13. BADGES / STATUS ---------- */
+.status-badge {
+    border-radius: 20px !important;
+    font-weight: 800 !important;
+}
+
+.status-badge.badge-success {
+    background: #DDF7EA !important;
+    color: #087A4B !important;
+    border-color: #BCE9D2 !important;
+}
+
+.badge-target {
+    border-radius: 20px !important;
+}
+
+.gap-item {
+    border-radius: 10px !important;
+}
+
+/* ---------- 14. BUTTONS / SNAPSHOT ---------- */
+.btn-snapshot-section,
+.btn-snapshot-table {
+    background: linear-gradient(180deg,#FFD91A 0%,#F5C400 100%) !important;
+    color: #111827 !important;
+    border: 1px solid #E0B400 !important;
+    border-radius: 9px !important;
+    box-shadow: 0 4px 10px rgba(255,196,0,.18);
+}
+
+.btn-snapshot-section:hover,
+.btn-snapshot-table:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 7px 14px rgba(255,196,0,.25);
+}
+
+/* ---------- 15. QUICK / ADDON ---------- */
+.addon-btn-quick {
+    background: var(--im3-navy) !important;
+    border-radius: 8px !important;
+}
+
+.addon-btn-quick:hover {
+    background: #26364F !important;
+}
+
+.addon-severity-high {
+    border-left-color: var(--im3-red) !important;
+    background: #FFF5F7 !important;
+}
+
+.addon-severity-warning {
+    border-left-color: var(--im3-yellow-dark) !important;
+    background: #FFFBE8 !important;
+}
+
+.addon-empty-card {
+    background: #F1FBF6 !important;
+    border-left-color: var(--im3-green) !important;
+}
+
+/* ---------- 16. STICKY KPI ---------- */
+.sticky-kpi-bar {
+    background: rgba(23,34,54,.94) !important;
+    border: 1px solid rgba(255,255,255,.10);
+    box-shadow: 0 10px 30px rgba(0,0,0,.22);
+}
+
+.sticky-top-btn {
+    background: var(--im3-yellow) !important;
+    color: #111827 !important;
+}
+
+/* ---------- 17. FOOTER ---------- */
+.dashboard-footer {
+    border-top-color: #DCE3EB !important;
+    color: #718096 !important;
+}
+
+.footer-status {
+    color: var(--im3-green) !important;
+}
+
+/* ---------- 18. LOADING ---------- */
+#loading {
+    background:
+        radial-gradient(circle at 50% 40%, rgba(255,214,0,.10), transparent 30%),
+        #111B2D !important;
+}
+
+.loader-fill {
+    background: linear-gradient(90deg,#F4C400,#FFD600) !important;
+}
+
+/* ---------- 19. DARK MODE - tetap kompatibel ---------- */
+body.dark-mode {
+    background: #0E1726 !important;
+    color: #F8FAFC !important;
+}
+
+body.dark-mode .header,
+body.dark-mode .top-nav-bar,
+body.dark-mode .card,
+body.dark-mode .exec-summary-wrapper,
+body.dark-mode .exec-kpi-box,
+body.dark-mode .mission-stat-card,
+body.dark-mode .leaderboard-card,
+body.dark-mode .table-container {
+    background: #182235 !important;
+    border-color: #2C3A50 !important;
+}
+
+body.dark-mode .header h1,
+body.dark-mode .kpi-main-val,
+body.dark-mode .box-val,
+body.dark-mode .m-val,
+body.dark-mode .exec-panel-header,
+body.dark-mode .exec-section-header,
+body.dark-mode .lb-header {
+    color: #F8FAFC !important;
+}
+
+body.dark-mode .card h3,
+body.dark-mode .box-lbl,
+body.dark-mode .m-lbl,
+body.dark-mode .kpi-compare-row,
+body.dark-mode .sub-header-title {
+    color: #AAB6C7 !important;
+}
+
+body.dark-mode .exec-card-panel {
+    background: #111B2D !important;
+    border-color: #2C3A50 !important;
+}
+
+body.dark-mode .toolbar {
+    background: #182235 !important;
+    border-color: #2C3A50 !important;
+}
+
+body.dark-mode .toolbar select,
+body.dark-mode .toolbar input,
+body.dark-mode .exec-select,
+body.dark-mode .multiselect-btn {
+    background: #111B2D !important;
+    color: #F8FAFC !important;
+    border-color: #3A4960 !important;
+}
+
+body.dark-mode table tbody tr:nth-child(even),
+body.dark-mode .mini-exec-table tbody tr:nth-child(even) {
+    background: #1C293D;
+}
+
+body.dark-mode table tbody tr:hover,
+body.dark-mode .mini-exec-table tbody tr:hover {
+    background: #28364B !important;
+}
+
+body.dark-mode .btn-export {
+    background: #182235 !important;
+    color: #F8FAFC !important;
+    border-color: #3A4960 !important;
+}
+
+/* ---------- 20. SAFE RESPONSIVE ---------- */
+@media (max-width: 1100px) {
+    .top-nav-bar {
+        position: relative;
+        top: auto;
+    }
+
+    .report-tabs {
+        overflow-x: auto;
+        scrollbar-width: thin;
+        padding-bottom: 2px;
+    }
+
+    .tab-btn {
+        white-space: nowrap;
+    }
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 8px !important;
+    }
+
+    .header,
+    .top-nav-bar,
+    .exec-summary-wrapper {
+        border-radius: 14px !important;
+    }
+
+    .header {
+        padding: 12px !important;
+    }
+
+    .top-nav-bar {
+        overflow-x: auto;
+    }
+
+    .report-tabs {
+        flex-wrap: nowrap;
+        min-width: max-content;
+    }
+
+    .tab-btn {
+        padding: 8px 10px !important;
+        font-size: 10px !important;
+    }
+
+    .card,
+    .exec-kpi-box,
+    .mission-stat-card,
+    .leaderboard-card {
+        border-radius: 12px !important;
+    }
+
+    .sticky-kpi-bar {
+        max-width: calc(100vw - 16px);
+        overflow-x: auto;
+        white-space: nowrap;
+        gap: 12px;
+    }
+}
+
+/* ---------- 21. PRINT ---------- */
+@media print {
+    .top-nav-bar {
+        position: static !important;
+        box-shadow: none !important;
+    }
+
+    .btn-export,
+    .btn-snapshot-section,
+    .btn-snapshot-table,
+    .dark-toggle-btn {
+        display: none !important;
+    }
+
+    .card,
+    .exec-kpi-box,
+    .exec-card-panel,
+    .leaderboard-card,
+    .table-container {
+        box-shadow: none !important;
+    }
+}
+
+
+/* =========================================================
+   IM3 THEME V2 - EXECUTIVE SUMMARY FINISHING
+   Visual refinement only. Existing data / JS / HTML logic stays.
+   ========================================================= */
+
+/* 1) Remove repetitive decorative yellow blobs from KPI cards */
+.exec-kpi-box::after,
+.card::after {
+    display: none !important;
+}
+
+/* 2) Cleaner, stronger Executive KPI cards */
+.exec-kpi-box {
+    min-height: 66px !important;
+    padding: 10px 13px !important;
+    background: #FFFFFF !important;
+    box-shadow: 0 3px 12px rgba(23,34,54,.055) !important;
+}
+
+.exec-kpi-box:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 7px 18px rgba(23,34,54,.10) !important;
+}
+
+.exec-kpi-box .box-lbl {
+    font-size: 10px !important;
+    font-weight: 800 !important;
+    text-transform: uppercase;
+    letter-spacing: .25px;
+}
+
+.exec-kpi-box .box-val {
+    font-size: 17px !important;
+    line-height: 1.15 !important;
+    margin-top: 4px !important;
+    font-weight: 900 !important;
+}
+
+/* Give the left accent more IM3 character */
+.box-red {
+    border-left: 4px solid #E51B4B !important;
+}
+.box-yellow {
+    border-left: 4px solid #F2B900 !important;
+}
+.box-magenta {
+    border-left: 4px solid #C83BE3 !important;
+}
+.box-cyan {
+    border-left: 4px solid #08A9C7 !important;
+}
+.box-green {
+    border-left: 4px solid #12A86B !important;
+}
+.box-purple {
+    border-left: 4px solid #8B5CF6 !important;
+}
+.box-orange {
+    border-left: 4px solid #F97316 !important;
+}
+
+/* 3) Executive banner: premium but restrained */
+.exec-summary-title-banner {
+    min-height: 72px !important;
+    background:
+        linear-gradient(105deg, #172236 0%, #1D2A40 72%, #202D43 100%) !important;
+    box-shadow: 0 7px 18px rgba(23,34,54,.10) !important;
+}
+
+.exec-summary-title-banner::after {
+    display: block !important;
+    right: -95px !important;
+    top: -115px !important;
+    width: 300px !important;
+    height: 245px !important;
+    background:
+        radial-gradient(circle at 42% 55%,
+            rgba(255,214,0,.18) 0 17%,
+            rgba(255,214,0,.07) 18% 38%,
+            transparent 39%) !important;
+}
+
+/* Thin yellow highlight under title */
+.exec-summary-title-banner::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 150px;
+    height: 3px;
+    background: #FFD600;
+    border-radius: 0 5px 0 0;
+}
+
+/* 4) Priority action: stronger visual hierarchy */
+.mission-stat-card {
+    min-height: 72px !important;
+    background: #FFFFFF !important;
+    box-shadow: 0 3px 12px rgba(23,34,54,.05) !important;
+}
+
+.mission-stat-card .m-val {
+    font-size: 18px !important;
+    font-weight: 900 !important;
+}
+
+.mission-stat-card .m-sub {
+    font-size: 10px !important;
+    font-weight: 800 !important;
+}
+
+/* Priority panel header */
+.exec-card-panel.border-top-yellow {
+    border-top-width: 4px !important;
+    border-top-color: #F2B900 !important;
+}
+
+/* PJP badge */
+.exec-card-panel .badge-target,
+.badge-target {
+    background: #FFF5C4 !important;
+    border: 1px solid #E7C83C !important;
+    color: #735A00 !important;
+    font-weight: 900 !important;
+}
+
+/* 5) Tables: cleaner BI look */
+.mini-exec-table,
+.exec-table,
+table {
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+}
+
+.mini-exec-table th:first-child,
+.exec-table th:first-child,
+table thead th:first-child {
+    border-top-left-radius: 8px !important;
+}
+
+.mini-exec-table th:last-child,
+.exec-table th:last-child,
+table thead th:last-child {
+    border-top-right-radius: 8px !important;
+}
+
+.mini-exec-table tbody tr:last-child td:first-child,
+.exec-table tbody tr:last-child td:first-child,
+table tbody tr:last-child td:first-child {
+    border-bottom-left-radius: 8px !important;
+}
+
+.mini-exec-table tbody tr:last-child td:last-child,
+.exec-table tbody tr:last-child td:last-child,
+table tbody tr:last-child td:last-child {
+    border-bottom-right-radius: 8px !important;
+}
+
+/* Keep red GAP values readable */
+.gap,
+.gap-value,
+.text-danger,
+.negative,
+[style*="color: red"],
+[style*="color:red"] {
+    font-weight: 800;
+}
+
+/* 6) RSE scorecard total: make it feel like a KPI */
+.exec-score-total,
+.total-score,
+.rse-total {
+    border-radius: 20px !important;
+    background: #E1F7EC !important;
+    color: #087A4B !important;
+    font-weight: 900 !important;
+}
+
+/* 7) Section headings */
+.exec-card-panel > h3,
+.exec-card-panel > .section-title,
+.card > h3 {
+    letter-spacing: -.15px !important;
+}
+
+/* 8) Slightly tighter desktop composition */
+@media (min-width: 1200px) {
+    .exec-kpi-global-grid {
+        gap: 9px !important;
+    }
+
+    .exec-kpi-box {
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+    }
+}
+
+/* 9) Mobile: preserve readability without changing data layout logic */
+@media (max-width: 768px) {
+    .exec-kpi-box {
+        min-height: 64px !important;
+        padding: 9px 10px !important;
+    }
+
+    .exec-kpi-box .box-val {
+        font-size: 15px !important;
+    }
+
+    .mission-stat-card {
+        min-height: 68px !important;
+    }
+
+    .mission-stat-card .m-val {
+        font-size: 16px !important;
+    }
+
+    .exec-summary-title-banner {
+        min-height: 64px !important;
+    }
+}
+
+
+/* =========================================================
+   LANGKAH 2A — EXECUTIVE SUMMARY LAYOUT
+   Hanya mengatur posisi section. Data & JavaScript tetap.
+   Target:
+   - Target Non KPI + RSE Scorecard berdampingan
+   - KPI Global & Today's Priority tetap full width
+   ========================================================= */
+
+@media (min-width: 1000px) {
+
+    /* Executive Summary menjadi grid */
+    #all-summary-tab .exec-summary-wrapper {
+        display: grid !important;
+        grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr) !important;
+        gap: 16px !important;
+        align-items: start !important;
+    }
+
+    /* Header, KPI Global, dan Priority Action tetap full width */
+    #all-summary-tab .exec-summary-title-banner,
+    #all-summary-tab #snapshotSectionGlobal,
+    #all-summary-tab #snapshotSectionMission {
+        grid-column: 1 / -1 !important;
+    }
+
+    /* Dua tabel berdampingan */
+    #all-summary-tab #snapshotSectionNonKpi,
+    #all-summary-tab #snapshotSectionRse {
+        grid-column: auto !important;
+        min-width: 0 !important;
+        width: 100% !important;
+        margin-bottom: 0 !important;
+    }
+
+    /* Hilangkan margin tambahan agar kedua panel sejajar */
+    #all-summary-tab #snapshotSectionNonKpi .mini-table-wrapper,
+    #all-summary-tab #snapshotSectionRse .mini-table-wrapper {
+        width: 100% !important;
+        overflow-x: auto !important;
+    }
+
+    /* Table tetap utuh, tetapi lebih proporsional ketika berada di 2 kolom */
+    #all-summary-tab #snapshotSectionNonKpi .mini-exec-table,
+    #all-summary-tab #snapshotSectionRse .mini-exec-table {
+        width: 100% !important;
+        table-layout: fixed !important;
+    }
+
+    #all-summary-tab #snapshotSectionNonKpi .mini-exec-table th,
+    #all-summary-tab #snapshotSectionNonKpi .mini-exec-table td {
+        padding: 7px 6px !important;
+        font-size: 10px !important;
+    }
+
+    #all-summary-tab #snapshotSectionRse .mini-exec-table th,
+    #all-summary-tab #snapshotSectionRse .mini-exec-table td {
+        padding: 6px 5px !important;
+        font-size: 9.5px !important;
+    }
+
+    /* Judul panel jangan terlalu tinggi */
+    #all-summary-tab #snapshotSectionNonKpi .exec-panel-header,
+    #all-summary-tab #snapshotSectionRse .exec-panel-header {
+        font-size: 12px !important;
+    }
+}
+
+/* Tablet/mobile: kembali satu kolom supaya tabel tidak sesak */
+@media (max-width: 999px) {
+    #all-summary-tab .exec-summary-wrapper {
+        display: block !important;
+    }
+
+    #all-summary-tab #snapshotSectionNonKpi,
+    #all-summary-tab #snapshotSectionRse {
+        width: 100% !important;
+        margin-bottom: 16px !important;
+    }
+}
+/* =========================================================
+   LANGKAH 2B-1
+   EXECUTIVE TREND + MARKET SHARE LAYOUT
+   Struktur visual saja — data disambungkan berikutnya.
+   ========================================================= */
+
+.exec-analysis-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(320px, .85fr);
+    gap: 16px;
+    width: 100%;
+    margin: 0 0 16px 0;
+}
+
+.exec-analysis-card {
+    min-width: 0;
+    min-height: 285px;
+    margin: 0 !important;
+    background:
+        linear-gradient(180deg, #FFFFFF 0%, #F9FBFD 100%) !important;
+}
+
+.analysis-subtitle {
+    margin: -4px 0 10px 0;
+    padding-left: 2px;
+    color: #718096;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.trend-placeholder,
+.market-share-placeholder {
+    min-height: 205px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border: 1px dashed #D8E0E9;
+    border-radius: 12px;
+    background:
+        radial-gradient(circle at 50% 0%,
+            rgba(255,214,0,.07),
+            transparent 42%),
+        #FBFCFE;
+}
+
+.market-share-placeholder {
+    background:
+        radial-gradient(circle at 50% 0%,
+            rgba(229,27,75,.055),
+            transparent 42%),
+        #FBFCFE;
+}
+
+.trend-placeholder-icon {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 9px;
+    border-radius: 12px;
+    background: #FFF5C4;
+    color: #D4A900;
+    font-size: 19px;
+}
+
+.market-share-placeholder .trend-placeholder-icon {
+    background: #FDE7EC;
+    color: #E51B4B;
+}
+
+.trend-placeholder-title {
+    color: #172236;
+    font-size: 13px;
+    font-weight: 900;
+}
+
+.trend-placeholder-text {
+    max-width: 300px;
+    margin-top: 5px;
+    color: #8995A6;
+    font-size: 10px;
+    line-height: 1.45;
+}
+
+/* Tablet / mobile */
+@media (max-width: 999px) {
+    .exec-analysis-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .exec-analysis-card {
+        min-height: 250px;
+    }
+
+    .trend-placeholder,
+    .market-share-placeholder {
+        min-height: 180px;
+    }
+}
+/* =========================================================
+   FIX LANGKAH 2B-1
+   Trend + Market Share = 1 baris penuh
+   Non KPI + RSE = baris kedua, berdampingan
+   ========================================================= */
+
+@media (min-width: 1000px) {
+
+    /* Analysis harus full width */
+    #all-summary-tab #snapshotSectionAnalysis {
+        grid-column: 1 / -1 !important;
+        display: grid !important;
+        grid-template-columns: minmax(0, 1.45fr) minmax(320px, .85fr) !important;
+        gap: 16px !important;
+        width: 100% !important;
+        margin: 0 0 16px 0 !important;
+    }
+
+    /* Dua panel analysis */
+    #all-summary-tab #snapshotSectionTrend,
+    #all-summary-tab #snapshotSectionMarketShare {
+        grid-column: auto !important;
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    /* Pastikan dua tabel berada di baris berikutnya */
+    #all-summary-tab #snapshotSectionNonKpi,
+    #all-summary-tab #snapshotSectionRse {
+        grid-column: auto !important;
+        align-self: start !important;
+    }
+
+}
+/* =========================================================
+   LANGKAH 2B-2
+   EXECUTIVE MONTHLY TREND
+   ========================================================= */
+
+.exec-trend-toolbar {
+    margin-bottom: 8px;
+}
+
+.exec-trend-metric-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.exec-trend-btn {
+    border: 1px solid #DCE4ED;
+    background: #F7F9FC;
+    color: #64748B;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 9px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all .18s ease;
+}
+
+.exec-trend-btn:hover {
+    background: #FFF7C7;
+    border-color: #E5C500;
+    color: #172236;
+}
+
+.exec-trend-btn.active {
+    background: #FFD600;
+    border-color: #E2BD00;
+    color: #172236;
+    box-shadow: 0 3px 8px rgba(255,214,0,.20);
+}
+
+.exec-trend-chart-wrap {
+    position: relative;
+    width: 100%;
+    height: 185px;
+    padding: 4px 4px 0 0;
+}
+
+.exec-trend-footnote {
+    margin-top: 5px;
+    color: #94A3B8;
+    font-size: 8px;
+    font-weight: 600;
+}
+
+@media (max-width: 768px) {
+
+    .exec-trend-metric-buttons {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding-bottom: 4px;
+    }
+
+    .exec-trend-btn {
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .exec-trend-chart-wrap {
+        height: 170px;
+    }
+
+}
