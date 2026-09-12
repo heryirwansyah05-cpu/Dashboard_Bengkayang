@@ -605,3 +605,486 @@ table {
     from { transform: translateX(-100%); }
     to { transform: translateX(200%); }
 }
+
+/* =========================================================
+   FINAL HEADER FIX — EXECUTIVE PERFORMANCE SUMMARY
+   Scope: HEADER ONLY
+   Do not alter dashboard data / calculations / tabs.
+   ========================================================= */
+
+/* Header container: compact, clean, no empty vertical area */
+body .container > .header {
+    height: 92px !important;
+    min-height: 92px !important;
+    padding: 0 20px !important;
+    margin-bottom: 14px !important;
+    overflow: visible !important;
+    position: relative !important;
+}
+
+/* TOP ROW = TITLE LEFT + USER/LOGOUT/IM3 RIGHT */
+body .container > .header .header-top-row {
+    height: 58px !important;
+    min-height: 58px !important;
+    width: 100% !important;
+    padding: 7px 0 4px 0 !important;
+    margin: 0 !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 18px !important;
+    border-bottom: 1px solid #eef2f7 !important;
+}
+
+/* LEFT: force title block to be visible */
+body .container > .header .header-top-row .header-left-brand {
+    display: flex !important;
+    flex: 1 1 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    height: 100% !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 0 !important;
+}
+
+/* Hide only the old Indosat logo inside the desktop header.
+   The Indosat/IM3 branding remains in the sidebar. */
+body .container > .header .header-top-row .header-left-brand .brand-logo-box {
+    display: none !important;
+}
+
+/* The title wrapper must remain visible */
+body .container > .header .header-top-row .header-left-brand > div:last-child {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+    min-width: 0 !important;
+}
+
+/* MAIN TITLE */
+body .container > .header .header-top-row .header-left-brand h1 {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 22px !important;
+    line-height: 1.08 !important;
+    font-weight: 900 !important;
+    letter-spacing: -0.65px !important;
+    color: #09234f !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+}
+
+/* SUBTITLE + PERIOD */
+body .container > .header .header-top-row .header-left-brand .sub-header-title {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0 !important;
+    margin: 3px 0 0 0 !important;
+    padding: 0 !important;
+    font-size: 11px !important;
+    line-height: 1 !important;
+    font-weight: 700 !important;
+    color: #54708f !important;
+    white-space: nowrap !important;
+}
+
+/* PERIOD BADGE */
+body .container > .header .header-top-row .header-left-brand .header-period-badge {
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    align-items: center !important;
+    margin: 0 0 0 9px !important;
+    padding: 4px 9px !important;
+    min-height: 22px !important;
+    border-radius: 7px !important;
+    background: #ffd400 !important;
+    color: #14213d !important;
+    font-size: 10px !important;
+    line-height: 1 !important;
+    font-weight: 900 !important;
+    vertical-align: middle !important;
+    box-shadow: 0 2px 6px rgba(0,0,0,.08) !important;
+}
+
+/* RIGHT: USER + LOGOUT + IM3 IN SAME TOP LINE */
+body .container > .header .header-top-row .header-right-im3 {
+    display: flex !important;
+    flex: 0 0 auto !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
+    height: 100% !important;
+    white-space: nowrap !important;
+}
+
+/* User badge */
+body .container > .header #userSessionBadge {
+    padding: 8px 13px !important;
+    border-radius: 9px !important;
+    font-size: 11px !important;
+    line-height: 1 !important;
+}
+
+/* Logout */
+body .container > .header .header-right-im3 button[onclick="handleLogout()"] {
+    padding: 8px 13px !important;
+    min-height: 34px !important;
+    border-radius: 9px !important;
+    font-size: 11px !important;
+    line-height: 1 !important;
+}
+
+/* IM3 logo */
+body .container > .header .header-right-im3 .im3-logo-box {
+    width: 40px !important;
+    height: 40px !important;
+    padding: 4px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 10px !important;
+    box-sizing: border-box !important;
+}
+
+body .container > .header .header-right-im3 .im3-logo-box img {
+    height: 27px !important;
+    width: auto !important;
+    object-fit: contain !important;
+}
+
+/* SECOND ROW = EXPORT + SNAPSHOT + DARK MODE, RIGHT ALIGNED */
+body .container > .header .header-bottom-row {
+    height: 34px !important;
+    min-height: 34px !important;
+    width: 100% !important;
+    padding: 2px 0 4px 0 !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    border: 0 !important;
+}
+
+/* Hide old date information only in the header.
+   It remains untouched in the dashboard logic. */
+body .container > .header .header-bottom-row .controls-left {
+    display: none !important;
+}
+
+body .container > .header .header-bottom-row .header-actions {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
+    margin: 0 !important;
+}
+
+/* Header action buttons */
+body .container > .header .header-actions .btn-export {
+    min-height: 30px !important;
+    height: 30px !important;
+    padding: 6px 12px !important;
+    border-radius: 9px !important;
+    font-size: 10px !important;
+    line-height: 1 !important;
+    font-weight: 800 !important;
+}
+
+body .container > .header .header-actions .dark-toggle-btn {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    padding: 0 !important;
+    border-radius: 9px !important;
+}
+
+/* REMOVE ONLY THE DUPLICATE LARGE EXECUTIVE TITLE BANNER.
+   The real title is now in the main header above. */
+body #all-summary-tab .exec-summary-title-banner {
+    display: none !important;
+}
+
+/* Prevent the hidden banner from leaving spacing */
+body #all-summary-tab .exec-summary-title-banner + * {
+    margin-top: 0 !important;
+}
+
+/* Keep Executive Summary content close to the compact header */
+body #all-summary-tab {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+/* Desktop only */
+@media (min-width: 901px) {
+    body .container > .header {
+        width: 100% !important;
+    }
+
+    body .container > .header .header-top-row .header-left-brand h1 {
+        font-size: 22px !important;
+    }
+}
+
+/* Tablet/mobile: preserve responsive behavior */
+@media (max-width: 900px) {
+    body .container > .header {
+        height: auto !important;
+        min-height: 92px !important;
+    }
+
+    body .container > .header .header-top-row {
+        height: auto !important;
+        min-height: 56px !important;
+        flex-wrap: wrap !important;
+        padding: 8px 0 !important;
+    }
+
+    body .container > .header .header-top-row .header-left-brand h1 {
+        font-size: 18px !important;
+        white-space: normal !important;
+    }
+
+    body .container > .header .header-top-row .header-right-im3 {
+        flex-wrap: nowrap !important;
+    }
+}
+
+/* =========================================================
+   MASTER HEADER FIX — CURRENT index(8).html + style(6).css
+   ONLY HEADER / DUPLICATE HERO. No JS/data/KPI calculations changed.
+   ========================================================= */
+
+body .container > .header.main-dashboard-header {
+    position: relative !important;
+    width: 100% !important;
+    height: 104px !important;
+    min-height: 104px !important;
+    margin: 0 0 14px 0 !important;
+    padding: 0 20px !important;
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 0 0 16px 16px !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+}
+
+body .container > .header.main-dashboard-header .header-top-row {
+    width: 100% !important;
+    height: 62px !important;
+    min-height: 62px !important;
+    margin: 0 !important;
+    padding: 8px 0 5px !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: flex-start !important;
+    justify-content: space-between !important;
+    gap: 20px !important;
+    box-sizing: border-box !important;
+    border-bottom: 1px solid #eef2f7 !important;
+}
+
+body .container > .header.main-dashboard-header .header-left-brand {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+}
+
+body .container > .header.main-dashboard-header .brand-logo-box {
+    display: none !important;
+}
+
+body .container > .header.main-dashboard-header .dashboard-title-block {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+body .container > .header.main-dashboard-header .dashboard-title-block h1 {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    color: #09234f !important;
+    font-size: 22px !important;
+    line-height: 1.05 !important;
+    font-weight: 900 !important;
+    letter-spacing: -0.7px !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+}
+
+body .container > .header.main-dashboard-header .dashboard-subtitle-line {
+    display: flex !important;
+    align-items: center !important;
+    gap: 9px !important;
+    margin: 5px 0 0 !important;
+    padding: 0 !important;
+    min-height: 22px !important;
+}
+
+body .container > .header.main-dashboard-header .dashboard-subtitle-line .sub-header-title {
+    display: inline-block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    color: #54708f !important;
+    font-size: 11px !important;
+    line-height: 1 !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+}
+
+body .container > .header.main-dashboard-header .dashboard-subtitle-line .header-period-badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    margin: 0 !important;
+    padding: 5px 10px !important;
+    min-height: 22px !important;
+    border-radius: 8px !important;
+    background: #ffd400 !important;
+    color: #14213d !important;
+    font-size: 10px !important;
+    line-height: 1 !important;
+    font-weight: 900 !important;
+    white-space: nowrap !important;
+}
+
+body .container > .header.main-dashboard-header .header-right-im3 {
+    flex: 0 0 auto !important;
+    height: 100% !important;
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    white-space: nowrap !important;
+}
+
+body .container > .header.main-dashboard-header #userSessionBadge {
+    padding: 8px 13px !important;
+    border-radius: 9px !important;
+    font-size: 11px !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+}
+
+body .container > .header.main-dashboard-header .header-right-im3 button[onclick="handleLogout()"] {
+    padding: 8px 13px !important;
+    min-height: 34px !important;
+    border-radius: 9px !important;
+    font-size: 11px !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+}
+
+body .container > .header.main-dashboard-header .header-right-im3 .im3-logo-box {
+    width: 40px !important;
+    height: 40px !important;
+    padding: 4px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 10px !important;
+    box-sizing: border-box !important;
+}
+
+body .container > .header.main-dashboard-header .header-right-im3 .im3-logo-box img {
+    width: auto !important;
+    height: 27px !important;
+    object-fit: contain !important;
+}
+
+body .container > .header.main-dashboard-header .header-bottom-row {
+    width: 100% !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    margin: 0 !important;
+    padding: 5px 0 7px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    box-sizing: border-box !important;
+    border: 0 !important;
+}
+
+body .container > .header.main-dashboard-header .header-bottom-row .controls-left {
+    display: none !important;
+}
+
+body .container > .header.main-dashboard-header .header-bottom-row .header-actions {
+    margin-left: auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
+}
+
+body .container > .header.main-dashboard-header .header-actions .btn-export {
+    min-height: 30px !important;
+    height: 30px !important;
+    padding: 6px 12px !important;
+    border-radius: 9px !important;
+    font-size: 10px !important;
+    line-height: 1 !important;
+    font-weight: 800 !important;
+}
+
+body .container > .header.main-dashboard-header .header-actions .dark-toggle-btn {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    padding: 0 !important;
+    border-radius: 9px !important;
+}
+
+/* Remove only the old duplicate hero title in Executive Summary. */
+body #all-summary-tab .exec-summary-title-banner {
+    display: none !important;
+}
+
+@media (max-width: 900px) {
+    body .container > .header.main-dashboard-header {
+        height: auto !important;
+        min-height: 104px !important;
+    }
+
+    body .container > .header.main-dashboard-header .header-top-row {
+        height: auto !important;
+        min-height: 62px !important;
+        flex-wrap: wrap !important;
+        padding: 8px 0 !important;
+    }
+
+    body .container > .header.main-dashboard-header .dashboard-title-block h1 {
+        font-size: 18px !important;
+        white-space: normal !important;
+    }
+
+    body .container > .header.main-dashboard-header .dashboard-subtitle-line {
+        flex-wrap: wrap !important;
+    }
+
+    body .container > .header.main-dashboard-header .header-bottom-row {
+        min-height: 42px !important;
+    }
+}

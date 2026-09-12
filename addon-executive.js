@@ -3102,7 +3102,7 @@ document.addEventListener(
             }
 
             #${SIDEBAR_ID} .cc-tagline::before {
-                content: "Lebih\\A Luas\\A Lebih\\A Dekat" !important;
+                content: "MICRO\\A CLUSTER\\A BENGKAYANG\\A " !important;
                 white-space: pre !important;
                 display: block !important;
                 font-size: 18px !important;
@@ -3156,9 +3156,10 @@ document.addEventListener(
             }
 
             body > .container > .header .header-left-brand {
-                visibility: hidden !important;
-                width: 1px !important;
-                overflow: hidden !important;
+                visibility: visible !important;
+                width: auto !important;
+                max-width: none !important;
+                overflow: visible !important;
             }
 
             body > .container > .header .header-right-im3 {

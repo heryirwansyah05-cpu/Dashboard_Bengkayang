@@ -268,13 +268,37 @@ function takeScreenshot() {
     const snapBtns = document.querySelectorAll(".btn-snapshot-section, .btn-snapshot-table");
     snapBtns.forEach(btn => btn.style.visibility = "hidden");
 
+    /*
+       IMPORTANT: do not force html2canvas to use a 1300px viewport.
+       The live dashboard is desktop-first and several CSS rules change
+       at <=1100px. Forcing 1300px can make the snapshot render differently
+       from the browser (including the header).
+    */
+    const snapshotViewportWidth = window.innerWidth >= 1000
+        ? Math.max(window.innerWidth, container.scrollWidth, 1440)
+        : window.innerWidth;
+
     html2canvas(container, {
         scale: 3,
         useCORS: true,
         allowTaint: true,
         backgroundColor: "#f8fafc",
         logging: false,
-        windowWidth: 1300
+        windowWidth: snapshotViewportWidth,
+        windowHeight: Math.max(window.innerHeight, container.scrollHeight),
+        scrollX: 0,
+        scrollY: 0,
+        onclone: (clonedDoc) => {
+            /* Guarantee the Executive Summary title is present in snapshot. */
+            const clonedHeaderBrand = clonedDoc.querySelector("body > .container > .header .header-left-brand");
+            if (clonedHeaderBrand) {
+                clonedHeaderBrand.style.setProperty("visibility", "visible", "important");
+                clonedHeaderBrand.style.setProperty("display", "flex", "important");
+                clonedHeaderBrand.style.setProperty("width", "auto", "important");
+                clonedHeaderBrand.style.setProperty("max-width", "none", "important");
+                clonedHeaderBrand.style.setProperty("overflow", "visible", "important");
+            }
+        }
     }).then(canvas => {
         snapBtns.forEach(btn => btn.style.visibility = "visible");
         let link = document.createElement('a');

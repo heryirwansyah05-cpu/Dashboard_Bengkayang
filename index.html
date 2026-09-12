@@ -72,6 +72,167 @@
             height: 14px;
         }
     </style>
+
+<style id="header-kpi-v2-fix">
+/* =========================================================
+   HEADER + EXECUTIVE KPI — V2 FIX
+   Only visual/layout correction. No data/function changes.
+   ========================================================= */
+.header {
+    min-height: 0 !important;
+    height: 92px !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+}
+.header-top-row {
+    min-height: 56px !important;
+    height: 56px !important;
+    padding: 8px 18px 4px 18px !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 20px !important;
+}
+.header-left-brand {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+}
+.header-left-brand .brand-logo-box { display:none !important; }
+.header-left-brand h1 {
+    margin: 0 !important;
+    font-size: 22px !important;
+    line-height: 1.05 !important;
+    font-weight: 900 !important;
+    letter-spacing: -0.6px !important;
+    color: #09234f !important;
+    white-space: nowrap !important;
+}
+.header-left-brand .sub-header-title {
+    margin-top: 3px !important;
+    font-size: 11px !important;
+    line-height: 1 !important;
+    font-weight: 700 !important;
+    color: #54708f !important;
+    white-space: nowrap !important;
+}
+.header-period-badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    margin-left: 8px !important;
+    padding: 4px 9px !important;
+    border-radius: 7px !important;
+    background: #ffd400 !important;
+    color: #14213d !important;
+    font-size: 10px !important;
+    font-weight: 900 !important;
+    vertical-align: middle !important;
+    box-shadow: 0 2px 6px rgba(0,0,0,.08) !important;
+}
+.header-right-im3 {
+    flex: 0 0 auto !important;
+    gap: 8px !important;
+    white-space: nowrap !important;
+}
+.header-right-im3 #userSessionBadge {
+    padding: 7px 12px !important;
+    border-radius: 9px !important;
+    font-size: 11px !important;
+}
+.header-right-im3 button[onclick="handleLogout()"] {
+    padding: 7px 13px !important;
+    border-radius: 9px !important;
+    font-size: 11px !important;
+}
+.header-right-im3 .im3-logo-box {
+    width: 40px !important;
+    height: 40px !important;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    border-radius: 10px !important;
+}
+.header-right-im3 .im3-logo-box img { height: 27px !important; }
+.header-bottom-row {
+    height: 36px !important;
+    min-height: 36px !important;
+    padding: 2px 18px 7px 18px !important;
+    box-sizing: border-box !important;
+    display:flex !important;
+    justify-content:flex-end !important;
+    align-items:center !important;
+}
+.header-bottom-row .controls-left { display:none !important; }
+.header-actions {
+    display:flex !important;
+    align-items:center !important;
+    justify-content:flex-end !important;
+    gap:8px !important;
+}
+.header-actions .btn-export {
+    padding: 7px 12px !important;
+    min-height: 30px !important;
+    border-radius: 9px !important;
+    font-size: 10px !important;
+}
+.header-actions .dark-toggle-btn {
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 9px !important;
+}
+/* Remove the oversized duplicate Executive Summary hero banner. */
+#all-summary-tab > .exec-summary-wrapper > .exec-summary-title-banner {
+    display:none !important;
+}
+/* KPI section moves directly under the compact header/nav. */
+#all-summary-tab #snapshotSectionGlobal {
+    margin-top: 0 !important;
+}
+#all-summary-tab .exec-kpi-global-grid {
+    display:grid !important;
+    grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+}
+#all-summary-tab .exec-kpi-box {
+    min-width: 0 !important;
+    height: 74px !important;
+    padding: 10px 12px !important;
+    border-radius: 12px !important;
+    box-sizing:border-box !important;
+}
+#all-summary-tab .exec-kpi-box .box-lbl {
+    font-size: 8.5px !important;
+    line-height: 1.1 !important;
+    white-space: nowrap !important;
+}
+#all-summary-tab .exec-kpi-box .box-val {
+    display:block !important;
+    margin-top: 5px !important;
+    font-size: 14px !important;
+    line-height: 1.1 !important;
+    white-space: nowrap !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+}
+#all-summary-tab .exec-section-header {
+    margin-bottom: 8px !important;
+}
+@media (max-width: 900px) {
+    .header { height:auto !important; min-height:92px !important; }
+    .header-top-row { height:auto !important; min-height:56px !important; align-items:flex-start !important; }
+    .header-left-brand h1 { font-size:17px !important; white-space:normal !important; }
+    .header-left-brand .sub-header-title { white-space:normal !important; }
+    .header-period-badge { margin-left:4px !important; }
+    .header-right-im3 .im3-logo-box { display:none !important; }
+    .header-bottom-row { height:auto !important; min-height:36px !important; }
+    .header-actions { flex-wrap:wrap !important; }
+    #all-summary-tab .exec-kpi-global-grid { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
+}
+</style>
+
 </head>
 
 <body>
@@ -107,19 +268,19 @@
 
 <div class="container">
     <!-- HEADER UTAMA -->
-    <div class="header">
+    <div class="header main-dashboard-header">
         <div class="header-top-row">
             <div class="header-left-brand">
-                <div class="brand-logo-box">
-                    <img src="input_file_14.png" alt="Indosat Ooredoo Hutchison" style="height: 28px; object-fit: contain;">
-                </div>
-                <div>
-                    <h1>Dashboard MC Bengkayang</h1>
-                    <div class="sub-header-title">Executive Performance & Monitoring Portal</div>
+                <div class="dashboard-title-block">
+                    <h1>EXECUTIVE PERFORMANCE SUMMARY</h1>
+                    <div class="dashboard-subtitle-line">
+                        <span class="sub-header-title">Micro Cluster Bengkayang</span>
+                        <span class="header-period-badge" id="headerExecutivePeriod">MTD - September 2026</span>
+                    </div>
                 </div>
             </div>
 
-            <div class="header-right-im3" style="display: flex; align-items: center; gap: 12px;">
+            <div class="header-right-im3">
                 <div id="userSessionBadge" style="background: #f1f5f9; padding: 6px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 12px; font-weight: 700; color: #334155;">
                     User: <span id="activeUserNameDisplay">-</span>
                 </div>
@@ -165,16 +326,7 @@
     <!-- ================= TAB 1: EXECUTIVE SUMMARY ================= -->
     <div id="all-summary-tab" class="report-content">
         <div class="exec-summary-wrapper" id="snapshotSectionAllSummary">
-            
-            <div class="exec-summary-title-banner">
-                <div>
-                    <h2>EXECUTIVE PERFORMANCE SUMMARY</h2>
-                    <div class="exec-summary-sub">Micro Cluster Bengkayang</div>
-                </div>
-                <button class="btn-snapshot-section" onclick="takeSectionSnapshot('snapshotSectionAllSummary')"><i class="fa-solid fa-camera"></i> Snapshot All Summary</button>
-            </div>
-
-            <!-- SECTION 1: KPI GLOBAL -->
+<!-- SECTION 1: KPI GLOBAL -->
             <div class="exec-section-block" id="snapshotSectionGlobal">
                 <div class="exec-section-header">
                     <span><i class="fa-solid fa-globe"></i> KPI GLOBAL (MTD)</span>
