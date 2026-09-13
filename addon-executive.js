@@ -4582,7 +4582,10 @@ document.addEventListener(
     }
 
     async function readSheet(sheetName){
-        const response = await fetch(MS_FILE, {cache:"no-store"});
+        const response = await fetch("./FB%20Market%20Share.xlsx?v=" + Date.now(), {
+            cache: "no-store",
+            credentials: "same-origin"
+        });
         if (!response.ok) throw new Error(`${MS_FILE} tidak dapat diakses`);
         const buffer = await response.arrayBuffer();
         const wb = XLSX.read(buffer, {type:"array", cellDates:true});
@@ -4602,7 +4605,6 @@ document.addEventListener(
             const r = rows[i] || [];
             const territory = cleanText(r[0]);
             if (!territory || territory.toUpperCase() === "TERRITORY") continue;
-            if (i < 3) continue;
             data.push({
                 territory,
                 IM3:{lmtd:num(r[1]),mtd:num(r[2]),growth:num(r[3])},
@@ -4666,7 +4668,11 @@ document.addEventListener(
     }
 
     function getCurrentKab(){
-        return kabRows.find(r => cleanText(r.territory).toUpperCase() === "MC-BENGKAYANG") || kabRows[0] || null;
+        // Prioritaskan MC-BENGKAYANG. Jika sumber memakai variasi penulisan,
+        // tetap pilih baris Bengkayang tanpa mengubah data sumber.
+        return kabRows.find(r => cleanText(r.territory).toUpperCase() === "MC-BENGKAYANG")
+            || kabRows.find(r => cleanText(r.territory).toUpperCase().includes("BENGKAYANG"))
+            || kabRows[0] || null;
     }
 
     function renderExecutiveMarketShareV2(kab){
@@ -4742,12 +4748,28 @@ document.addEventListener(
     }
 
     async function bootExecutiveMS(){
+        const container = document.getElementById("executiveMarketShareContainer");
+        if (!container) return;
+
         try {
             const rows = await loadKAB();
-            const kab = rows.find(r => cleanText(r.territory).toUpperCase() === "MC-BENGKAYANG") || getCurrentKab();
-            if (kab) renderExecutiveMarketShareV2(kab);
+            const kab = getCurrentKab();
+            if (!kab) throw new Error("Data MC-BENGKAYANG tidak ditemukan pada sheet KAB MS MOM");
+            renderExecutiveMarketShareV2(kab);
         } catch(err) {
-            console.warn("Market Share V2 Executive:",err);
+            console.warn("Market Share V2 Executive:", err);
+            // Retry setelah seluruh asset selesai dimuat. Ini mengatasi kondisi
+            // race saat addon dijalankan bersamaan dengan loader dashboard.
+            setTimeout(async () => {
+                try {
+                    kabLoaded = false;
+                    const rows = await loadKAB();
+                    const kab = getCurrentKab();
+                    if (kab) renderExecutiveMarketShareV2(kab);
+                } catch(retryErr) {
+                    console.warn("Market Share V2 Executive retry:", retryErr);
+                }
+            }, 1200);
         }
     }
 

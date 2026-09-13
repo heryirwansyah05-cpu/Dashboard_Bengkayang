@@ -2,6 +2,161 @@ let chartPstRevLineInstance = null;
 let chartPstVlrLineInstance = null;
 let chartPstTertiaryLineInstance = null;
 let globalHeaderMS = [], globalDataMS = [];
+
+// ================================================================
+// DYNAMIC TARGET RSE
+// Target diambil dari file "Target RSE.xlsx".
+// Jika target di Excel diubah, dashboard akan membaca target terbaru
+// saat halaman di-refresh. Logic pencapaian tetap menggunakan
+// perhitungan existing.
+// ================================================================
+let globalTargetRSE = {
+    tradeSupply: 1616250360,
+    sellInSP: 2412,
+    retailerTagging: 155,
+    fwa: 18,
+    dseProductivity: 5
+};
+
+function normalizeTargetLabel(value) {
+    return String(value ?? "")
+        .toUpperCase()
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+function readTargetNumber(value) {
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+
+    let s = String(value ?? "").trim();
+    if (!s) return 0;
+
+    // Mendukung angka Excel seperti "1,616,250,360", "1.616.250.360",
+    // maupun angka biasa. Untuk target KPI, separator ribuan dibuang.
+    s = s.replace(/RP\.?\s*/gi, "").replace(/\s/g, "");
+
+    if (s.includes(",") && s.includes(".")) {
+        // Jika format Indonesia: 1.616.250.360
+        if (s.lastIndexOf(".") > s.lastIndexOf(",")) {
+            s = s.replace(/,/g, "");
+        } else {
+            s = s.replace(/\./g, "").replace(",", ".");
+        }
+    } else if (s.includes(",")) {
+        // Untuk target integer, koma dianggap separator ribuan.
+        s = s.replace(/,/g, "");
+    } else if (s.includes(".")) {
+        // Jika seluruh bagian setelah titik berjumlah 3 digit, anggap ribuan.
+        const parts = s.split(".");
+        if (parts.length > 1 && parts.slice(1).every(p => /^\d{3}$/.test(p))) {
+            s = parts.join("");
+        }
+    }
+
+    const n = Number(s);
+    return Number.isFinite(n) ? n : 0;
+}
+
+function applyTargetRSEFromRows(rows) {
+    if (!Array.isArray(rows) || rows.length === 0) return;
+
+    let headerRow = -1;
+    let kpiCol = 0;
+    let targetCol = 1;
+
+    // Cari header "KPI" dan "TARGET" secara fleksibel.
+    for (let i = 0; i < Math.min(rows.length, 15); i++) {
+        const row = rows[i] || [];
+        const labels = row.map(normalizeTargetLabel);
+        const k = labels.findIndex(v =>
+            v === "KPI" || v.includes("KPI") || v.includes("METRIC") || v.includes("PARAMETER")
+        );
+        const t = labels.findIndex(v =>
+            v === "TARGET" || v.includes("TARGET")
+        );
+        if (k !== -1 && t !== -1) {
+            headerRow = i;
+            kpiCol = k;
+            targetCol = t;
+            break;
+        }
+    }
+
+    // Jika header tidak ditemukan, fallback: kolom A = KPI, B = Target.
+    if (headerRow === -1) {
+        headerRow = 0;
+        kpiCol = 0;
+        targetCol = 1;
+    }
+
+    for (let i = headerRow + 1; i < rows.length; i++) {
+        const row = rows[i] || [];
+        const label = normalizeTargetLabel(row[kpiCol]);
+        if (!label) continue;
+
+        const value = readTargetNumber(row[targetCol]);
+        if (!value && value !== 0) continue;
+
+        if (label.includes("TRADE SUPPLY")) {
+            globalTargetRSE.tradeSupply = value;
+        } else if (
+            label.includes("SELL IN SP") ||
+            label.includes("SELL-IN SP") ||
+            (label.includes("SELL IN") && label.includes("3GB"))
+        ) {
+            globalTargetRSE.sellInSP = value;
+        } else if (
+            label.includes("RETAILER TAGGING") ||
+            label.includes("TAGGING")
+        ) {
+            globalTargetRSE.retailerTagging = value;
+        } else if (
+            label.includes("RGU GA FWA") ||
+            label === "FWA" ||
+            label.includes("FWA")
+        ) {
+            globalTargetRSE.fwa = value;
+        } else if (
+            label.includes("DSE PRODUCTIVITY") ||
+            label.includes("PRODUCTIVITY")
+        ) {
+            globalTargetRSE.dseProductivity = value;
+        }
+    }
+}
+
+const pTargetRSE = fetch("./Target%20RSE.xlsx?v=" + Date.now(), {
+    cache: "no-store",
+    credentials: "same-origin"
+})
+    .then(res => {
+        if (!res.ok) throw new Error("Target RSE.xlsx tidak ditemukan");
+        return res.arrayBuffer();
+    })
+    .then(data => {
+        const wb = XLSX.read(data, { type: "array" });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, {
+            header: 1,
+            raw: true,
+            defval: ""
+        });
+
+        applyTargetRSEFromRows(rows);
+
+        // Pastikan target dari Excel langsung diterapkan ke Executive Summary
+        // setelah file Target RSE.xlsx selesai dibaca.
+        if (typeof updateExecutiveSummaryNew === "function") {
+            updateExecutiveSummaryNew();
+        }
+
+        console.log("Target RSE loaded:", globalTargetRSE);
+    })
+    .catch(err => {
+        console.warn("Target RSE load fallback:", err.message);
+        console.warn("Dashboard menggunakan target default existing:", globalTargetRSE);
+    });
+
 let globalHeaderSM = [], globalDataSM = [];
 let globalHeaderDO = [], globalDataDO = [];
 let globalHeaderDailyOSA = [], globalDataDailyOSA = [];
@@ -622,7 +777,7 @@ const p5 = fetch("PARTNER PERFORMANCE.xlsx")
     updateDashboardPP();
   }).catch(e => console.log("PP load skip"));
 
-Promise.all([p1, p2, p3, p4, p5]).then(() => {
+Promise.all([p1, p2, p3, p4, p5, pTargetRSE]).then(() => {
   updateAutoDateH2();
   updateGlobalAiHeaderSummary();
   updateExecutiveSummaryNew();
@@ -1458,22 +1613,23 @@ function updateExecutiveSummaryNew() {
     document.getElementById("exKpiBio").innerText = pctBio.toFixed(1) + "%";
     document.getElementById("exKpiTag").innerText = pctTag.toFixed(1) + "%";
 
-    let tradeTargetVal = 1568441913;
+    // TARGET DINAMIS dari Target RSE.xlsx
+    let tradeTargetVal = globalTargetRSE.tradeSupply;
     let tradeAchPct = tradeTargetVal > 0 ? (totalTradeSupply / tradeTargetVal) * 100 : 0;
     let tradeScore = Math.min(tradeAchPct, 140);
     let tradeWeighted = tradeScore * 0.30;
 
-    let sellInTargetVal = 2234;
+    let sellInTargetVal = globalTargetRSE.sellInSP;
     let sellInAchPct = sellInTargetVal > 0 ? (achSellIn / sellInTargetVal) * 100 : 0;
     let sellInScore = Math.min(sellInAchPct, 140);
     let sellInWeighted = sellInScore * 0.175;
 
-    let tagTargetVal = 155;
+    let tagTargetVal = globalTargetRSE.retailerTagging;
     let tagAchPct = tagTargetVal > 0 ? (globalTagAchCount / tagTargetVal) * 100 : 0;
     let tagScore = Math.min(tagAchPct, 140);
     let tagWeighted = tagScore * 0.175;
 
-    let fwaTargetVal = 10;
+    let fwaTargetVal = globalTargetRSE.fwa;
     let fwaAchCount = 0;
     globalDataDO.forEach(r => {
         let matchDse = (selDse === "ALL" || String(r[2] || "").trim() === selDse);
@@ -1486,9 +1642,15 @@ function updateExecutiveSummaryNew() {
     let fwaScore = Math.min(fwaAchPct, 160);
     let fwaWeighted = fwaScore * 0.15;
 
+    // DSE Productivity saat ini belum memiliki logic achievement di script.
+    // Target dibaca dinamis agar tampilan target ikut Excel, sedangkan
+    // achievement/score tetap 0% sesuai logic existing.
+    let dseProdTargetVal = globalTargetRSE.dseProductivity;
     let dseProdWeighted = 0.00;
     let totalRseScore = tradeWeighted + sellInWeighted + tagWeighted + fwaWeighted + dseProdWeighted;
 
+    const tradeTargetDisplay = document.getElementById("rseTgtTrade");
+    if (tradeTargetDisplay) tradeTargetDisplay.innerText = Math.round(tradeTargetVal).toLocaleString('id-ID');
     document.getElementById("rseActTrade").innerText = "Rp " + Math.round(totalTradeSupply).toLocaleString('id-ID');
     document.getElementById("rseAchTrade").innerText = tradeAchPct.toFixed(2) + "%";
     document.getElementById("rseWScoreTrade").innerText = tradeWeighted.toFixed(2) + "%";
@@ -1503,10 +1665,14 @@ function updateExecutiveSummaryNew() {
     document.getElementById("rseAchTag").innerText = tagAchPct.toFixed(2) + "%";
     document.getElementById("rseWScoreTag").innerText = tagWeighted.toFixed(2) + "%";
 
+    const fwaTargetDisplay = document.getElementById("rseTgtFwa");
+    if (fwaTargetDisplay) fwaTargetDisplay.innerText = Math.round(fwaTargetVal).toLocaleString('id-ID');
     document.getElementById("rseActFwa").innerText = fwaAchCount.toLocaleString('id-ID');
     document.getElementById("rseAchFwa").innerText = fwaAchPct.toFixed(2) + "%";
     document.getElementById("rseWScoreFwa").innerText = fwaWeighted.toFixed(2) + "%";
 
+    const prodTargetDisplay = document.getElementById("rseTgtProd");
+    if (prodTargetDisplay) prodTargetDisplay.innerText = Math.round(dseProdTargetVal).toLocaleString('id-ID');
     document.getElementById("rseWScoreProd").innerText = "0.00%";
     
     const formattedTotalScore = totalRseScore.toFixed(2) + "%";
@@ -1952,3 +2118,151 @@ function renderPstMainLineChart(rows) {
         }
     });
 }
+/* ============================================================================
+   FINAL MARKET SHARE FIX
+   - Dipasang di script.js agar tidak bergantung pada addon-executive.js
+   - Sumber: FB Market Share.xlsx / sheet KAB MS MOM
+   - Khusus Executive Summary: MC-BENGKAYANG
+   ============================================================================ */
+(function FINAL_MARKET_SHARE_FIX(){
+    "use strict";
+
+    const MS_FILE_URL = "./FB%20Market%20Share.xlsx?v=" + Date.now();
+    const MS_SHEET = "KAB MS MOM";
+
+    function msClean(v){ return String(v ?? "").trim(); }
+    function msNum(v){
+        if (typeof v === "number") return Number.isFinite(v) ? v : 0;
+        let s = msClean(v).replace(/%/g, "").replace(/\s/g, "");
+        if (!s) return 0;
+        if (s.includes(",") && s.includes(".")) s = s.replace(/\./g, "").replace(",", ".");
+        else if (s.includes(",")) s = s.replace(",", ".");
+        const n = Number(s);
+        return Number.isFinite(n) ? n : 0;
+    }
+    function msPct(v){ return (msNum(v) * 100).toFixed(2) + "%"; }
+    function msGrowth(v){
+        const n = msNum(v);
+        return (n >= 0 ? "+" : "") + (n * 100).toFixed(2) + "%";
+    }
+
+    async function loadMarketShare(){
+        const response = await fetch(MS_FILE_URL, {
+            cache: "no-store",
+            credentials: "same-origin"
+        });
+        if (!response.ok) throw new Error("FB Market Share.xlsx HTTP " + response.status);
+
+        const buffer = await response.arrayBuffer();
+        if (typeof XLSX === "undefined") throw new Error("SheetJS XLSX belum tersedia");
+
+        const wb = XLSX.read(buffer, {type:"array", cellDates:true});
+        const sheetName = wb.SheetNames.find(s => msClean(s).toUpperCase() === MS_SHEET.toUpperCase());
+        if (!sheetName) throw new Error("Sheet KAB MS MOM tidak ditemukan");
+
+        const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], {
+            header: 1,
+            raw: true,
+            defval: ""
+        });
+
+        for (let i = 0; i < rows.length; i++) {
+            const r = rows[i] || [];
+            const territory = msClean(r[0]);
+            if (!territory) continue;
+            if (territory.toUpperCase() === "TERRITORY") continue;
+            if (!territory.toUpperCase().includes("BENGKAYANG")) continue;
+
+            return {
+                territory,
+                IM3:  {lmtd:msNum(r[1]),  mtd:msNum(r[2]),  growth:msNum(r[3])},
+                "3ID":{lmtd:msNum(r[4]),  mtd:msNum(r[5]),  growth:msNum(r[6])},
+                TSEL: {lmtd:msNum(r[7]),  mtd:msNum(r[8]),  growth:msNum(r[9])},
+                XLS:  {lmtd:msNum(r[10]), mtd:msNum(r[11]), growth:msNum(r[12])}
+            };
+        }
+        throw new Error("MC-BENGKAYANG tidak ditemukan pada KAB MS MOM");
+    }
+
+    function renderMarketShare(kab){
+        const container = document.getElementById("executiveMarketShareContainer");
+        if (!container) return;
+
+        const brands = [
+            {key:"IM3",  label:"IM3",  cls:"im3"},
+            {key:"3ID",  label:"3ID",  cls:"tri"},
+            {key:"TSEL", label:"TSEL", cls:"tsel"},
+            {key:"XLS",  label:"XLS",  cls:"xls"}
+        ];
+
+        container.innerHTML = `
+            <div style="padding:18px 20px 14px;background:#fff;border-radius:16px;box-sizing:border-box;height:100%;">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;">
+                    <div>
+                        <div style="font-size:17px;font-weight:800;color:#111827;">Market Share MC Bengkayang</div>
+                        <div style="font-size:11px;color:#94a3b8;margin-top:3px;">MTD vs LMTD · MoM Growth</div>
+                    </div>
+                    <div style="font-size:10px;color:#64748b;text-align:right;">FB Market Share.xlsx<br>KAB MS MOM</div>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;">
+                    ${brands.map(b => `
+                        <div style="border:1px solid #e5e7eb;border-radius:10px;padding:10px 8px;background:#fff;min-width:0;">
+                            <div style="font-size:11px;font-weight:800;color:#334155;">${b.label}</div>
+                            <div style="font-size:18px;font-weight:900;color:#111827;margin-top:3px;">${msPct(kab[b.key].mtd)}</div>
+                            <div style="font-size:10px;font-weight:700;color:${kab[b.key].growth >= 0 ? '#16a34a' : '#dc2626'};margin-top:2px;">${msGrowth(kab[b.key].growth)} MoM</div>
+                        </div>
+                    `).join("")}
+                </div>
+                <div style="margin-top:14px;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;">
+                    <table style="width:100%;border-collapse:collapse;font-size:10px;">
+                        <thead><tr style="background:#17243a;color:#fff;">
+                            <th style="padding:8px;text-align:left;">Brand</th>
+                            <th style="padding:8px;text-align:right;">LMTD</th>
+                            <th style="padding:8px;text-align:right;">MTD</th>
+                            <th style="padding:8px;text-align:right;">MoM</th>
+                        </tr></thead>
+                        <tbody>
+                            ${brands.map(b => `
+                                <tr>
+                                    <td style="padding:7px 8px;border-bottom:1px solid #eef2f7;font-weight:800;">${b.label}</td>
+                                    <td style="padding:7px 8px;border-bottom:1px solid #eef2f7;text-align:right;">${msPct(kab[b.key].lmtd)}</td>
+                                    <td style="padding:7px 8px;border-bottom:1px solid #eef2f7;text-align:right;font-weight:800;">${msPct(kab[b.key].mtd)}</td>
+                                    <td style="padding:7px 8px;border-bottom:1px solid #eef2f7;text-align:right;font-weight:800;color:${kab[b.key].growth >= 0 ? '#16a34a' : '#dc2626'};">${msGrowth(kab[b.key].growth)}</td>
+                                </tr>
+                            `).join("")}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+
+    async function bootFinalMarketShare(){
+        const container = document.getElementById("executiveMarketShareContainer");
+        if (!container) return;
+        try {
+            const kab = await loadMarketShare();
+            renderMarketShare(kab);
+            console.log("FINAL MARKET SHARE FIX: loaded", kab);
+        } catch (err) {
+            console.error("FINAL MARKET SHARE FIX:", err);
+            // Retry sekali setelah semua asset selesai dimuat.
+            setTimeout(async () => {
+                try {
+                    const kab = await loadMarketShare();
+                    renderMarketShare(kab);
+                    console.log("FINAL MARKET SHARE FIX: retry loaded", kab);
+                } catch (retryErr) {
+                    console.error("FINAL MARKET SHARE FIX RETRY:", retryErr);
+                }
+            }, 1500);
+        }
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", bootFinalMarketShare, {once:true});
+    } else {
+        bootFinalMarketShare();
+    }
+    window.addEventListener("load", bootFinalMarketShare, {once:true});
+})();

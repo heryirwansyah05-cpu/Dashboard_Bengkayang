@@ -318,6 +318,7 @@
             <button class="tab-btn" id="navTabOutlet" onclick="switchReport('detail-outlet', this)"><i class="fa-solid fa-store"></i> Detail Outlet</button>
             <button class="tab-btn" id="navTabDaily" onclick="switchReport('daily-dse', this)"><i class="fa-solid fa-calendar-days"></i> GAP Daily KPI DSE</button>
             <button class="tab-btn" id="navTabPartner" onclick="switchReport('partner-performance', this)"><i class="fa-solid fa-chart-line"></i> Partner Performance</button>
+            <button class="tab-btn" id="navTabMarketProfile" onclick="switchReport('market-share-profile', this)"><i class="fa-solid fa-ranking-star"></i> Profil Market Share</button>
             <button class="tab-btn" id="navTabTodayInstruction" onclick="switchReport('today-instruction-tab', this)" style="background: #e11d48; color: #ffffff;"><i class="fa-solid fa-clipboard-list"></i> Today Instruction</button>
         </div>
         <div class="update">Status: <b>Live Data Active</b></div>
@@ -528,7 +529,7 @@
                             <tr>
                                 <td style="text-align: left; font-weight: 700;">Trade Supply (BN)</td>
                                 <td><span class="badge-target">30.0%</span></td>
-                                <td>1,568,441,913</td>
+                                <td><span id="rseTgtTrade">1,616,250,360</span></td>
                                 <td><span id="rseActTrade">103,533,333</span></td>
                                 <td><span id="rseAchTrade" style="color:#ef4444; font-weight:700;">6.60%</span></td>
                                 <td><b id="rseWScoreTrade">1.98%</b></td>
@@ -536,7 +537,7 @@
                             <tr>
                                 <td style="text-align: left; font-weight: 700;">Sell In SP 3GB</td>
                                 <td><span class="badge-target">17.5%</span></td>
-                                <td><span id="rseTgtSellIn">2,234</span></td>
+                                <td><span id="rseTgtSellIn">2,412</span></td>
                                 <td><span id="rseActSellIn">0</span></td>
                                 <td><span id="rseAchSellIn" style="color:#ef4444; font-weight:700;">0.00%</span></td>
                                 <td><b id="rseWScoreSellIn">0.00%</b></td>
@@ -552,7 +553,7 @@
                             <tr>
                                 <td style="text-align: left; font-weight: 700;">RGU GA FWA</td>
                                 <td><span class="badge-target">15.0%</span></td>
-                                <td>10</td>
+                                <td><span id="rseTgtFwa">18</span></td>
                                 <td><span id="rseActFwa">0</span></td>
                                 <td><span id="rseAchFwa" style="color:#ef4444; font-weight:700;">0.00%</span></td>
                                 <td><b id="rseWScoreFwa">0.00%</b></td>
@@ -560,7 +561,7 @@
                             <tr>
                                 <td style="text-align: left; font-weight: 700;">DSE Productivity</td>
                                 <td><span class="badge-target">20.0%</span></td>
-                                <td>5</td>
+                                <td><span id="rseTgtProd">5</span></td>
                                 <td>0</td>
                                 <td><span style="color:#ef4444; font-weight:700;">0.00%</span></td>
                                 <td><b id="rseWScoreProd">0.00%</b></td>
@@ -1082,6 +1083,63 @@
     </div>
 </div>
 
+
+
+    <!-- PROFIL MARKET SHARE -->
+    <div id="market-share-profile" class="report-content ms-profile-page" style="display:none">
+            <div class="exec-summary-wrapper ms-profile-wrapper">
+                <div class="ms-profile-head">
+                    <div>
+                        <div class="ms-profile-title"><i class="fa-solid fa-ranking-star"></i> PROFIL MARKET SHARE</div>
+                        <div class="ms-profile-sub">Analisis Market Share Kecamatan · KAB MS MOM & KEC MS MOM</div>
+                    </div>
+                    <button class="btn-snapshot-section" onclick="takeSectionSnapshot('market-share-profile')"><i class="fa-solid fa-camera"></i> Snapshot</button>
+                </div>
+
+                <div class="ms-profile-filters">
+                    <div><label>PT</label><select id="msProfilePT"></select></div>
+                    <div><label>Kecamatan</label><select id="msProfileKec"></select></div>
+                    <div><label>Brand</label><select id="msProfileBrand">
+                        <option value="IM3">IM3</option><option value="3ID">3ID</option><option value="TSEL">TSEL</option><option value="XLS">XLS</option>
+                    </select></div>
+                </div>
+
+                <div class="ms-profile-kpi-grid" id="msProfileKpiGrid"></div>
+
+                <div class="ms-profile-analysis-grid">
+                    <div class="exec-card-panel border-top-yellow">
+                        <div class="exec-panel-header">TOP & BOTTOM KECAMATAN — MTD</div>
+                        <div class="ms-topbottom-grid">
+                            <div class="ms-rank-card"><h4><i class="fa-solid fa-arrow-up"></i> TOP 3 MTD</h4><div id="msTopMtd"></div></div>
+                            <div class="ms-rank-card"><h4><i class="fa-solid fa-arrow-down"></i> BOTTOM 3 MTD</h4><div id="msBottomMtd"></div></div>
+                        </div>
+                    </div>
+                    <div class="exec-card-panel border-top-red">
+                        <div class="exec-panel-header">TOP & BOTTOM KECAMATAN — GROWTH</div>
+                        <div class="ms-topbottom-grid">
+                            <div class="ms-rank-card"><h4><i class="fa-solid fa-arrow-trend-up"></i> TOP 3 POSITIVE</h4><div id="msTopGrowth"></div></div>
+                            <div class="ms-rank-card"><h4><i class="fa-solid fa-arrow-trend-down"></i> TOP 3 NEGATIVE</h4><div id="msBottomGrowth"></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="exec-card-panel border-top-cyan ms-profile-chart-card">
+                    <div class="exec-panel-header-flex">
+                        <div>
+                            <div class="exec-panel-header"><i class="fa-solid fa-chart-line color-cyan"></i> MONTHLY PERFORMANCE</div>
+                            <div class="analysis-subtitle" id="msProfileChartSubtitle">MTD vs LMTD & Growth</div>
+                        </div>
+                    </div>
+                    <div class="ms-profile-chart-wrap"><canvas id="msProfileChart"></canvas></div>
+                </div>
+
+                <div class="ms-profile-table-wrap">
+                    <div class="exec-panel-header">DETAIL KECAMATAN</div>
+                    <div class="mini-table-wrapper"><table class="mini-exec-table" id="msProfileDetailTable"></table></div>
+                </div>
+            </div>
+        
+    </div>
     <!-- FOOTER -->
     <div class="dashboard-footer">
         <div class="footer-brand">
@@ -1105,8 +1163,8 @@
 </div>
 <div id="mobileApp"></div>
 
-<script src="script.js"></script>
-<script src="addon-executive.js"></script>
+<script src="script.js?v=20260913-profil-ms-native-v2"></script>
+<script src="addon-executive.js?v=20260913-profil-ms-native"></script>
 <script src="mobile.js"></script>
 </body>
 </html>

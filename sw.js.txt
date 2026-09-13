@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bengkayang-v10-market-share-final';
+const CACHE_NAME = 'bengkayang-v12-target-ms-fix';
 
 // Cache hanya file statis yang aman untuk disimpan.
 // addon-executive.js dan FB Market Share.xlsx sengaja TIDAK dicache
@@ -42,7 +42,12 @@ self.addEventListener('fetch', event => {
   }
 
   // Selalu ambil workbook Market Share terbaru.
-  if (url.pathname.endsWith('/FB%20Market%20Share.xlsx') || url.pathname.endsWith('/FB Market Share.xlsx')) {
+  if (
+    url.pathname.endsWith('/FB%20Market%20Share.xlsx') ||
+    url.pathname.endsWith('/FB Market Share.xlsx') ||
+    url.pathname.endsWith('/Target%20RSE.xlsx') ||
+    url.pathname.endsWith('/Target RSE.xlsx')
+  ) {
     event.respondWith(fetch(event.request, { cache: 'no-store' }));
     return;
   }
