@@ -1504,169 +1504,8 @@ document.addEventListener(
         return n > 1 ? n / 100 : n;
     }
 
-    async function loadExecutiveMarketShare() {
-        const container = document.getElementById("executiveMarketShareContainer");
-        if (!container || executiveMarketShareLoaded) return;
-
-        try {
-            const response = await fetch("FB Market Share.xlsx", { cache: "no-store" });
-            if (!response.ok) throw new Error("FB Market Share.xlsx tidak dapat diakses");
-
-            const buffer = await response.arrayBuffer();
-            const wb = XLSX.read(buffer, { type: "array" });
-            const sheetName = wb.SheetNames.find(s => String(s).trim().toUpperCase() === "TEMP_DATA_SLIDE") || "TEMP_DATA_SLIDE";
-            const ws = wb.Sheets[sheetName];
-            if (!ws) throw new Error("Sheet TEMP_DATA_SLIDE tidak ditemukan");
-
-            const rows = XLSX.utils.sheet_to_json(ws, { header:1, raw:true });
-            const headerIndex = rows.findIndex(r => String(r?.[0] ?? "").trim().toUpperCase() === "BULAN");
-            if (headerIndex < 0) throw new Error("Header Bulan tidak ditemukan");
-
-            const header = rows[headerIndex].map(v => String(v ?? "").trim().toUpperCase());
-            const idxMonth = 0;
-            const idxIM3 = header.findIndex(v => v === "IM3");
-            const idx3ID = header.findIndex(v => v === "3ID");
-            const idxTSEL = header.findIndex(v => v === "TSEL");
-            const idxXLS = header.findIndex(v => v === "XLS");
-
-            const result = [];
-            for (let i = headerIndex + 1; i < rows.length && result.length < 8; i++) {
-                const r = rows[i] || [];
-                const month = String(r[idxMonth] ?? "").trim();
-                if (!month) break;
-                if (/^BULAN$/i.test(month)) break;
-                result.push({
-                    month,
-                    IM3: normalizeMsPercent(r[idxIM3]),
-                    "3ID": normalizeMsPercent(r[idx3ID]),
-                    TSEL: normalizeMsPercent(r[idxTSEL]),
-                    XLS: normalizeMsPercent(r[idxXLS])
-                });
-            }
-
-            if (!result.length) throw new Error("Data Market Share kosong");
-
-            executiveMarketShareData = result;
-            executiveMarketShareLoaded = true;
-            renderExecutiveMarketShare();
-        } catch (error) {
-            console.warn("Executive Market Share load error:", error);
-            container.innerHTML = `
-                <div class="market-share-placeholder">
-                    <div class="trend-placeholder-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
-                    <div class="trend-placeholder-title">Market Share belum tersedia</div>
-                    <div class="trend-placeholder-text">Pastikan file <b>FB Market Share.xlsx</b> berada di folder dashboard.</div>
-                </div>
-            `;
-        }
-    }
-
-    function msColor(name) {
-        if (name === "IM3") return "#E51B4B";
-        if (name === "3ID") return "#F5B800";
-        if (name === "TSEL") return "#08A9C7";
-        return "#8B5CF6";
-    }
-
-    function renderExecutiveMarketShare() {
-        const container = document.getElementById("executiveMarketShareContainer");
-        if (!container || !executiveMarketShareData.length) return;
-
-        const latest = executiveMarketShareData[executiveMarketShareData.length - 1];
-        const operators = ["IM3", "3ID", "TSEL", "XLS"];
-
-        container.innerHTML = `
-            <div class="market-share-content">
-                <div class="ms-latest-grid">
-                    ${operators.map(op => `
-                        <div class="ms-latest-item" style="border-top:3px solid ${msColor(op)};">
-                            <span class="ms-latest-name">${op}</span>
-                            <span class="ms-latest-value">${(latest[op] * 100).toFixed(2)}%</span>
-                        </div>
-                    `).join("")}
-                </div>
-                <div class="ms-chart-wrap">
-                    <canvas id="executiveMarketShareChart"></canvas>
-                </div>
-                <div class="ms-footnote">
-                    Sumber: FB Market Share.xlsx · ${latest.month} · MC Bengkayang
-                </div>
-            </div>
-        `;
-
-        const canvas = document.getElementById("executiveMarketShareChart");
-        if (!canvas || typeof Chart === "undefined") return;
-
-        if (executiveMarketShareChart) executiveMarketShareChart.destroy();
-
-        executiveMarketShareChart = new Chart(canvas.getContext("2d"), {
-            type: "line",
-            data: {
-                labels: executiveMarketShareData.map(d => d.month),
-                datasets: operators.map(op => ({
-                    label: op,
-                    data: executiveMarketShareData.map(d => d[op] * 100),
-                    borderColor: msColor(op),
-                    backgroundColor: "transparent",
-                    borderWidth: op === "IM3" ? 2.8 : 1.7,
-                    pointRadius: op === "IM3" ? 3 : 2,
-                    pointHoverRadius: 5,
-                    pointBackgroundColor: msColor(op),
-                    pointBorderColor: "#FFFFFF",
-                    pointBorderWidth: 1.5,
-                    tension: .3,
-                    fill: false
-                }))
-            },
-            options: {
-                responsive:true,
-                maintainAspectRatio:false,
-                interaction:{ intersect:false, mode:"index" },
-                plugins:{
-                    legend:{
-                        display:true,
-                        position:"bottom",
-                        labels:{
-                            usePointStyle:true,
-                            pointStyle:"circle",
-                            boxWidth:7,
-                            boxHeight:7,
-                            padding:8,
-                            color:"#526176",
-                            font:{size:8, weight:"700"}
-                        }
-                    },
-                    tooltip:{
-                        displayColors:false,
-                        callbacks:{
-                            label: context => `${context.dataset.label}: ${Number(context.raw).toFixed(2)}%`
-                        }
-                    }
-                },
-                scales:{
-                    x:{
-                        grid:{display:false},
-                        ticks:{color:"#718096", font:{size:7, weight:"700"}, maxRotation:0}
-                    },
-                    y:{
-                        beginAtZero:false,
-                        suggestedMin:0,
-                        suggestedMax:50,
-                        grid:{color:"rgba(148,163,184,.13)"},
-                        ticks:{
-                            color:"#718096",
-                            font:{size:7, weight:"600"},
-                            callback:v => `${v}%`
-                        }
-                    }
-                }
-            }
-        });
-    }
-
     function bootExecutiveEnhancement() {
         injectExecutiveRefinementStyle();
-        loadExecutiveMarketShare();
     }
 
     document.addEventListener("DOMContentLoaded", () => {
@@ -4663,4 +4502,530 @@ document.addEventListener(
     }
 
     window.addEventListener("load", bootHeaderKpiOnly, { once: true });
+})();
+
+/* ============================================================================
+   MARKET SHARE V2 PATCH
+   - Executive Market Share membaca KAB MS MOM
+   - Mapping KAB MS MOM: IM3 B/C/D, 3ID E/F/G, TSEL H/I/J, XLS K/L/M
+   - LMTD / MTD / MoM = B/C/D, E/F/G, H/I/J, K/L/M
+   - Tambah TAB PROFIL MARKET SHARE secara dinamis
+   - Tidak menghapus / mengganti fungsi existing
+   ============================================================================ */
+(function MARKET_SHARE_V2_PATCH(){
+    "use strict";
+
+    const MS_FILE = "FB Market Share.xlsx";
+    const MS_SHEET_KAB = "KAB MS MOM";
+    const MS_SHEET_KEC = "KEC MS MOM ";
+
+    const BRAND_META = {
+        IM3:  { color:"#E51B4B", lt:1, mtd:2, growth:3, monthStart:29, monthEnd:33, blockStart:29 },
+        "3ID": { color:"#F5B800", lt:4, mtd:5, growth:6, monthStart:40, monthEnd:44, blockStart:40 },
+        TSEL: { color:"#08A9C7", lt:7, mtd:8, growth:9, monthStart:51, monthEnd:55, blockStart:51 },
+        XLS:  { color:"#8B5CF6", lt:10, mtd:11, growth:12, monthStart:62, monthEnd:66, blockStart:62 }
+    };
+
+    let kabRows = [];
+    let kecRows = [];
+    let kabLoaded = false;
+    let kecLoaded = false;
+    let profileChart = null;
+    let execChart = null;
+
+    function num(v){
+        if (typeof v === "number") return Number.isFinite(v) ? v : 0;
+        if (typeof parseNum === "function") {
+            const n = parseNum(v);
+            return Number.isFinite(n) ? n : 0;
+        }
+        let s = String(v ?? "").trim();
+        if (!s) return 0;
+        s = s.replace(/%/g, "").replace(/\s/g, "");
+        if (s.includes(",") && s.includes(".")) {
+            s = s.replace(/\./g, "").replace(",", ".");
+        } else if (s.includes(",")) {
+            s = s.replace(",", ".");
+        }
+        const n = Number(s);
+        return Number.isFinite(n) ? n : 0;
+    }
+
+    function pct(v){
+        const n = num(v);
+        return `${(n * 100).toFixed(2)}%`;
+    }
+
+    function pctSigned(v){
+        const n = num(v);
+        const sign = n > 0 ? "+" : "";
+        return `${sign}${(n * 100).toFixed(2)}%`;
+    }
+
+    function pctClass(v){
+        return num(v) >= 0 ? "ms-positive" : "ms-negative";
+    }
+
+    function cleanText(v){
+        return String(v ?? "").trim();
+    }
+
+    function monthLabel(v){
+        if (v instanceof Date && !isNaN(v)) {
+            return v.toLocaleDateString("en-US", {month:"short", year:"2-digit"});
+        }
+        const s = cleanText(v);
+        if (!s) return "-";
+        const d = new Date(s);
+        if (!isNaN(d)) return d.toLocaleDateString("en-US", {month:"short", year:"2-digit"});
+        return s;
+    }
+
+    async function readSheet(sheetName){
+        const response = await fetch(MS_FILE, {cache:"no-store"});
+        if (!response.ok) throw new Error(`${MS_FILE} tidak dapat diakses`);
+        const buffer = await response.arrayBuffer();
+        const wb = XLSX.read(buffer, {type:"array", cellDates:true});
+        const actual = wb.SheetNames.find(s => cleanText(s).toUpperCase() === cleanText(sheetName).toUpperCase());
+        if (!actual) throw new Error(`Sheet ${sheetName} tidak ditemukan`);
+        const ws = wb.Sheets[actual];
+        return XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:""});
+    }
+
+    async function loadKAB(){
+        if (kabLoaded) return kabRows;
+        const rows = await readSheet(MS_SHEET_KAB);
+        // KAB MS MOM memiliki header data pada row Excel 3 dan data pada row 5.
+        // Dalam array JS: row index 1 = LMTD/MTD/MoM, index 2 = brand, index 3 = value.
+        const data = [];
+        for (let i=0;i<rows.length;i++) {
+            const r = rows[i] || [];
+            const territory = cleanText(r[0]);
+            if (!territory || territory.toUpperCase() === "TERRITORY") continue;
+            if (i < 3) continue;
+            data.push({
+                territory,
+                IM3:{lmtd:num(r[1]),mtd:num(r[2]),growth:num(r[3])},
+                "3ID":{lmtd:num(r[4]),mtd:num(r[5]),growth:num(r[6])},
+                TSEL:{lmtd:num(r[7]),mtd:num(r[8]),growth:num(r[9])},
+                XLS:{lmtd:num(r[10]),mtd:num(r[11]),growth:num(r[12])}
+            });
+        }
+        kabRows = data;
+        kabLoaded = true;
+        return data;
+    }
+
+    async function loadKEC(){
+        if (kecLoaded) return kecRows;
+        const rows = await readSheet(MS_SHEET_KEC);
+        const data = [];
+        // KEC MS MOM: header utama row Excel 4 => array index 3; data mulai row Excel 5.
+        for (let i=4;i<rows.length;i++) {
+            const r = rows[i] || [];
+            const rawKec = cleanText(r[0]);
+            if (!rawKec || rawKec.toUpperCase() === "KECAMATAN") continue;
+
+            const kec = rawKec.split("|")[0].trim();
+            if (!kec) continue;
+
+            data.push({
+                row:r,
+                kecamatan:kec,
+                partner:cleanText(r[1]),
+                kabupaten:cleanText(r[2]),
+                mtd:{
+                    IM3:num(r[34]),
+                    "3ID":num(r[45]),
+                    TSEL:num(r[56]),
+                    XLS:num(r[67])
+                },
+                lmtd:{
+                    IM3:num(r[33]),
+                    "3ID":num(r[44]),
+                    TSEL:num(r[55]),
+                    XLS:num(r[66])
+                },
+                growth:{
+                    IM3:num(r[35]),
+                    "3ID":num(r[46]),
+                    TSEL:num(r[57]),
+                    XLS:num(r[68])
+                },
+                monthly:{
+                    IM3:{labels:r.slice(28,33).map(monthLabel), values:r.slice(28,33).map(num)},
+                    "3ID":{labels:r.slice(39,44).map(monthLabel), values:r.slice(39,44).map(num)},
+                    TSEL:{labels:r.slice(50,55).map(monthLabel), values:r.slice(50,55).map(num)},
+                    XLS:{labels:r.slice(61,66).map(monthLabel), values:r.slice(61,66).map(num)}
+                }
+            });
+        }
+        kecRows = data;
+        kecLoaded = true;
+        return data;
+    }
+
+    function getCurrentKab(){
+        return kabRows.find(r => cleanText(r.territory).toUpperCase() === "MC-BENGKAYANG") || kabRows[0] || null;
+    }
+
+    function renderExecutiveMarketShareV2(kab){
+        const container = document.getElementById("executiveMarketShareContainer");
+        if (!container || !kab) return;
+
+        const brands = ["IM3","3ID","TSEL","XLS"];
+        container.innerHTML = `
+            <div class="ms-v2-content">
+                <div class="ms-v2-kpi-grid">
+                    ${brands.map(b => `
+                        <div class="ms-v2-kpi" style="border-top:3px solid ${BRAND_META[b].color}">
+                            <span>${b}</span>
+                            <b>${pct(kab[b].mtd)}</b>
+                            <small class="${pctClass(kab[b].growth)}">${pctSigned(kab[b].growth)} MoM</small>
+                        </div>
+                    `).join("")}
+                </div>
+                <div class="ms-v2-chart-title">MTD vs LMTD · MoM Growth</div>
+                <div class="ms-v2-chart-wrap"><canvas id="executiveMarketShareV2Chart"></canvas></div>
+                <div class="ms-footnote">Sumber: FB Market Share.xlsx · KAB MS MOM · MTD vs LMTD</div>
+            </div>
+        `;
+
+        const canvas = document.getElementById("executiveMarketShareV2Chart");
+        if (!canvas || typeof Chart === "undefined") return;
+        if (execChart) execChart.destroy();
+
+        const labels = ["LMTD","MTD"];
+        execChart = new Chart(canvas.getContext("2d"), {
+            type:"line",
+            data:{
+                labels:brands,
+                datasets:[
+                    {
+                        label:"LMTD",
+                        data:brands.map(b=>kab[b].lmtd*100),
+                        borderColor:"#94A3B8",
+                        backgroundColor:"transparent",
+                        borderDash:[6,5],
+                        borderWidth:1.8,
+                        pointRadius:3,
+                        pointBackgroundColor:"#94A3B8",
+                        tension:.25
+                    },
+                    {
+                        label:"MTD",
+                        data:brands.map(b=>kab[b].mtd*100),
+                        borderColor:"#E51B4B",
+                        backgroundColor:"transparent",
+                        borderWidth:3,
+                        pointRadius:4,
+                        pointBackgroundColor:brands.map(b=>BRAND_META[b].color),
+                        pointBorderColor:"#FFFFFF",
+                        pointBorderWidth:1.5,
+                        tension:.25
+                    }
+                ]
+            },
+            options:{
+                responsive:true,
+                maintainAspectRatio:false,
+                plugins:{
+                    legend:{display:true,position:"bottom",labels:{usePointStyle:true,boxWidth:7,font:{size:8,weight:"700"}}},
+                    tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${Number(c.raw).toFixed(2)}%`}}
+                },
+                scales:{
+                    x:{grid:{display:false},ticks:{font:{size:8,weight:"700"}}},
+                    y:{beginAtZero:true,suggestedMax:50,ticks:{callback:v=>`${v}%`,font:{size:8}},grid:{color:"rgba(148,163,184,.13)"}}
+                }
+            }
+        });
+    }
+
+    async function bootExecutiveMS(){
+        try {
+            const rows = await loadKAB();
+            const kab = rows.find(r => cleanText(r.territory).toUpperCase() === "MC-BENGKAYANG") || getCurrentKab();
+            if (kab) renderExecutiveMarketShareV2(kab);
+        } catch(err) {
+            console.warn("Market Share V2 Executive:",err);
+        }
+    }
+
+    function injectProfileTab(){
+        if (document.getElementById("navTabMarketProfile")) return;
+        const nav = document.getElementById("mainReportTabsContainer");
+        if (!nav) return;
+
+        const btn = document.createElement("button");
+        btn.className = "tab-btn";
+        btn.id = "navTabMarketProfile";
+        btn.innerHTML = '<i class="fa-solid fa-ranking-star"></i> Profil Market Share';
+        btn.onclick = function(){ switchReport("market-share-profile", btn); renderMarketShareProfile(); };
+        nav.appendChild(btn);
+
+        const todayBtn = document.getElementById("navTabTodayInstruction");
+        if (todayBtn && todayBtn.parentNode === nav) nav.insertBefore(btn, todayBtn);
+
+        const currentUser = localStorage.getItem("logged_in_user");
+        if (currentUser && typeof ALLOWED_USERS !== "undefined" && ALLOWED_USERS[currentUser]?.type === "dse") {
+            btn.style.display = "none";
+        }
+    }
+
+    function injectProfileSection(){
+        if (document.getElementById("market-share-profile")) return;
+        const footer = document.querySelector(".dashboard-footer");
+        if (!footer) return;
+
+        const el = document.createElement("div");
+        el.id = "market-share-profile";
+        el.className = "report-content ms-profile-page";
+        el.style.display = "none";
+        el.innerHTML = `
+            <div class="exec-summary-wrapper ms-profile-wrapper">
+                <div class="ms-profile-head">
+                    <div>
+                        <div class="ms-profile-title"><i class="fa-solid fa-ranking-star"></i> PROFIL MARKET SHARE</div>
+                        <div class="ms-profile-sub">Analisis Market Share Kecamatan · KAB MS MOM & KEC MS MOM</div>
+                    </div>
+                    <button class="btn-snapshot-section" onclick="takeSectionSnapshot('market-share-profile')"><i class="fa-solid fa-camera"></i> Snapshot</button>
+                </div>
+
+                <div class="ms-profile-filters">
+                    <div><label>Kecamatan</label><select id="msProfileKec"></select></div>
+                    <div><label>Brand</label><select id="msProfileBrand">
+                        <option value="IM3">IM3</option><option value="3ID">3ID</option><option value="TSEL">TSEL</option><option value="XLS">XLS</option>
+                    </select></div>
+                </div>
+
+                <div class="ms-profile-kpi-grid" id="msProfileKpiGrid"></div>
+
+                <div class="ms-profile-analysis-grid">
+                    <div class="exec-card-panel border-top-yellow">
+                        <div class="exec-panel-header">TOP & BOTTOM KECAMATAN — MTD</div>
+                        <div class="ms-topbottom-grid">
+                            <div class="ms-rank-card"><h4><i class="fa-solid fa-arrow-up"></i> TOP 3 MTD</h4><div id="msTopMtd"></div></div>
+                            <div class="ms-rank-card"><h4><i class="fa-solid fa-arrow-down"></i> BOTTOM 3 MTD</h4><div id="msBottomMtd"></div></div>
+                        </div>
+                    </div>
+                    <div class="exec-card-panel border-top-red">
+                        <div class="exec-panel-header">TOP & BOTTOM KECAMATAN — GROWTH</div>
+                        <div class="ms-topbottom-grid">
+                            <div class="ms-rank-card"><h4><i class="fa-solid fa-arrow-trend-up"></i> TOP 3 POSITIVE</h4><div id="msTopGrowth"></div></div>
+                            <div class="ms-rank-card"><h4><i class="fa-solid fa-arrow-trend-down"></i> TOP 3 NEGATIVE</h4><div id="msBottomGrowth"></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="exec-card-panel border-top-cyan ms-profile-chart-card">
+                    <div class="exec-panel-header-flex">
+                        <div>
+                            <div class="exec-panel-header"><i class="fa-solid fa-chart-line color-cyan"></i> MONTHLY PERFORMANCE</div>
+                            <div class="analysis-subtitle" id="msProfileChartSubtitle">MTD vs LMTD & Growth</div>
+                        </div>
+                    </div>
+                    <div class="ms-profile-chart-wrap"><canvas id="msProfileChart"></canvas></div>
+                </div>
+
+                <div class="ms-profile-table-wrap">
+                    <div class="exec-panel-header">DETAIL KECAMATAN</div>
+                    <div class="mini-table-wrapper"><table class="mini-exec-table" id="msProfileDetailTable"></table></div>
+                </div>
+            </div>
+        `;
+        footer.parentNode.insertBefore(el, footer);
+
+        const kecSelect = document.getElementById("msProfileKec");
+        const brandSelect = document.getElementById("msProfileBrand");
+        if (kecSelect) kecSelect.onchange = renderMarketShareProfile;
+        if (brandSelect) brandSelect.onchange = renderMarketShareProfile;
+    }
+
+    function fillKecFilter(){
+        const sel = document.getElementById("msProfileKec");
+        if (!sel || !kecRows.length) return;
+        const current = sel.value;
+        const names = [...new Set(kecRows.map(r=>r.kecamatan))].sort((a,b)=>a.localeCompare(b,"id"));
+        sel.innerHTML = `<option value="ALL">Semua Kecamatan</option>` + names.map(k=>`<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`).join("");
+        if (names.includes(current)) sel.value=current;
+    }
+
+    function escapeHtml(v){
+        return String(v??"").replace(/[&<>'"]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[ch]));
+    }
+
+    function rankHtml(items, emptyText){
+        if (!items.length) return `<div class="ms-rank-empty">${emptyText}</div>`;
+        return items.map((r,i)=>`
+            <div class="ms-rank-row">
+                <span class="ms-rank-no">${i+1}</span>
+                <span class="ms-rank-name">${escapeHtml(r.kecamatan)}</span>
+                <b class="${r.value>=0?'ms-positive':'ms-negative'}">${pctSigned(r.value)}</b>
+            </div>
+        `).join("");
+    }
+
+    function rankMtdHtml(items){
+        if (!items.length) return `<div class="ms-rank-empty">Tidak ada data</div>`;
+        return items.map((r,i)=>`
+            <div class="ms-rank-row">
+                <span class="ms-rank-no">${i+1}</span>
+                <span class="ms-rank-name">${escapeHtml(r.kecamatan)}</span>
+                <b>${pct(r.value)}</b>
+            </div>
+        `).join("");
+    }
+
+    function renderProfileKpi(row,brand){
+        const grid=document.getElementById("msProfileKpiGrid");
+        if(!grid||!row)return;
+        const meta=BRAND_META[brand];
+        grid.innerHTML=`
+            <div class="ms-profile-kpi" style="border-left-color:${meta.color}"><span>MTD ${brand}</span><b>${pct(row.mtd[brand])}</b><small>Market Share saat ini</small></div>
+            <div class="ms-profile-kpi" style="border-left-color:#64748B"><span>LMTD ${brand}</span><b>${pct(row.lmtd[brand])}</b><small>Periode sebelumnya</small></div>
+            <div class="ms-profile-kpi ${pctClass(row.growth[brand])}" style="border-left-color:${meta.color}"><span>GROWTH ${brand}</span><b>${pctSigned(row.growth[brand])}</b><small>MTD vs LMTD</small></div>
+        `;
+    }
+
+    function renderProfileChart(row,brand){
+        const canvas=document.getElementById("msProfileChart");
+        if(!canvas||!row||typeof Chart==="undefined")return;
+        if(profileChart)profileChart.destroy();
+        const meta=BRAND_META[brand];
+        const m=row.monthly[brand];
+        const labels=m.labels.length?m.labels:["Apr-26","May-26","Jun-26","Jul-26","Aug-26"];
+        const values=m.values.map(v=>v*100);
+        const lmtd=row.lmtd[brand]*100;
+        const mtd=row.mtd[brand]*100;
+        const growth=row.growth[brand]*100;
+        profileChart=new Chart(canvas.getContext("2d"),{
+            type:"line",
+            data:{labels,datasets:[
+                {label:`${brand} Monthly`,data:values,borderColor:meta.color,backgroundColor:"transparent",borderWidth:3,pointRadius:3,tension:.3},
+                {label:"LMTD",data:labels.map(()=>lmtd),borderColor:"#94A3B8",borderDash:[6,5],borderWidth:1.6,pointRadius:0,tension:0},
+                {label:"MTD",data:labels.map(()=>mtd),borderColor:"#172236",borderDash:[3,4],borderWidth:1.6,pointRadius:0,tension:0}
+            ]},
+            options:{responsive:true,maintainAspectRatio:false,interaction:{intersect:false,mode:"index"},plugins:{legend:{position:"bottom",labels:{usePointStyle:true,boxWidth:7,font:{size:8,weight:"700"}}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${Number(c.raw).toFixed(2)}%`}}},scales:{x:{grid:{display:false},ticks:{font:{size:8,weight:"700"}}},y:{beginAtZero:true,suggestedMax:60,ticks:{callback:v=>`${v}%`,font:{size:8}},grid:{color:"rgba(148,163,184,.13)"}}}}
+        });
+        const sub=document.getElementById("msProfileChartSubtitle");
+        if(sub)sub.textContent=`${brand} · Monthly Performance · MTD ${pct(mtd/100)} vs LMTD ${pct(lmtd/100)} · Growth ${pctSigned(growth/100)}`;
+    }
+
+    function renderDetailTable(rows,brand){
+        const table=document.getElementById("msProfileDetailTable");
+        if(!table)return;
+        table.innerHTML=`<thead><tr><th>Kecamatan</th><th>Partner</th><th>LMTD ${brand}</th><th>MTD ${brand}</th><th>Growth</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${escapeHtml(r.kecamatan)}</td><td>${escapeHtml(r.partner)}</td><td>${pct(r.lmtd[brand])}</td><td>${pct(r.mtd[brand])}</td><td class="${pctClass(r.growth[brand])}">${pctSigned(r.growth[brand])}</td></tr>`).join("")}</tbody>`;
+    }
+
+    async function renderMarketShareProfile(){
+        const page=document.getElementById("market-share-profile");
+        if(!page)return;
+        page.style.display="block";
+        try{
+            await loadKEC();
+            fillKecFilter();
+            const kecVal=document.getElementById("msProfileKec")?.value||"ALL";
+            const brand=document.getElementById("msProfileBrand")?.value||"IM3";
+            const selected=kecVal==="ALL"?kecRows:(kecRows.filter(r=>r.kecamatan===kecVal));
+            let focus=selected[0]||kecRows[0];
+            if(kecVal==="ALL"){
+                const kab=getCurrentKab();
+                if(kab){
+                    focus={
+                        kecamatan:"MC-BENGKAYANG",
+                        partner:"All Kecamatan",
+                        kabupaten:"BENGKAYANG",
+                        mtd:{IM3:kab.IM3.mtd,"3ID":kab["3ID"].mtd,TSEL:kab.TSEL.mtd,XLS:kab.XLS.mtd},
+                        lmtd:{IM3:kab.IM3.lmtd,"3ID":kab["3ID"].lmtd,TSEL:kab.TSEL.lmtd,XLS:kab.XLS.lmtd},
+                        growth:{IM3:kab.IM3.growth,"3ID":kab["3ID"].growth,TSEL:kab.TSEL.growth,XLS:kab.XLS.growth},
+                        monthly:{IM3:{labels:["LMTD","MTD"],values:[kab.IM3.lmtd,kab.IM3.mtd]},"3ID":{labels:["LMTD","MTD"],values:[kab["3ID"].lmtd,kab["3ID"].mtd]},TSEL:{labels:["LMTD","MTD"],values:[kab.TSEL.lmtd,kab.TSEL.mtd]},XLS:{labels:["LMTD","MTD"],values:[kab.XLS.lmtd,kab.XLS.mtd]}}
+                    };
+                }
+            }
+            if(focus)renderProfileKpi(focus,brand);
+
+            const mtdRank=kecRows.map(r=>({kecamatan:r.kecamatan,value:r.mtd[brand]})).sort((a,b)=>b.value-a.value);
+            const growthRank=kecRows.map(r=>({kecamatan:r.kecamatan,value:r.growth[brand]})).sort((a,b)=>b.value-a.value);
+            document.getElementById("msTopMtd").innerHTML=rankMtdHtml(mtdRank.slice(0,3));
+            document.getElementById("msBottomMtd").innerHTML=rankMtdHtml(mtdRank.slice(-3).reverse());
+            document.getElementById("msTopGrowth").innerHTML=rankHtml(growthRank.filter(x=>x.value>0).slice(0,3),"Tidak ada growth positif");
+            document.getElementById("msBottomGrowth").innerHTML=rankHtml(growthRank.filter(x=>x.value<0).slice(-3).reverse(),"Tidak ada growth negatif");
+            if(focus)renderProfileChart(focus,brand);
+            renderDetailTable(selected,brand);
+        }catch(err){
+            console.warn("Profil Market Share:",err);
+            const pageBody=document.querySelector("#market-share-profile .ms-profile-wrapper");
+            if(pageBody)pageBody.insertAdjacentHTML("beforeend",`<div class="ms-profile-error">Data Market Share gagal dimuat: ${escapeHtml(err.message)}</div>`);
+        }
+    }
+
+    function injectStyles(){
+        if(document.getElementById("market-share-v2-style"))return;
+        const style=document.createElement("style");
+        style.id="market-share-v2-style";
+        style.textContent=`
+            .ms-v2-content{width:100%;}
+            .ms-v2-kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-bottom:8px;}
+            .ms-v2-kpi{background:#fff;border:1px solid #e4eaf1;border-radius:10px;padding:7px 8px;min-width:0;box-shadow:0 2px 8px rgba(23,34,54,.04);}
+            .ms-v2-kpi span{display:block;font-size:8px;font-weight:800;color:#64748b;}
+            .ms-v2-kpi b{display:block;font-size:13px;font-weight:900;color:#172236;margin-top:2px;}
+            .ms-v2-kpi small{display:block;font-size:7.5px;font-weight:800;margin-top:2px;}
+            .ms-v2-chart-title{font-size:8px;font-weight:800;color:#64748b;margin:4px 0;}
+            .ms-v2-chart-wrap{height:150px;position:relative;}
+            .ms-positive{color:#079455!important;}
+            .ms-negative{color:#e51b4b!important;}
+            .ms-profile-page{max-width:1440px;margin:0 auto;}
+            .ms-profile-wrapper{padding:20px!important;}
+            .ms-profile-head{display:flex;justify-content:space-between;align-items:center;gap:15px;padding-bottom:14px;border-bottom:1px solid #e4eaf1;margin-bottom:15px;}
+            .ms-profile-title{font-size:18px;font-weight:900;color:#172236;}
+            .ms-profile-title i{color:#f5b800;margin-right:6px;}
+            .ms-profile-sub{font-size:10px;font-weight:600;color:#66758a;margin-top:4px;}
+            .ms-profile-filters{display:grid;grid-template-columns:260px 220px;gap:10px;background:#f8fafc;border:1px solid #e4eaf1;border-radius:12px;padding:12px;margin-bottom:14px;}
+            .ms-profile-filters label{display:block;font-size:9px;font-weight:800;color:#64748b;margin-bottom:5px;}
+            .ms-profile-filters select{width:100%;height:34px;padding:0 10px;border:1px solid #d7dee8;border-radius:9px;background:#fff;color:#172236;font-size:10px;font-weight:800;outline:none;}
+            .ms-profile-kpi-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px;}
+            .ms-profile-kpi{background:#fff;border:1px solid #e4eaf1;border-left:5px solid #172236;border-radius:12px;padding:13px 14px;min-height:88px;box-shadow:0 4px 14px rgba(23,34,54,.05);}
+            .ms-profile-kpi span{display:block;font-size:9px;font-weight:900;color:#64748b;}
+            .ms-profile-kpi b{display:block;font-size:21px;font-weight:900;color:#172236;margin-top:5px;}
+            .ms-profile-kpi small{display:block;font-size:8px;color:#94a3b8;font-weight:700;margin-top:3px;}
+            .ms-profile-analysis-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+            .ms-topbottom-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+            .ms-rank-card{border:1px solid #e4eaf1;border-radius:10px;padding:9px;background:#fbfdff;}
+            .ms-rank-card h4{font-size:8px;font-weight:900;color:#172236;margin:0 0 7px;}
+            .ms-rank-card h4 i{margin-right:4px;color:#f5b800;}
+            .ms-rank-row{display:grid;grid-template-columns:20px 1fr auto;align-items:center;gap:5px;padding:6px 0;border-bottom:1px solid #eef2f6;font-size:8px;}
+            .ms-rank-row:last-child{border-bottom:0;}
+            .ms-rank-no{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#eef2f6;font-weight:900;color:#172236;}
+            .ms-rank-name{font-weight:800;color:#334155;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+            .ms-rank-row b{font-weight:900;}
+            .ms-rank-empty{font-size:8px;color:#94a3b8;padding:10px 0;font-weight:700;}
+            .ms-profile-chart-card{margin-bottom:12px;}
+            .ms-profile-chart-wrap{height:300px;position:relative;padding:8px 5px 5px;}
+            .ms-profile-table-wrap{background:#fff;border:1px solid #e4eaf1;border-radius:12px;padding:12px;}
+            .ms-profile-table-wrap .mini-table-wrapper{margin-top:8px;overflow:auto;}
+            #msProfileDetailTable{width:100%;border-collapse:collapse;min-width:600px;font-size:9px;}
+            #msProfileDetailTable th{background:#172236;color:#fff;padding:8px;text-align:left;font-size:8px;}
+            #msProfileDetailTable td{padding:7px;border-bottom:1px solid #e4eaf1;font-weight:700;color:#334155;}
+            .ms-profile-error{margin-top:12px;padding:12px;border-radius:10px;background:#fef2f2;color:#b91c1c;font-size:10px;font-weight:800;}
+            @media(max-width:900px){
+                .ms-v2-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+                .ms-profile-filters,.ms-profile-kpi-grid,.ms-profile-analysis-grid{grid-template-columns:1fr;}
+                .ms-topbottom-grid{grid-template-columns:1fr;}
+                .ms-profile-chart-wrap{height:250px;}
+                .ms-profile-title{font-size:15px;}
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    function boot(){
+        injectStyles();
+        injectProfileTab();
+        injectProfileSection();
+        setTimeout(bootExecutiveMS,500);
+    }
+
+    if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",boot,{once:true});
+    else boot();
+    window.addEventListener("load",()=>{injectProfileTab();injectProfileSection();bootExecutiveMS();},{once:true});
 })();

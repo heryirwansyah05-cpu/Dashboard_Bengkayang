@@ -1,32 +1,53 @@
-const CACHE_NAME = 'bengkayang-v8-header-snapshot-fix';
+const CACHE_NAME = 'bengkayang-v10-market-share-final';
+
+// Cache hanya file statis yang aman untuk disimpan.
+// addon-executive.js dan FB Market Share.xlsx sengaja TIDAK dicache
+// agar perubahan kode/data selalu diambil dari server terbaru.
 const urlsToCache = [
   'index.html',
   'style.css',
+  'mobile.css',
+  'addon-style.css',
+  'im3-theme.css',
   'script.js',
-  'MS BENGKAYANG 19 JULI 2026.xlsx',
-  'SITE MONITORING.xlsx',
-  'DETAIL OUTLET.xlsx',
-  'DAILY SELL IN DSE.xlsx',
-  'PARTNER PERFORMANCE.xlsx',
-  'MS WEEK 30.xlsx'
+  'mobile.js',
+  'manifest.json',
+  'im3.png'
 ];
 
-// Install Service Worker & Cache File
 self.addEventListener('install', event => {
+  self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        return cache.addAll(urlsToCache);
-      })
+    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
   );
 });
 
-// Fetch File dari Cache saat Offline
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys()
+      .then(keys => Promise.all(
+        keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
+      ))
+      .then(() => self.clients.claim())
+  );
+});
+
 self.addEventListener('fetch', event => {
+  const url = new URL(event.request.url);
+
+  // Selalu ambil addon terbaru. Jangan pernah mengambil addon dari cache lama.
+  if (url.pathname.endsWith('/addon-executive.js')) {
+    event.respondWith(fetch(event.request, { cache: 'no-store' }));
+    return;
+  }
+
+  // Selalu ambil workbook Market Share terbaru.
+  if (url.pathname.endsWith('/FB%20Market%20Share.xlsx') || url.pathname.endsWith('/FB Market Share.xlsx')) {
+    event.respondWith(fetch(event.request, { cache: 'no-store' }));
+    return;
+  }
+
   event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        return response || fetch(event.request);
-      })
+    caches.match(event.request).then(response => response || fetch(event.request))
   );
 });
