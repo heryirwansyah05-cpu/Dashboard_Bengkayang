@@ -5049,6 +5049,250 @@ document.addEventListener(
             </tbody>`;
     }
 
+
+    /* =========================================================
+       DETAIL KECAMATAN — SNAPSHOT FULL TABLE
+       ---------------------------------------------------------
+       - Hanya untuk tabel Profil Market Share.
+       - Mengambil SELURUH tabel, termasuk kolom yang berada
+         di luar horizontal scroll.
+       - Mengikuti filter PT / Kecamatan / Brand yang sedang aktif.
+       - Tidak mengubah KPI Summary, chart, atau data source.
+       ========================================================= */
+
+    function getMsSnapshotFilterLabel(){
+        const pt = document.getElementById("msProfilePT")?.value || "ALL";
+        const kec = document.getElementById("msProfileKec")?.value || "ALL";
+        const brand = document.getElementById("msProfileBrand")?.value || "IM3";
+
+        const clean = v => String(v || "")
+            .replace(/^ALL$/i, "SEMUA")
+            .replace(/[\\/:*?"<>|]+/g, "-")
+            .replace(/\s+/g, "_")
+            .substring(0, 60);
+
+        return `${clean(pt)}_${clean(kec)}_${clean(brand)}`;
+    }
+
+    function ensureMarketShareDetailSnapshotButton(){
+        const wrap = document.querySelector("#market-share-profile .ms-profile-table-wrap");
+        if(!wrap) return;
+
+        let button = document.getElementById("btnSnapshotMsDetailTable");
+
+        if(!button){
+            button = document.createElement("button");
+            button.id = "btnSnapshotMsDetailTable";
+            button.type = "button";
+            button.className = "btn-snapshot-table";
+            button.innerHTML = '<i class="fa-solid fa-camera"></i> Snapshot Tabel';
+
+            button.style.cssText = `
+                display:inline-flex;
+                align-items:center;
+                justify-content:center;
+                gap:7px;
+                margin-left:auto;
+                background:#FFD600;
+                color:#172236;
+                border:1px solid #E0BD00;
+                border-radius:9px;
+                padding:8px 13px;
+                font-family:inherit;
+                font-size:10px;
+                font-weight:900;
+                line-height:1;
+                cursor:pointer;
+                box-shadow:0 3px 8px rgba(23,34,54,.08);
+                white-space:nowrap;
+                flex:0 0 auto;
+            `;
+
+            button.addEventListener("mouseenter",()=>{
+                if(!button.disabled) button.style.background="#F2C900";
+            });
+            button.addEventListener("mouseleave",()=>{
+                button.style.background="#FFD600";
+            });
+            button.addEventListener("click",takeMarketShareDetailTableSnapshot);
+
+            /*
+             * Buat title bar khusus DETAIL KECAMATAN.
+             * Tidak menyentuh KPI Summary, chart, filter, atau section lain.
+             */
+            let head = wrap.querySelector(".ms-profile-table-head");
+
+            if(!head){
+                const h3 = wrap.querySelector("h3");
+
+                if(h3){
+                    head = document.createElement("div");
+                    head.className = "ms-profile-table-head";
+
+                    head.style.cssText = `
+                        display:flex;
+                        align-items:center;
+                        justify-content:space-between;
+                        gap:10px;
+                        margin-bottom:8px;
+                        width:100%;
+                        box-sizing:border-box;
+                    `;
+
+                    h3.parentNode.insertBefore(head,h3);
+                    head.appendChild(h3);
+
+                    h3.style.margin = "0";
+                }else{
+                    head = document.createElement("div");
+                    head.className = "ms-profile-table-head";
+                    head.style.cssText = `
+                        display:flex;
+                        align-items:center;
+                        justify-content:flex-end;
+                        gap:10px;
+                        margin-bottom:8px;
+                        width:100%;
+                        box-sizing:border-box;
+                    `;
+                    wrap.insertBefore(head,wrap.firstElementChild);
+                }
+            }else{
+                head.style.display = "flex";
+                head.style.alignItems = "center";
+                head.style.justifyContent = "space-between";
+                head.style.gap = "10px";
+            }
+
+            head.appendChild(button);
+        }
+
+        return button;
+    }
+
+    async function takeMarketShareDetailTableSnapshot(){
+        const table = document.getElementById("msProfileDetailTable");
+        const wrapper = table?.closest(".mini-table-wrapper");
+
+        if(!table || !wrapper){
+            console.warn("Snapshot Detail Kecamatan: tabel tidak ditemukan.");
+            return;
+        }
+
+        if(typeof html2canvas !== "function"){
+            alert("Fitur Snapshot belum tersedia karena html2canvas belum termuat.");
+            return;
+        }
+
+        const button = document.getElementById("btnSnapshotMsDetailTable");
+        const original = {
+            wrapperStyle: wrapper.getAttribute("style"),
+            tableStyle: table.getAttribute("style"),
+            buttonVisibility: button ? button.style.visibility : ""
+        };
+
+        try{
+            if(button){
+                button.disabled = true;
+                button.style.visibility = "hidden";
+            }
+
+            /*
+             * Penting:
+             * Jangan screenshot wrapper yang memiliki horizontal scroll.
+             * Screenshot langsung tabel setelah lebarnya dipaksa mengikuti
+             * seluruh content width agar kolom sampai WOW ikut tercapture.
+             */
+            const fullWidth = Math.max(
+                table.scrollWidth || 0,
+                table.offsetWidth || 0,
+                table.getBoundingClientRect().width || 0
+            );
+
+            wrapper.style.overflow = "visible";
+            wrapper.style.maxWidth = "none";
+            wrapper.style.width = "max-content";
+            wrapper.style.height = "auto";
+            wrapper.style.maxHeight = "none";
+
+            table.style.width = `${fullWidth}px`;
+            table.style.minWidth = `${fullWidth}px`;
+            table.style.maxWidth = "none";
+
+            /*
+             * Beri browser satu frame untuk menyelesaikan reflow.
+             */
+            await new Promise(resolve => requestAnimationFrame(() => {
+                requestAnimationFrame(resolve);
+            }));
+
+            const finalWidth = Math.max(
+                table.scrollWidth || 0,
+                table.offsetWidth || 0
+            );
+
+            const canvas = await html2canvas(table,{
+                scale:3,
+                useCORS:true,
+                allowTaint:true,
+                backgroundColor:"#FFFFFF",
+                logging:false,
+                scrollX:0,
+                scrollY:0,
+                windowWidth:Math.max(
+                    document.documentElement.clientWidth,
+                    finalWidth + 80
+                ),
+                windowHeight:Math.max(
+                    document.documentElement.clientHeight,
+                    table.scrollHeight + 80
+                )
+            });
+
+            const link = document.createElement("a");
+            const date = new Date();
+            const stamp =
+                date.getFullYear() +
+                String(date.getMonth()+1).padStart(2,"0") +
+                String(date.getDate()).padStart(2,"0") + "_" +
+                String(date.getHours()).padStart(2,"0") +
+                String(date.getMinutes()).padStart(2,"0");
+
+            link.download =
+                `Snapshot-Detail-Kecamatan-${getMsSnapshotFilterLabel()}-${stamp}.png`;
+
+            link.href = canvas.toDataURL("image/png",1.0);
+            link.click();
+
+        }catch(err){
+            console.error("Snapshot Detail Kecamatan error:",err);
+            alert("Snapshot tabel gagal dibuat. Silakan coba lagi.");
+        }finally{
+            if(original.wrapperStyle === null){
+                wrapper.removeAttribute("style");
+            }else{
+                wrapper.setAttribute("style",original.wrapperStyle);
+            }
+
+            if(original.tableStyle === null){
+                table.removeAttribute("style");
+            }else{
+                table.setAttribute("style",original.tableStyle);
+            }
+
+            if(button){
+                button.disabled = false;
+                button.style.visibility = original.buttonVisibility;
+            }
+        }
+    }
+
+    /*
+     * Bisa dipanggil dari HTML bila diperlukan.
+     */
+    window.takeMarketShareDetailTableSnapshot =
+        takeMarketShareDetailTableSnapshot;
+
     async function renderMarketShareProfile(){
         const page=document.getElementById("market-share-profile");
         if(!page)return;
@@ -5115,6 +5359,7 @@ document.addEventListener(
             }
             renderProfileCharts();
             renderDetailTable(selected.length?selected:ptRows);
+            ensureMarketShareDetailSnapshotButton();
 
             const sub=document.querySelector(".ms-profile-sub");
             if(sub){
