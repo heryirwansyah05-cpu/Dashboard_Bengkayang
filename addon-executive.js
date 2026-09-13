@@ -2825,8 +2825,8 @@ document.addEventListener(
             }
 
             #${SIDEBAR_ID} .cc-brand {
-                height: 168px !important;
-                flex: 0 0 168px !important;
+                height: 155px !important;
+                flex: 0 0 155px !important;
                 position: relative !important;
                 overflow: hidden !important;
                 padding: 18px 12px 12px !important;
@@ -2877,20 +2877,20 @@ document.addEventListener(
             }
 
             #${SIDEBAR_ID} .cc-side-nav {
-                padding: 18px 7px 0 !important;
+                padding: 10px 7px 0 !important;
                 display: flex !important;
                 flex-direction: column !important;
-                gap: 5px !important;
+                gap: 3px !important;
             }
 
             #${SIDEBAR_ID} .cc-side-btn {
                 width: 100% !important;
-                min-height: 38px !important;
-                padding: 8px 9px !important;
+                min-height: 34px !important;
+                padding: 6px 8px !important;
                 box-sizing: border-box !important;
                 display: flex !important;
                 align-items: center !important;
-                gap: 11px !important;
+                gap: 8px !important;
                 border: 0 !important;
                 border-radius: 9px !important;
                 background: transparent !important;
@@ -2929,8 +2929,8 @@ document.addEventListener(
 
             #${SIDEBAR_ID} .cc-tagline {
                 margin-top: auto !important;
-                min-height: 260px !important;
-                padding: 24px 15px 14px !important;
+                min-height: 145px !important;
+                padding: 12px 12px 10px !important;
                 box-sizing: border-box !important;
                 position: relative !important;
                 overflow: hidden !important;
@@ -2944,7 +2944,7 @@ document.addEventListener(
                 content: "MICRO\\A CLUSTER\\A BENGKAYANG\\A " !important;
                 white-space: pre !important;
                 display: block !important;
-                font-size: 18px !important;
+                font-size: 15px !important;
                 line-height: .98 !important;
                 font-weight: 950 !important;
                 letter-spacing: -.7px !important;
@@ -2955,8 +2955,8 @@ document.addEventListener(
                 content: "Menghubungkan\\A Indonesia" !important;
                 white-space: pre !important;
                 position: absolute !important;
-                left: 17px !important;
-                bottom: 13px !important;
+                left: 13px !important;
+                bottom: 9px !important;
                 color: #fff !important;
                 font-size: 8px !important;
                 line-height: 1.15 !important;
@@ -3206,6 +3206,7 @@ document.addEventListener(
             { id: "navTabOutlet", label: "Detail Outlet", icon: "fa-store" },
             { id: "navTabDaily", label: "GAP Daily KPI DSE", icon: "fa-chart-column" },
             { id: "navTabPartner", label: "Partner Performance", icon: "fa-users" },
+            { id: "navTabMarketProfile", label: "Profil Market Share", icon: "fa-ranking-star" },
             { id: "navTabTodayInstruction", label: "Today Instruction", icon: "fa-clipboard-list" }
         ];
 
@@ -3240,6 +3241,16 @@ document.addEventListener(
             btn.addEventListener("click", () => {
                 source.click();
                 syncSidebarActive(item.id);
+
+                // Profil Market Share memakai TAB native dari index.html.
+                // Setelah switchReport selesai, render isi profilnya.
+                if (item.id === "navTabMarketProfile") {
+                    setTimeout(() => {
+                        if (typeof window.renderMarketShareProfile === "function") {
+                            window.renderMarketShareProfile();
+                        }
+                    }, 100);
+                }
             });
 
             nav.appendChild(btn);
@@ -3265,6 +3276,7 @@ document.addEventListener(
             ["navTabOutlet", "detail-outlet"],
             ["navTabDaily", "daily-dse"],
             ["navTabPartner", "partner-performance"],
+            ["navTabMarketProfile", "market-share-profile"],
             ["navTabTodayInstruction", "today-instruction-tab"]
         ];
 
@@ -4607,10 +4619,11 @@ document.addEventListener(
             if (!territory || territory.toUpperCase() === "TERRITORY") continue;
             data.push({
                 territory,
-                IM3:{lmtd:num(r[1]),mtd:num(r[2]),growth:num(r[3])},
-                "3ID":{lmtd:num(r[4]),mtd:num(r[5]),growth:num(r[6])},
-                TSEL:{lmtd:num(r[7]),mtd:num(r[8]),growth:num(r[9])},
-                XLS:{lmtd:num(r[10]),mtd:num(r[11]),growth:num(r[12])}
+                weekly:[num(r[1]),num(r[2]),num(r[3]),num(r[4]),num(r[5]),num(r[6])],
+                IM3:{lmtd:num(r[7]),mtd:num(r[8]),growth:num(r[9])},
+                "3ID":{lmtd:num(r[10]),mtd:num(r[11]),growth:num(r[12])},
+                TSEL:{lmtd:num(r[13]),mtd:num(r[14]),growth:num(r[15])},
+                XLS:{lmtd:num(r[16]),mtd:num(r[17]),growth:num(r[18])}
             });
         }
         kabRows = data;
@@ -4622,7 +4635,11 @@ document.addEventListener(
         if (kecLoaded) return kecRows;
         const rows = await readSheet(MS_SHEET_KEC);
         const data = [];
-        // KEC MS MOM: header utama row Excel 4 => array index 3; data mulai row Excel 5.
+
+        // KEC MS MOM: header row Excel 4 (JS index 3), data starts Excel row 5.
+        // Profil Market Share menggunakan KHUSUS BLOK IM3 AC:AM:
+        // AC Apr-26, AD May-26, AE Jun-26, AF Jul-26, AG Aug-26,
+        // AH LMTD, AI MTD, AJ IM3 (MoM), AK LLW, AL LW, AM IM3 (WoW).
         for (let i=4;i<rows.length;i++) {
             const r = rows[i] || [];
             const rawKec = cleanText(r[0]);
@@ -4636,6 +4653,23 @@ document.addEventListener(
                 kecamatan:kec,
                 partner:cleanText(r[1]),
                 kabupaten:cleanText(r[2]),
+                pt:cleanText(r[3]),
+
+                // IM3 AC:AM = JS index 28:39
+                im3Monthly:{
+                    labels:["Apr-26","May-26","Jun-26","Jul-26","Aug-26"],
+                    values:r.slice(28,33).map(num)
+                },
+                im3:{
+                    lmtd:num(r[33]),
+                    mtd:num(r[34]),
+                    mom:num(r[35]),
+                    llw:num(r[36]),
+                    lw:num(r[37]),
+                    wow:num(r[38])
+                },
+
+                // Tetap simpan brand lain untuk kebutuhan KPI/filter existing.
                 mtd:{
                     IM3:num(r[34]),
                     "3ID":num(r[45]),
@@ -4653,12 +4687,6 @@ document.addEventListener(
                     "3ID":num(r[46]),
                     TSEL:num(r[57]),
                     XLS:num(r[68])
-                },
-                monthly:{
-                    IM3:{labels:r.slice(28,33).map(monthLabel), values:r.slice(28,33).map(num)},
-                    "3ID":{labels:r.slice(39,44).map(monthLabel), values:r.slice(39,44).map(num)},
-                    TSEL:{labels:r.slice(50,55).map(monthLabel), values:r.slice(50,55).map(num)},
-                    XLS:{labels:r.slice(61,66).map(monthLabel), values:r.slice(61,66).map(num)}
                 }
             });
         }
@@ -4794,82 +4822,49 @@ document.addEventListener(
         }
     }
 
-    function injectProfileSection(){
-        if (document.getElementById("market-share-profile")) return;
-        const footer = document.querySelector(".dashboard-footer");
-        if (!footer) return;
+    // Profile section is native HTML in index.html. Keep this function as a no-op
+    // so the addon never creates a duplicate section or overwrites native controls.
+    function injectProfileSection(){ return; }
 
-        const el = document.createElement("div");
-        el.id = "market-share-profile";
-        el.className = "report-content ms-profile-page";
-        el.style.display = "none";
-        el.innerHTML = `
-            <div class="exec-summary-wrapper ms-profile-wrapper">
-                <div class="ms-profile-head">
-                    <div>
-                        <div class="ms-profile-title"><i class="fa-solid fa-ranking-star"></i> PROFIL MARKET SHARE</div>
-                        <div class="ms-profile-sub">Analisis Market Share Kecamatan · KAB MS MOM & KEC MS MOM</div>
-                    </div>
-                    <button class="btn-snapshot-section" onclick="takeSectionSnapshot('market-share-profile')"><i class="fa-solid fa-camera"></i> Snapshot</button>
-                </div>
+    function bindProfileControls(){
+        const ptSelect=document.getElementById("msProfilePT");
+        const kecSelect=document.getElementById("msProfileKec");
+        const brandSelect=document.getElementById("msProfileBrand");
+        if(ptSelect && ptSelect.dataset.msBound!=="1"){
+            ptSelect.dataset.msBound="1";
+            ptSelect.addEventListener("change",()=>{ fillKecFilter(); renderMarketShareProfile(); });
+        }
+        if(kecSelect && kecSelect.dataset.msBound!=="1"){
+            kecSelect.dataset.msBound="1";
+            kecSelect.addEventListener("change",renderMarketShareProfile);
+        }
+        if(brandSelect && brandSelect.dataset.msBound!=="1"){
+            brandSelect.dataset.msBound="1";
+            brandSelect.addEventListener("change",renderMarketShareProfile);
+        }
+    }
 
-                <div class="ms-profile-filters">
-                    <div><label>Kecamatan</label><select id="msProfileKec"></select></div>
-                    <div><label>Brand</label><select id="msProfileBrand">
-                        <option value="IM3">IM3</option><option value="3ID">3ID</option><option value="TSEL">TSEL</option><option value="XLS">XLS</option>
-                    </select></div>
-                </div>
-
-                <div class="ms-profile-kpi-grid" id="msProfileKpiGrid"></div>
-
-                <div class="ms-profile-analysis-grid">
-                    <div class="exec-card-panel border-top-yellow">
-                        <div class="exec-panel-header">TOP & BOTTOM KECAMATAN — MTD</div>
-                        <div class="ms-topbottom-grid">
-                            <div class="ms-rank-card"><h4><i class="fa-solid fa-arrow-up"></i> TOP 3 MTD</h4><div id="msTopMtd"></div></div>
-                            <div class="ms-rank-card"><h4><i class="fa-solid fa-arrow-down"></i> BOTTOM 3 MTD</h4><div id="msBottomMtd"></div></div>
-                        </div>
-                    </div>
-                    <div class="exec-card-panel border-top-red">
-                        <div class="exec-panel-header">TOP & BOTTOM KECAMATAN — GROWTH</div>
-                        <div class="ms-topbottom-grid">
-                            <div class="ms-rank-card"><h4><i class="fa-solid fa-arrow-trend-up"></i> TOP 3 POSITIVE</h4><div id="msTopGrowth"></div></div>
-                            <div class="ms-rank-card"><h4><i class="fa-solid fa-arrow-trend-down"></i> TOP 3 NEGATIVE</h4><div id="msBottomGrowth"></div></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="exec-card-panel border-top-cyan ms-profile-chart-card">
-                    <div class="exec-panel-header-flex">
-                        <div>
-                            <div class="exec-panel-header"><i class="fa-solid fa-chart-line color-cyan"></i> MONTHLY PERFORMANCE</div>
-                            <div class="analysis-subtitle" id="msProfileChartSubtitle">MTD vs LMTD & Growth</div>
-                        </div>
-                    </div>
-                    <div class="ms-profile-chart-wrap"><canvas id="msProfileChart"></canvas></div>
-                </div>
-
-                <div class="ms-profile-table-wrap">
-                    <div class="exec-panel-header">DETAIL KECAMATAN</div>
-                    <div class="mini-table-wrapper"><table class="mini-exec-table" id="msProfileDetailTable"></table></div>
-                </div>
-            </div>
-        `;
-        footer.parentNode.insertBefore(el, footer);
-
-        const kecSelect = document.getElementById("msProfileKec");
-        const brandSelect = document.getElementById("msProfileBrand");
-        if (kecSelect) kecSelect.onchange = renderMarketShareProfile;
-        if (brandSelect) brandSelect.onchange = renderMarketShareProfile;
+    function fillPTFilter(){
+        const sel=document.getElementById("msProfilePT");
+        if(!sel || !kecRows.length)return;
+        const current=sel.value||"ALL";
+        const names=[...new Set(kecRows.map(r=>cleanText(r.pt)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"id"));
+        sel.innerHTML=`<option value="ALL">Semua PT</option>`+
+            names.map(pt=>`<option value="${escapeHtml(pt)}">${escapeHtml(pt)}</option>`).join("");
+        if(["ALL",...names].includes(current))sel.value=current;
     }
 
     function fillKecFilter(){
-        const sel = document.getElementById("msProfileKec");
-        if (!sel || !kecRows.length) return;
-        const current = sel.value;
-        const names = [...new Set(kecRows.map(r=>r.kecamatan))].sort((a,b)=>a.localeCompare(b,"id"));
-        sel.innerHTML = `<option value="ALL">Semua Kecamatan</option>` + names.map(k=>`<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`).join("");
-        if (names.includes(current)) sel.value=current;
+        const sel=document.getElementById("msProfileKec");
+        if(!sel || !kecRows.length)return;
+        const ptVal=document.getElementById("msProfilePT")?.value||"ALL";
+        const current=sel.value||"ALL";
+        const source=ptVal==="ALL"?kecRows:kecRows.filter(r=>cleanText(r.pt)===ptVal);
+        const names=[...new Set(source.map(r=>r.kecamatan))].sort((a,b)=>a.localeCompare(b,"id"));
+        sel.innerHTML=`<option value="ALL">Semua Kecamatan</option>`+
+            names.map(k=>`<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`).join("");
+        if(["ALL",...names].includes(current))sel.value=current;
+        else sel.value="ALL";
     }
 
     function escapeHtml(v){
@@ -4898,82 +4893,234 @@ document.addEventListener(
         `).join("");
     }
 
-    function renderProfileKpi(row,brand){
+    function renderProfileKpi(kab,brand){
         const grid=document.getElementById("msProfileKpiGrid");
-        if(!grid||!row)return;
+        if(!grid||!kab||!kab[brand])return;
         const meta=BRAND_META[brand];
+        const source=kab[brand];
         grid.innerHTML=`
-            <div class="ms-profile-kpi" style="border-left-color:${meta.color}"><span>MTD ${brand}</span><b>${pct(row.mtd[brand])}</b><small>Market Share saat ini</small></div>
-            <div class="ms-profile-kpi" style="border-left-color:#64748B"><span>LMTD ${brand}</span><b>${pct(row.lmtd[brand])}</b><small>Periode sebelumnya</small></div>
-            <div class="ms-profile-kpi ${pctClass(row.growth[brand])}" style="border-left-color:${meta.color}"><span>GROWTH ${brand}</span><b>${pctSigned(row.growth[brand])}</b><small>MTD vs LMTD</small></div>
+            <div class="ms-profile-kpi" style="border-left-color:${meta.color}"><span>MTD ${brand}</span><b>${pct(source.mtd)}</b><small>KAB MS MOM · Market Share saat ini</small></div>
+            <div class="ms-profile-kpi" style="border-left-color:#64748B"><span>LMTD ${brand}</span><b>${pct(source.lmtd)}</b><small>KAB MS MOM · Periode sebelumnya</small></div>
+            <div class="ms-profile-kpi ${pctClass(source.growth)}" style="border-left-color:${meta.color}"><span>GROWTH ${brand}</span><b>${pctSigned(source.growth)}</b><small>KAB MS MOM · MTD vs LMTD</small></div>
         `;
     }
 
-    function renderProfileChart(row,brand){
-        const canvas=document.getElementById("msProfileChart");
-        if(!canvas||!row||typeof Chart==="undefined")return;
-        if(profileChart)profileChart.destroy();
-        const meta=BRAND_META[brand];
-        const m=row.monthly[brand];
-        const labels=m.labels.length?m.labels:["Apr-26","May-26","Jun-26","Jul-26","Aug-26"];
-        const values=m.values.map(v=>v*100);
-        const lmtd=row.lmtd[brand]*100;
-        const mtd=row.mtd[brand]*100;
-        const growth=row.growth[brand]*100;
-        profileChart=new Chart(canvas.getContext("2d"),{
-            type:"line",
-            data:{labels,datasets:[
-                {label:`${brand} Monthly`,data:values,borderColor:meta.color,backgroundColor:"transparent",borderWidth:3,pointRadius:3,tension:.3},
-                {label:"LMTD",data:labels.map(()=>lmtd),borderColor:"#94A3B8",borderDash:[6,5],borderWidth:1.6,pointRadius:0,tension:0},
-                {label:"MTD",data:labels.map(()=>mtd),borderColor:"#172236",borderDash:[3,4],borderWidth:1.6,pointRadius:0,tension:0}
-            ]},
-            options:{responsive:true,maintainAspectRatio:false,interaction:{intersect:false,mode:"index"},plugins:{legend:{position:"bottom",labels:{usePointStyle:true,boxWidth:7,font:{size:8,weight:"700"}}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${Number(c.raw).toFixed(2)}%`}}},scales:{x:{grid:{display:false},ticks:{font:{size:8,weight:"700"}}},y:{beginAtZero:true,suggestedMax:60,ticks:{callback:v=>`${v}%`,font:{size:8}},grid:{color:"rgba(148,163,184,.13)"}}}}
-        });
-        const sub=document.getElementById("msProfileChartSubtitle");
-        if(sub)sub.textContent=`${brand} · Monthly Performance · MTD ${pct(mtd/100)} vs LMTD ${pct(lmtd/100)} · Growth ${pctSigned(growth/100)}`;
+    function renderProfileCharts(){
+        const leftCanvas=document.getElementById("msProfileWeeklyChart");
+        const rightCanvas=document.getElementById("msProfileKabChart");
+        if(typeof Chart==="undefined")return;
+
+        if(profileChart){
+            try{profileChart.destroy();}catch(e){}
+            profileChart=null;
+        }
+        if(window.msProfileKabChart){
+            try{window.msProfileKabChart.destroy();}catch(e){}
+            window.msProfileKabChart=null;
+        }
+
+        // =====================================================
+        // CHART KIRI — WEEKLY, sumber KAB MS MOM kolom B:G
+        // B W4-Jul | C W1-Aug | D W2-Aug | E W4-Aug | F W5-Aug | G WoW
+        // WoW adalah perubahan, sehingga ditampilkan sebagai badge,
+        // sedangkan line chart memakai titik weekly B:F.
+        // =====================================================
+        const kab=getCurrentKab();
+        if(leftCanvas && kab){
+            const weekly=[
+                num(kab.weekly?.[0]),
+                num(kab.weekly?.[1]),
+                num(kab.weekly?.[2]),
+                num(kab.weekly?.[3]),
+                num(kab.weekly?.[4])
+            ];
+            profileChart=new Chart(leftCanvas.getContext("2d"),{
+                type:"line",
+                data:{
+                    labels:["W4-Jul","W1-Aug","W2-Aug","W4-Aug","W5-Aug"],
+                    datasets:[{
+                        label:"IM3 Weekly",
+                        data:weekly.map(v=>v*100),
+                        borderColor:"#E51B4B",
+                        backgroundColor:"rgba(229,27,75,.10)",
+                        borderWidth:3,
+                        pointRadius:4,
+                        pointHoverRadius:6,
+                        pointBackgroundColor:"#E51B4B",
+                        pointBorderColor:"#FFFFFF",
+                        pointBorderWidth:2,
+                        fill:true,
+                        tension:.3
+                    }]
+                },
+                options:{
+                    responsive:true,
+                    maintainAspectRatio:false,
+                    interaction:{intersect:false,mode:"index"},
+                    plugins:{
+                        legend:{position:"bottom",labels:{usePointStyle:true,boxWidth:7,font:{size:8,weight:"700"}}},
+                        tooltip:{callbacks:{label:c=>`IM3 Weekly: ${Number(c.raw).toFixed(2)}%`}}
+                    },
+                    scales:{
+                        x:{grid:{display:false},ticks:{font:{size:8,weight:"700"}}},
+                        y:{beginAtZero:true,suggestedMax:50,ticks:{callback:v=>`${v}%`,font:{size:8}},grid:{color:"rgba(148,163,184,.13)"}}
+                    }
+                }
+            });
+        }
+
+        // =====================================================
+        // CHART KANAN — H:J KAB MS MOM khusus IM3
+        // H LMTD | I MTD | J MoM
+        // =====================================================
+        if(rightCanvas && kab){
+            const vals=[num(kab.IM3.lmtd),num(kab.IM3.mtd),num(kab.IM3.growth)];
+            window.msProfileKabChart=new Chart(rightCanvas.getContext("2d"),{
+                type:"bar",
+                data:{
+                    labels:["LMTD","MTD","MoM"],
+                    datasets:[{
+                        label:"IM3",
+                        data:vals.map(v=>v*100),
+                        backgroundColor:["#94A3B8","#E51B4B",vals[2]>=0?"#079455":"#E51B4B"],
+                        borderRadius:7,
+                        maxBarThickness:55
+                    }]
+                },
+                options:{
+                    responsive:true,
+                    maintainAspectRatio:false,
+                    plugins:{
+                        legend:{display:false},
+                        tooltip:{callbacks:{label:c=>`IM3 ${c.label}: ${Number(c.raw).toFixed(2)}%`}}
+                    },
+                    scales:{
+                        x:{grid:{display:false},ticks:{font:{size:9,weight:"800"}}},
+                        y:{suggestedMin:-5,suggestedMax:40,ticks:{callback:v=>`${v}%`,font:{size:8}},grid:{color:"rgba(148,163,184,.13)"}}
+                    }
+                }
+            });
+        }
+
+        const weeklySub=document.getElementById("msProfileWeeklySubtitle");
+        if(weeklySub && kab){
+            weeklySub.textContent=`IM3 Weekly · W4-Jul → W5-Aug · WoW ${pctSigned(kab.IM3.growth)} vs periode sebelumnya`;
+        }
+        const kabSub=document.getElementById("msProfileKabSubtitle");
+        if(kabSub && kab){
+            kabSub.textContent=`MC-BENGKAYANG · IM3 · LMTD ${pct(kab.IM3.lmtd)} · MTD ${pct(kab.IM3.mtd)} · MoM ${pctSigned(kab.IM3.growth)}`;
+        }
     }
 
-    function renderDetailTable(rows,brand){
+    function renderDetailTable(rows){
         const table=document.getElementById("msProfileDetailTable");
         if(!table)return;
-        table.innerHTML=`<thead><tr><th>Kecamatan</th><th>Partner</th><th>LMTD ${brand}</th><th>MTD ${brand}</th><th>Growth</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${escapeHtml(r.kecamatan)}</td><td>${escapeHtml(r.partner)}</td><td>${pct(r.lmtd[brand])}</td><td>${pct(r.mtd[brand])}</td><td class="${pctClass(r.growth[brand])}">${pctSigned(r.growth[brand])}</td></tr>`).join("")}</tbody>`;
+
+        // Hanya IM3 — sumber KEC MS MOM — kolom AC:AM.
+        const monthLabels=["Apr-26","May-26","Jun-26","Jul-26","Aug-26"];
+        table.innerHTML=`
+            <thead>
+                <tr>
+                    <th>Kecamatan</th>
+                    <th>PT</th>
+                    ${monthLabels.map(m=>`<th style="text-align:right">${m}</th>`).join("")}
+                    <th style="text-align:right">LMTD</th>
+                    <th style="text-align:right">MTD</th>
+                    <th style="text-align:right">IOH / MoM</th>
+                    <th style="text-align:right">LLW</th>
+                    <th style="text-align:right">LW</th>
+                    <th style="text-align:right">WOW</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${rows.map(r=>`
+                    <tr>
+                        <td>${escapeHtml(r.kecamatan)}</td>
+                        <td>${escapeHtml(r.pt)}</td>
+                        ${r.im3Monthly.values.map(v=>`<td style="text-align:right">${pct(v)}</td>`).join("")}
+                        <td style="text-align:right">${pct(r.im3.lmtd)}</td>
+                        <td style="text-align:right;font-weight:900">${pct(r.im3.mtd)}</td>
+                        <td style="text-align:right" class="${pctClass(r.im3.mom)}">${pctSigned(r.im3.mom)}</td>
+                        <td style="text-align:right">${pct(r.im3.llw)}</td>
+                        <td style="text-align:right">${pct(r.im3.lw)}</td>
+                        <td style="text-align:right" class="${pctClass(r.im3.wow)}">${pctSigned(r.im3.wow)}</td>
+                    </tr>
+                `).join("")}
+            </tbody>`;
     }
 
     async function renderMarketShareProfile(){
         const page=document.getElementById("market-share-profile");
         if(!page)return;
         page.style.display="block";
+
         try{
             await loadKEC();
+            await loadKAB();
+            bindProfileControls();
+            fillPTFilter();
             fillKecFilter();
-            const kecVal=document.getElementById("msProfileKec")?.value||"ALL";
-            const brand=document.getElementById("msProfileBrand")?.value||"IM3";
-            const selected=kecVal==="ALL"?kecRows:(kecRows.filter(r=>r.kecamatan===kecVal));
-            let focus=selected[0]||kecRows[0];
-            if(kecVal==="ALL"){
-                const kab=getCurrentKab();
-                if(kab){
-                    focus={
-                        kecamatan:"MC-BENGKAYANG",
-                        partner:"All Kecamatan",
-                        kabupaten:"BENGKAYANG",
-                        mtd:{IM3:kab.IM3.mtd,"3ID":kab["3ID"].mtd,TSEL:kab.TSEL.mtd,XLS:kab.XLS.mtd},
-                        lmtd:{IM3:kab.IM3.lmtd,"3ID":kab["3ID"].lmtd,TSEL:kab.TSEL.lmtd,XLS:kab.XLS.lmtd},
-                        growth:{IM3:kab.IM3.growth,"3ID":kab["3ID"].growth,TSEL:kab.TSEL.growth,XLS:kab.XLS.growth},
-                        monthly:{IM3:{labels:["LMTD","MTD"],values:[kab.IM3.lmtd,kab.IM3.mtd]},"3ID":{labels:["LMTD","MTD"],values:[kab["3ID"].lmtd,kab["3ID"].mtd]},TSEL:{labels:["LMTD","MTD"],values:[kab.TSEL.lmtd,kab.TSEL.mtd]},XLS:{labels:["LMTD","MTD"],values:[kab.XLS.lmtd,kab.XLS.mtd]}}
-                    };
-                }
-            }
-            if(focus)renderProfileKpi(focus,brand);
 
-            const mtdRank=kecRows.map(r=>({kecamatan:r.kecamatan,value:r.mtd[brand]})).sort((a,b)=>b.value-a.value);
-            const growthRank=kecRows.map(r=>({kecamatan:r.kecamatan,value:r.growth[brand]})).sort((a,b)=>b.value-a.value);
-            document.getElementById("msTopMtd").innerHTML=rankMtdHtml(mtdRank.slice(0,3));
-            document.getElementById("msBottomMtd").innerHTML=rankMtdHtml(mtdRank.slice(-3).reverse());
-            document.getElementById("msTopGrowth").innerHTML=rankHtml(growthRank.filter(x=>x.value>0).slice(0,3),"Tidak ada growth positif");
-            document.getElementById("msBottomGrowth").innerHTML=rankHtml(growthRank.filter(x=>x.value<0).slice(-3).reverse(),"Tidak ada growth negatif");
-            if(focus)renderProfileChart(focus,brand);
-            renderDetailTable(selected,brand);
+            const ptVal=document.getElementById("msProfilePT")?.value||"ALL";
+            const kecVal=document.getElementById("msProfileKec")?.value||"ALL";
+            const brandVal=document.getElementById("msProfileBrand")?.value||"IM3";
+
+            // PT + Kecamatan dipakai untuk DETAIL/RANKING KECAMATAN.
+            // KPI 3 DI ATAS WAJIB memakai KAB MS MOM (MC-BENGKAYANG),
+            // khusus LMTD, MTD dan MoM sesuai brand yang dipilih.
+            const ptRows=ptVal==="ALL"
+                ? kecRows
+                : kecRows.filter(r=>cleanText(r.pt)===ptVal);
+
+            const selected=kecVal==="ALL"
+                ? ptRows
+                : ptRows.filter(r=>r.kecamatan===kecVal);
+
+            const kab=getCurrentKab();
+            if(kab)renderProfileKpi(kab,brandVal);
+
+            // Ranking mengikuti PT + Kecamatan yang dipilih.
+            const rankSource=selected.length?selected:ptRows;
+            const mtdRank=rankSource
+                .map(r=>({kecamatan:r.kecamatan,value:r.im3.mtd}))
+                .sort((a,b)=>b.value-a.value);
+            const growthRank=rankSource
+                .map(r=>({kecamatan:r.kecamatan,value:r.im3.mom}))
+                .sort((a,b)=>b.value-a.value);
+
+            const topMtd=document.getElementById("msTopMtd");
+            const bottomMtd=document.getElementById("msBottomMtd");
+            const topGrowth=document.getElementById("msTopGrowth");
+            const bottomGrowth=document.getElementById("msBottomGrowth");
+            if(topMtd)topMtd.innerHTML=rankMtdHtml(mtdRank.slice(0,3));
+            if(bottomMtd)bottomMtd.innerHTML=rankMtdHtml(mtdRank.slice(-3).reverse());
+            if(topGrowth)topGrowth.innerHTML=rankHtml(growthRank.filter(x=>x.value>0).slice(0,3),"Tidak ada growth positif");
+            if(bottomGrowth)bottomGrowth.innerHTML=rankHtml(growthRank.filter(x=>x.value<0).slice(-3).reverse(),"Tidak ada growth negatif");
+
+            const chartCard=document.querySelector("#market-share-profile .ms-profile-chart-card");
+            if(chartCard){
+                chartCard.innerHTML=`
+                    <div class="ms-profile-chart-grid">
+                        <div class="ms-profile-chart-panel">
+                            <h3><i class="fa-solid fa-chart-line" style="color:#E51B4B"></i> WEEKLY PERFORMANCE — IM3</h3>
+                            <small id="msProfileWeeklySubtitle">W4-Jul → W5-Aug</small>
+                            <div class="ms-profile-chart-wrap"><canvas id="msProfileWeeklyChart"></canvas></div>
+                        </div>
+                        <div class="ms-profile-chart-panel">
+                            <h3><i class="fa-solid fa-chart-column" style="color:#E51B4B"></i> LMTD vs MTD — IM3</h3>
+                            <small id="msProfileKabSubtitle">MC-BENGKAYANG · KAB MS MOM</small>
+                            <div class="ms-profile-chart-wrap"><canvas id="msProfileKabChart"></canvas></div>
+                        </div>
+                    </div>`;
+            }
+            renderProfileCharts();
+            renderDetailTable(selected.length?selected:ptRows);
+
+            const sub=document.querySelector(".ms-profile-sub");
+            if(sub){
+                const scope=ptVal==="ALL"?"Semua PT":ptVal;
+                sub.textContent=`Analisis Market Share Kecamatan · IM3 · ${scope} · Sumber KEC MS MOM + KAB MS MOM`;
+            }
         }catch(err){
             console.warn("Profil Market Share:",err);
             const pageBody=document.querySelector("#market-share-profile .ms-profile-wrapper");
@@ -5002,7 +5149,7 @@ document.addEventListener(
             .ms-profile-title{font-size:18px;font-weight:900;color:#172236;}
             .ms-profile-title i{color:#f5b800;margin-right:6px;}
             .ms-profile-sub{font-size:10px;font-weight:600;color:#66758a;margin-top:4px;}
-            .ms-profile-filters{display:grid;grid-template-columns:260px 220px;gap:10px;background:#f8fafc;border:1px solid #e4eaf1;border-radius:12px;padding:12px;margin-bottom:14px;}
+            .ms-profile-filters{display:grid;grid-template-columns:220px 260px 180px;gap:10px;background:#f8fafc;border:1px solid #e4eaf1;border-radius:12px;padding:12px;margin-bottom:14px;}
             .ms-profile-filters label{display:block;font-size:9px;font-weight:800;color:#64748b;margin-bottom:5px;}
             .ms-profile-filters select{width:100%;height:34px;padding:0 10px;border:1px solid #d7dee8;border-radius:9px;background:#fff;color:#172236;font-size:10px;font-weight:800;outline:none;}
             .ms-profile-kpi-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px;}
@@ -5022,32 +5169,48 @@ document.addEventListener(
             .ms-rank-row b{font-weight:900;}
             .ms-rank-empty{font-size:8px;color:#94a3b8;padding:10px 0;font-weight:700;}
             .ms-profile-chart-card{margin-bottom:12px;}
-            .ms-profile-chart-wrap{height:300px;position:relative;padding:8px 5px 5px;}
+            .ms-profile-chart-wrap{height:280px;position:relative;padding:8px 5px 5px;}
+            .ms-profile-chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+            .ms-profile-chart-panel{background:#fff;border:1px solid #e4eaf1;border-radius:12px;padding:10px;}
+            .ms-profile-chart-panel h3{margin:0;font-size:11px;font-weight:900;color:#172236;}
+            .ms-profile-chart-panel small{display:block;font-size:8px;font-weight:700;color:#64748b;margin-top:3px;}
             .ms-profile-table-wrap{background:#fff;border:1px solid #e4eaf1;border-radius:12px;padding:12px;}
             .ms-profile-table-wrap .mini-table-wrapper{margin-top:8px;overflow:auto;}
-            #msProfileDetailTable{width:100%;border-collapse:collapse;min-width:600px;font-size:9px;}
-            #msProfileDetailTable th{background:#172236;color:#fff;padding:8px;text-align:left;font-size:8px;}
-            #msProfileDetailTable td{padding:7px;border-bottom:1px solid #e4eaf1;font-weight:700;color:#334155;}
+            #msProfileDetailTable{width:100%;border-collapse:collapse;min-width:1120px;font-size:9px;}
+            #msProfileDetailTable th{background:#172236;color:#fff;padding:8px;text-align:left;font-size:8px;white-space:nowrap;}
+            #msProfileDetailTable td{padding:7px;border-bottom:1px solid #e4eaf1;font-weight:700;color:#334155;white-space:nowrap;}
             .ms-profile-error{margin-top:12px;padding:12px;border-radius:10px;background:#fef2f2;color:#b91c1c;font-size:10px;font-weight:800;}
             @media(max-width:900px){
                 .ms-v2-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
-                .ms-profile-filters,.ms-profile-kpi-grid,.ms-profile-analysis-grid{grid-template-columns:1fr;}
+                .ms-profile-filters,.ms-profile-kpi-grid,.ms-profile-analysis-grid,.ms-profile-chart-grid{grid-template-columns:1fr;}
                 .ms-topbottom-grid{grid-template-columns:1fr;}
-                .ms-profile-chart-wrap{height:250px;}
+                .ms-profile-chart-wrap{height:240px;}
                 .ms-profile-title{font-size:15px;}
             }
         `;
         document.head.appendChild(style);
     }
 
+    function bindProfileTab(){
+        const btn=document.getElementById("navTabMarketProfile");
+        if(!btn || btn.dataset.msBound==="1")return;
+        btn.dataset.msBound="1";
+        btn.addEventListener("click",()=>setTimeout(renderMarketShareProfile,0));
+    }
+
+    // Expose renderer so the IM3 sidebar can open the native Profile tab.
+    window.renderMarketShareProfile = renderMarketShareProfile;
+
     function boot(){
         injectStyles();
         injectProfileTab();
         injectProfileSection();
+        bindProfileTab();
+        bindProfileControls();
         setTimeout(bootExecutiveMS,500);
     }
 
     if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",boot,{once:true});
     else boot();
-    window.addEventListener("load",()=>{injectProfileTab();injectProfileSection();bootExecutiveMS();},{once:true});
+    window.addEventListener("load",()=>{injectProfileTab();injectProfileSection();bindProfileTab();bindProfileControls();bootExecutiveMS();},{once:true});
 })();
