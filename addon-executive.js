@@ -2088,27 +2088,89 @@ document.addEventListener(
         updateExecutiveInsight();
     }
 
+    function executiveText(id, fallback="-") {
+        const el=document.getElementById(id);
+        return el ? String(el.textContent || "").trim() : fallback;
+    }
+
+    function executiveNumber(id, fallback=0) {
+        const raw=executiveText(id, "");
+        if(!raw)return fallback;
+        let s=raw.replace(/Rp/gi,"").replace(/pcs|Outlet/gi,"").replace(/%/g,"").trim();
+        s=s.replace(/\./g,"").replace(/,/g,".");
+        const n=Number(s);
+        return Number.isFinite(n)?n:fallback;
+    }
+
+    function executiveSignedGrowth(id, fallback=0) {
+        const raw=executiveText(id, "");
+        const m=raw.match(/[-+]?\d+(?:[\.,]\d+)?/);
+        if(!m)return fallback;
+        const n=Number(m[0].replace(",","."));
+        return Number.isFinite(n)?n:fallback;
+    }
+
     function updateExecutiveInsight() {
         const body = document.getElementById("executiveInsightBody");
         if (!body) return;
+
         const score = readRseScore();
+        const scoreGap = Math.max(0, 70-score);
+
+        const kpis = [
+            {name:"Revenue", growth:executiveSignedGrowth("exKpiRevGrowth")},
+            {name:"Primary", growth:executiveSignedGrowth("exKpiPrimaryGrowth")},
+            {name:"Secondary", growth:executiveSignedGrowth("exKpiSecondaryGrowth")},
+            {name:"Tertiary B#", growth:executiveSignedGrowth("exKpiTertiaryGrowth")},
+            {name:"Trade Supply", growth:executiveSignedGrowth("exKpiTradeGrowth")},
+            {name:"VLR Subs", growth:executiveSignedGrowth("exKpiVlrGrowth")},
+            {name:"RGUGA Trade", growth:executiveSignedGrowth("exKpiRgugaGrowth")},
+            {name:"SP Sell In", growth:executiveSignedGrowth("exKpiSpSellInGrowth")}
+        ];
+        const negative = kpis.filter(x=>x.growth<0).sort((a,b)=>a.growth-b.growth)[0];
+        const positive = kpis.filter(x=>x.growth>0).sort((a,b)=>b.growth-a.growth)[0];
+
+        const osaAch = executiveText("exPriorityOsaAch");
+        const osaActual = executiveText("exPriorityOsaActual").replace(/^Ach:\s*/i,"");
+        const osaGap = executiveText("exPriorityOsaGap").replace(/^GAP Total OSA:\s*/i,"");
+        const bioAch = executiveText("exPriorityBioAch");
+        const bioActual = executiveText("exPriorityBioActual").replace(/^Ach:\s*/i,"");
+        const bioGap = executiveText("exPriorityBioGap").replace(/^GAP Total:\s*/i,"");
+        const tagAch = executiveText("exPriorityTagAch");
+        const tagActual = executiveText("exPriorityTagActual").replace(/^Ach:\s*/i,"");
+        const tagGap = executiveText("exPriorityTagGap").replace(/^GAP Total:\s*/i,"");
+        const fwaAch = executiveText("exPriorityFwaAch");
+        const fwaActual = executiveText("exPriorityFwaActual").replace(/^Ach:\s*/i,"");
+        const fwaGap = executiveText("exPriorityFwaGap").replace(/^GAP Total:\s*/i,"");
+
+        const ms = window.__executiveMarketShareSnapshot || null;
+        const msText = ms
+            ? `Market Share IM3 berada di ${pct(ms.IM3.mtd)} dengan MoM ${pctSigned(ms.IM3.growth)}.`
+            : "Data Market Share sedang diperbarui.";
+
+        const sentences = [];
+        sentences.push(`RSE Score saat ini <b>${score.toFixed(2)}%</b>, masih ${scoreGap.toFixed(2)} poin dari target 70%.`);
+        if(negative) sentences.push(`Di PST, tekanan terbesar datang dari <b>${negative.name}</b> (${negative.growth.toFixed(2)}%).`);
+        if(positive) sentences.push(`Pertumbuhan tertinggi saat ini ada pada <b>${positive.name}</b> (+${positive.growth.toFixed(2)}%).`);
+        sentences.push(`Priority Action: OSA ${osaAch} (Ach ${osaActual}; gap ${osaGap}), Biometric ${bioAch} (Ach ${bioActual}; gap ${bioGap}), Tagging ${tagAch} (Ach ${tagActual}; gap ${tagGap}), dan FWA ${fwaAch} (Ach ${fwaActual}; gap ${fwaGap}).`);
+        sentences.push(msText);
+
+        const actions=[];
+        if(negative) actions.push(`Recovery ${negative.name}: fokuskan follow-up pada outlet/DSE yang menyumbang penurunan.`);
+        if(osaAch!="-") actions.push(`Dorong OSA lebih dulu karena pencapaiannya ${osaAch} dengan gap ${osaGap}.`);
+        if(tagAch!="-" && bioAch!="-") actions.push(`Percepat outlet yang belum Tagging 3PCS dan Biometric agar gap outlet turun bersamaan.`);
+        if(fwaAch!="-") actions.push(`Kejar FWA RGUGA sampai target 18 pcs tercapai; posisi saat ini ${fwaAch}.`);
+        if(ms) actions.push(`Pertahankan momentum Market Share IM3 ${pct(ms.IM3.mtd)} sambil menjaga MoM ${pctSigned(ms.IM3.growth)}.`);
+
         body.innerHTML = `
-            <div class="final-insight-score">RSE Score saat ini <b>${score.toFixed(2)}%</b></div>
-            <div class="final-insight-text">
-                Gap terbesar berasal dari Sell In dan DSE Productivity.<br>
-                Fokus pada akselerasi tagging 3PCS, biometrik, dan peningkatan distribusi SP.
-            </div>
+            <div class="final-insight-score">Dashboard Insight <b>${score.toFixed(2)}% RSE</b></div>
+            <div class="final-insight-text">${sentences.join(" ")}</div>
             <div class="final-reco-box">
-                <div class="final-reco-title">Rekomendasi AI :</div>
-                <ul class="final-reco-list">
-                    <li>Push distribusi SP ke Outlet</li>
-                    <li>Percepat program Biometrik</li>
-                    <li>Market Blitz 6 hari (Target 300 GA)</li>
-                    <li>Fokus recovery di Sanggau Ledo</li>
-                </ul>
+                <div class="final-reco-title">Focus Action</div>
+                <ul class="final-reco-list">${actions.slice(0,5).map(x=>`<li>${x}</li>`).join("")}</ul>
             </div>
-            <button class="final-insight-button" type="button" onclick="document.getElementById('snapshotSectionRse')?.scrollIntoView({behavior:'smooth',block:'center'})">
-                Lihat Rekomendasi Lengkap <i class="fa-solid fa-arrow-right"></i>
+            <button class="final-insight-button" type="button" onclick="document.getElementById('snapshotSectionMission')?.scrollIntoView({behavior:'smooth',block:'center'})">
+                Lihat Priority Action <i class="fa-solid fa-arrow-right"></i>
             </button>
         `;
     }
@@ -2395,6 +2457,7 @@ document.addEventListener(
     });
 
     setInterval(() => {
+        updateExecutiveInsight();
         const rse = document.getElementById(FINAL_RSE_ID);
         if (!rse) return;
         const score = readRseScore();
@@ -4664,9 +4727,18 @@ document.addEventListener(
         const container = document.getElementById("executiveMarketShareContainer");
         if (!container || !kab) return;
 
+        window.__executiveMarketShareSnapshot = kab;
         const brands = ["IM3","3ID","TSEL","XLS"];
+
         container.innerHTML = `
             <div class="ms-v2-content">
+                <div class="ms-v2-head">
+                    <div>
+                        <div class="ms-v2-title">Market Share MC Bengkayang</div>
+                        <div class="ms-v2-subtitle">IM3 Weekly Performance · LMTD vs MTD · MoM Growth</div>
+                    </div>
+                    <div class="ms-v2-source">FB Market Share.xlsx<br>KAB MS MOM</div>
+                </div>
                 <div class="ms-v2-kpi-grid">
                     ${brands.map(b => `
                         <div class="ms-v2-kpi" style="border-top:3px solid ${BRAND_META[b].color}">
@@ -4676,59 +4748,28 @@ document.addEventListener(
                         </div>
                     `).join("")}
                 </div>
-                <div class="ms-v2-chart-title">MTD vs LMTD · MoM Growth</div>
                 <div class="ms-v2-chart-wrap"><canvas id="executiveMarketShareV2Chart"></canvas></div>
-                <div class="ms-footnote">Sumber: FB Market Share.xlsx · KAB MS MOM · MTD vs LMTD</div>
+                <div class="ms-v2-chart-foot">IM3 MTD ${pct(kab.IM3.mtd)} · LMTD ${pct(kab.IM3.lmtd)} · MoM ${pctSigned(kab.IM3.growth)}</div>
             </div>
         `;
 
         const canvas = document.getElementById("executiveMarketShareV2Chart");
         if (!canvas || typeof Chart === "undefined") return;
-        if (execChart) execChart.destroy();
+        if (execChart) { try { execChart.destroy(); } catch(e) {} }
 
-        const labels = ["LMTD","MTD"];
+        const labels=["W4-Jul","W1-Aug","W2-Aug","W4-Aug","W5-Aug"];
+        const weekly=(kab.weekly||[]).map(v=>num(v)*100);
+        const lmtd=num(kab.IM3.lmtd)*100;
+        const mtd=num(kab.IM3.mtd)*100;
+
         execChart = new Chart(canvas.getContext("2d"), {
             type:"line",
-            data:{
-                labels:brands,
-                datasets:[
-                    {
-                        label:"LMTD",
-                        data:brands.map(b=>kab[b].lmtd*100),
-                        borderColor:"#94A3B8",
-                        backgroundColor:"transparent",
-                        borderDash:[6,5],
-                        borderWidth:1.8,
-                        pointRadius:3,
-                        pointBackgroundColor:"#94A3B8",
-                        tension:.25
-                    },
-                    {
-                        label:"MTD",
-                        data:brands.map(b=>kab[b].mtd*100),
-                        borderColor:"#E51B4B",
-                        backgroundColor:"transparent",
-                        borderWidth:3,
-                        pointRadius:4,
-                        pointBackgroundColor:brands.map(b=>BRAND_META[b].color),
-                        pointBorderColor:"#FFFFFF",
-                        pointBorderWidth:1.5,
-                        tension:.25
-                    }
-                ]
-            },
-            options:{
-                responsive:true,
-                maintainAspectRatio:false,
-                plugins:{
-                    legend:{display:true,position:"bottom",labels:{usePointStyle:true,boxWidth:7,font:{size:8,weight:"700"}}},
-                    tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${Number(c.raw).toFixed(2)}%`}}
-                },
-                scales:{
-                    x:{grid:{display:false},ticks:{font:{size:8,weight:"700"}}},
-                    y:{beginAtZero:true,suggestedMax:50,ticks:{callback:v=>`${v}%`,font:{size:8}},grid:{color:"rgba(148,163,184,.13)"}}
-                }
-            }
+            data:{labels,datasets:[
+                {label:"IM3 Weekly",data:weekly,borderColor:"#E51B4B",backgroundColor:"rgba(229,27,75,.10)",borderWidth:3,pointRadius:4,pointHoverRadius:6,pointBackgroundColor:"#E51B4B",pointBorderColor:"#fff",pointBorderWidth:2,fill:true,tension:.3},
+                {label:"LMTD",data:labels.map(()=>lmtd),borderColor:"#94A3B8",borderDash:[6,5],borderWidth:1.6,pointRadius:0,fill:false,tension:0},
+                {label:"MTD",data:labels.map(()=>mtd),borderColor:"#172236",borderDash:[3,4],borderWidth:1.6,pointRadius:0,fill:false,tension:0}
+            ]},
+            options:{responsive:true,maintainAspectRatio:false,interaction:{intersect:false,mode:"index"},plugins:{legend:{position:"bottom",labels:{usePointStyle:true,boxWidth:8,font:{size:9,weight:"700"}}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${Number(c.raw).toFixed(2)}%`}}},scales:{x:{grid:{display:false},ticks:{font:{size:9,weight:"700"}}},y:{beginAtZero:true,suggestedMax:50,ticks:{callback:v=>`${v}%`,font:{size:9}},grid:{color:"rgba(148,163,184,.13)"}}}}
         });
     }
 
@@ -5336,6 +5377,13 @@ document.addEventListener(
         style.id="market-share-v2-style";
         style.textContent=`
             .ms-v2-content{width:100%;}
+            .ms-v2-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px;}
+            .ms-v2-title{font-size:15px;font-weight:900;color:#172236;}
+            .ms-v2-subtitle{font-size:9px;font-weight:700;color:#64748b;margin-top:2px;}
+            .ms-v2-source{font-size:8px;line-height:1.35;color:#64748b;text-align:right;}
+            .ms-v2-chart-wrap{height:190px!important;position:relative;margin-top:8px;}
+            .ms-v2-chart-foot{font-size:8px;font-weight:800;color:#64748b;margin-top:4px;}
+
             .ms-v2-kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-bottom:8px;}
             .ms-v2-kpi{background:#fff;border:1px solid #e4eaf1;border-radius:10px;padding:7px 8px;min-width:0;box-shadow:0 2px 8px rgba(23,34,54,.04);}
             .ms-v2-kpi span{display:block;font-size:8px;font-weight:800;color:#64748b;}
@@ -5415,4 +5463,202 @@ document.addEventListener(
     if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",boot,{once:true});
     else boot();
     window.addEventListener("load",()=>{injectProfileTab();injectProfileSection();bindProfileTab();bindProfileControls();bootExecutiveMS();},{once:true});
+})();
+
+
+/* =========================================================
+   REQ REVISION — 20 SEPTEMBER 2026
+   1. KPI GLOBAL mengikuti 8 KPI PST dalam satu baris desktop.
+   2. YOUR'S PRIORITY ACTION memakai 4 KPI execution.
+   3. TOTAL SCORE RSE berada di blok hitam; DSE Productivity tetap baris biasa.
+   ========================================================= */
+(function(){
+    const style = document.createElement("style");
+    style.id = "req-revision-20260920";
+    style.textContent = `
+        @media (min-width: 1200px) {
+            #snapshotSectionGlobal .exec-kpi-global-grid {
+                grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
+                gap: 8px !important;
+            }
+        }
+
+        @media (min-width: 1000px) and (max-width: 1199px) {
+            #snapshotSectionGlobal .exec-kpi-global-grid {
+                grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+            }
+        }
+
+        #snapshotSectionGlobal .exec-kpi-box .box-lbl {
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+        }
+
+        #snapshotSectionGlobal .exec-kpi-box .box-val {
+            white-space: nowrap !important;
+        }
+
+        #snapshotSectionRse .mini-exec-table tbody tr:last-child td {
+            background: #ffffff !important;
+            color: #172236 !important;
+        }
+
+        #snapshotSectionRse .mini-exec-table tbody tr:last-child td b,
+        #snapshotSectionRse .mini-exec-table tbody tr:last-child td span {
+            color: inherit !important;
+        }
+
+        #snapshotSectionRse .mini-exec-table tfoot .rse-total-score-row td {
+            background: #172236 !important;
+            color: #ffffff !important;
+            font-weight: 900 !important;
+        }
+
+        #snapshotSectionRse .mini-exec-table tfoot .rse-total-score-row td:last-child {
+            font-size: 15px !important;
+            color: #ffffff !important;
+        }
+
+        #snapshotSectionMission .m-ach {
+            display: block !important;
+            margin-top: 2px !important;
+            color: #475569 !important;
+            font-size: 9px !important;
+            font-weight: 800 !important;
+            line-height: 1.05 !important;
+        }
+
+        #snapshotSectionMission .exec-mission-stats-grid {
+            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        }
+
+        /* FINAL FIX: 8 KPI GLOBAL benar-benar satu baris desktop. */
+        @media (min-width: 1200px) {
+            #all-summary-tab #snapshotSectionGlobal .exec-kpi-global-grid {
+                grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
+                gap: 6px !important;
+            }
+            #all-summary-tab #snapshotSectionGlobal .exec-kpi-box {
+                min-width: 0 !important;
+                height: 78px !important;
+                min-height: 78px !important;
+                max-height: 78px !important;
+                padding: 7px 7px 6px !important;
+            }
+            #all-summary-tab #snapshotSectionGlobal .exec-kpi-box .box-lbl {
+                font-size: 8px !important;
+                line-height: 1 !important;
+            }
+            #all-summary-tab #snapshotSectionGlobal .exec-kpi-box .box-val {
+                font-size: 12px !important;
+                line-height: 1 !important;
+                margin-top: 3px !important;
+                letter-spacing: -0.55px !important;
+            }
+            #all-summary-tab #snapshotSectionGlobal .exec-kpi-box .kpi-global-compare,
+            #all-summary-tab #snapshotSectionGlobal .exec-kpi-box .kpi-global-growth {
+                font-size: 7.5px !important;
+                line-height: 1 !important;
+                margin-top: 3px !important;
+                white-space: nowrap !important;
+            }
+        }
+
+        /* FINAL FIX: hanya TOTAL SCORE RSE yang hitam. DSE Productivity normal. */
+        #all-summary-tab #snapshotSectionRse .mini-exec-table tbody tr:last-child td {
+            background: #FFFFFF !important;
+            color: #334155 !important;
+            border-bottom: 1px solid #EDF1F5 !important;
+            font-weight: 700 !important;
+        }
+        #all-summary-tab #snapshotSectionRse .mini-exec-table tbody tr:last-child td b,
+        #all-summary-tab #snapshotSectionRse .mini-exec-table tbody tr:last-child td span {
+            color: inherit !important;
+        }
+    `;
+    document.head.appendChild(style);
+})();
+
+
+/* =========================================================
+   FINAL VISUAL FIX — 20 SEPTEMBER 2026
+   - KPI Global 8 kartu: lebih besar dan mudah dibaca.
+   - DSE Productivity NORMAL/PUTIH.
+   - Hanya TOTAL SCORE RSE yang hitam.
+   ========================================================= */
+(function(){
+    const style = document.createElement('style');
+    style.id = 'final-pst-rse-visual-fix-20260920';
+    style.textContent = `
+        @media (min-width: 1200px) {
+            #all-summary-tab #snapshotSectionGlobal .exec-kpi-global-grid {
+                grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
+                gap: 10px !important;
+            }
+            #all-summary-tab #snapshotSectionGlobal .exec-kpi-box {
+                height: 104px !important;
+                min-height: 104px !important;
+                max-height: 104px !important;
+                padding: 12px 11px 10px !important;
+            }
+            #all-summary-tab #snapshotSectionGlobal .exec-kpi-box .box-lbl {
+                font-size: 9.5px !important;
+                line-height: 1.1 !important;
+            }
+            #all-summary-tab #snapshotSectionGlobal .exec-kpi-box .box-val {
+                font-size: 17px !important;
+                line-height: 1.05 !important;
+                margin-top: 6px !important;
+                letter-spacing: -0.35px !important;
+            }
+            #all-summary-tab #snapshotSectionGlobal .exec-kpi-box .kpi-global-compare,
+            #all-summary-tab #snapshotSectionGlobal .exec-kpi-box .kpi-global-growth {
+                font-size: 9.5px !important;
+                line-height: 1.1 !important;
+                margin-top: 5px !important;
+            }
+        }
+
+        /* DSE Productivity: normal row, never black. */
+        #all-summary-tab #snapshotSectionRse .mini-exec-table tbody tr.rse-dse-productivity-row td,
+        #all-summary-tab #snapshotSectionRse .mini-exec-table tbody tr:nth-child(5) td {
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+            color: #172236 !important;
+            border-bottom: 1px solid #edf1f5 !important;
+            font-weight: 700 !important;
+        }
+        #all-summary-tab #snapshotSectionRse .mini-exec-table tbody tr.rse-dse-productivity-row td *,
+        #all-summary-tab #snapshotSectionRse .mini-exec-table tbody tr:nth-child(5) td * {
+            color: inherit !important;
+        }
+
+        /* Only Total Score row is black. */
+        #all-summary-tab #snapshotSectionRse .mini-exec-table tfoot tr.rse-total-score-row td {
+            background: #172236 !important;
+            background-color: #172236 !important;
+            color: #ffffff !important;
+            font-weight: 900 !important;
+        }
+        #all-summary-tab #snapshotSectionRse .mini-exec-table tfoot tr.rse-total-score-row td * {
+            color: #ffffff !important;
+        }
+    `;
+    document.head.appendChild(style);
+
+    function forceDseRowNormal(){
+        document.querySelectorAll('#snapshotSectionRse .mini-exec-table tbody tr.rse-dse-productivity-row, #snapshotSectionRse .mini-exec-table tbody tr:nth-child(5)').forEach(row=>{
+            row.querySelectorAll('td').forEach(td=>{
+                td.style.setProperty('background-color','#ffffff','important');
+                td.style.setProperty('background','#ffffff','important');
+                td.style.setProperty('color','#172236','important');
+            });
+        });
+    }
+    if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', forceDseRowNormal, {once:true});
+    else forceDseRowNormal();
+    window.addEventListener('load', forceDseRowNormal);
+    setTimeout(forceDseRowNormal, 500);
+    setTimeout(forceDseRowNormal, 1500);
 })();

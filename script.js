@@ -18,6 +18,38 @@ let globalTargetRSE = {
     dseProductivity: 5
 };
 
+// LAST UPDATE RSE — sumber wajib Target RSE.xlsx!F2
+let globalLastUpdateRSE = "";
+
+function formatLastUpdateRSE(value) {
+    if (value === undefined || value === null || value === "") return "-";
+
+    if (value instanceof Date && !isNaN(value.getTime())) {
+        const months = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+        return `${value.getDate()} ${months[value.getMonth()]} ${value.getFullYear()}`;
+    }
+
+    const raw = String(value).trim();
+    if (!raw) return "-";
+
+    const months = {
+        JANUARI:"Januari", FEBRUARI:"Februari", MARET:"Maret", APRIL:"April", MEI:"Mei", JUNI:"Juni",
+        JULI:"Juli", AGUSTUS:"Agustus", SEPTEMBER:"September", OKTOBER:"Oktober", NOVEMBER:"November", DESEMBER:"Desember"
+    };
+
+    return raw.replace(/\b(JANUARI|FEBRUARI|MARET|APRIL|MEI|JUNI|JULI|AGUSTUS|SEPTEMBER|OKTOBER|NOVEMBER|DESEMBER)\b/gi, m => months[m.toUpperCase()] || m);
+}
+
+function applyLastUpdateRSEFromRows(rows) {
+    // Target RSE.xlsx: F2 = baris index 1, kolom index 5.
+    if (!Array.isArray(rows) || !rows[1]) return;
+    globalLastUpdateRSE = formatLastUpdateRSE(rows[1][5]);
+    const headerEl = document.getElementById("lastUpdateHeaderText");
+    if (headerEl) headerEl.innerText = `Last Update: ${globalLastUpdateRSE}`;
+    const legacyEl = document.getElementById("lastUpdateText");
+    if (legacyEl) legacyEl.innerText = `Last Update : ${globalLastUpdateRSE}`;
+}
+
 function normalizeTargetLabel(value) {
     return String(value ?? "")
         .toUpperCase()
@@ -125,14 +157,24 @@ function applyTargetRSEFromRows(rows) {
     }
 }
 
-const pTargetRSE = fetch("./Target%20RSE.xlsx?v=" + Date.now(), {
-    cache: "no-store",
-    credentials: "same-origin"
-})
-    .then(res => {
-        if (!res.ok) throw new Error("Target RSE.xlsx tidak ditemukan");
-        return res.arrayBuffer();
-    })
+const pTargetRSE = (async function(){
+    const candidates = [
+        "./TARGET%20RSE.xlsx?v=" + Date.now(),
+        "./Target%20RSE.xlsx?v=" + Date.now(),
+        "./TARGET%20RSE(3).xlsx?v=" + Date.now()
+    ];
+    let lastError = null;
+    for (const url of candidates) {
+        try {
+            const res = await fetch(url, { cache: "no-store", credentials: "same-origin" });
+            if (res.ok) return await res.arrayBuffer();
+            lastError = new Error("HTTP " + res.status + " for " + url);
+        } catch (err) {
+            lastError = err;
+        }
+    }
+    throw lastError || new Error("TARGET RSE.xlsx tidak ditemukan");
+})()
     .then(data => {
         const wb = XLSX.read(data, { type: "array" });
         const ws = wb.Sheets[wb.SheetNames[0]];
@@ -143,6 +185,7 @@ const pTargetRSE = fetch("./Target%20RSE.xlsx?v=" + Date.now(), {
         });
 
         applyTargetRSEFromRows(rows);
+        applyLastUpdateRSEFromRows(rows);
 
         // Pastikan target dari Excel langsung diterapkan ke Executive Summary
         // setelah file Target RSE.xlsx selesai dibaca.
@@ -594,11 +637,16 @@ function parseNum(val) {
 
 function updateAutoDateH2() {
     const updateText = document.getElementById("lastUpdateText");
+    const headerUpdateText = document.getElementById("lastUpdateHeaderText");
     const dayCountText = document.getElementById("headerDayCountText");
     const hkInfo = getRemainingWorkingDaysInfo();
+    const lastUpdateDisplay = globalLastUpdateRSE || hkInfo.updateDateStr;
 
     if (updateText) {
-        updateText.innerText = `Last Update : ${hkInfo.updateDateStr} (H-2) | Sisa HK: ${hkInfo.remainingDays} Hari`;
+        updateText.innerText = `Last Update : ${lastUpdateDisplay}`;
+    }
+    if (headerUpdateText) {
+        headerUpdateText.innerText = `Last Update: ${lastUpdateDisplay}`;
     }
     if (dayCountText) {
         dayCountText.innerText = `Hari ke-${hkInfo.currentDayNum} ${hkInfo.currentMonthName} ${hkInfo.currentYear}`;
@@ -901,6 +949,8 @@ function updateDashboardMS() {
 
   const sticky=document.getElementById("stickyRev"); if(sticky) sticky.innerText="Rp "+Math.round(totalRevMtd).toLocaleString("id-ID");
   currentPstFilteredRows=filteredRows; renderPstMainLineChart(filteredRows); renderTable("dataTable",globalHeaderMS,filteredRows);
+  // Sinkronkan KPI GLOBAL langsung dari dataset PST yang sama.
+  if (typeof updateExecutiveSummaryNew === "function") updateExecutiveSummaryNew();
 }
 
 function updateDashboardSM() {
@@ -1581,50 +1631,101 @@ function updateExecutiveSummaryNew() {
         let matchDse = (selDse === "ALL" || String(r[2] || "").trim() === selDse);
         if (matchDse) {
             if (parseNum(r[18]) >= 1) globalBioAchCount++;
-            if (parseNum(r[15]) >= 3 || parseNum(r[16]) >= 1) globalTagAchCount++;
+            // Detail Outlet: TAGGING 3PCS achievement = outlet with TAGGING 3PCS >= 1.
+            if (parseNum(r[16]) >= 1) globalTagAchCount++;
         }
     });
     let pctBio = totalOutlet > 0 ? (globalBioAchCount / totalOutlet) * 100 : 0;
     let pctTag = totalOutlet > 0 ? (globalTagAchCount / totalOutlet) * 100 : 0;
 
-    document.getElementById("exKpiRev").innerText = Math.round(totalRev).toLocaleString('id-ID');
-    document.getElementById("exKpiTertiary").innerText = Math.round(totalTertiary).toLocaleString('id-ID');
-    document.getElementById("exKpiTradeSupply").innerText = Math.round(totalTradeSupply).toLocaleString('id-ID');
-    document.getElementById("exKpiSellIn").innerText = pctSellIn.toFixed(1) + "%";
-    document.getElementById("exKpiOsa").innerText = pctOsa.toFixed(1) + "%";
-    document.getElementById("exKpiBio").innerText = pctBio.toFixed(1) + "%";
-    document.getElementById("exKpiTag").innerText = pctTag.toFixed(1) + "%";
+    // KPI GLOBAL = PERSIS 8 KPI pada TAB PST.
+    // Jika LMTD tersedia dan bernilai, tampilkan LMTD + Growth.
+    // Jika LMTD tidak tersedia, fallback ke Target bila target tersedia.
+    const globalPstConfig = [
+        { key:"Rev", label:"REVENUE", mtd:"REVENUE MTD", lmtd:"REVENUE LMTD", target:null, unit:"" },
+        { key:"Primary", label:"PRIMARY", mtd:"PRIMARY MTD", lmtd:"PRIMARY LMTD", target:null, unit:"" },
+        { key:"Secondary", label:"SECONDARY", mtd:"SECONDARY MTD", lmtd:"SECONDARY LMTD", target:null, unit:"" },
+        { key:"Tertiary", label:"TERTIARY B#", mtd:"TERTIARY B# MTD", lmtd:"TERTIARY B# LMTD", target:null, unit:"" },
+        { key:"Trade", label:"TRADE SUPPLY", mtd:"TRADE SUPPLY MTD", lmtd:"TRADE SUPPLY LMTD", target:"tradeSupply", unit:"", mainId:"exKpiTradeSupply" },
+        { key:"Vlr", label:"VLR SUBS", mtd:"VLR SUBS MTD", lmtd:"VLR SUBS LMTD", target:null, unit:"" },
+        { key:"Rguga", label:"RGUGA TRADE", mtd:"RGUGA TRADE MTD", lmtd:"RGUGA TRADE LMTD", target:null, unit:"" },
+        { key:"SpSellIn", label:"SP SELL IN", mtd:"SP SELL IN MTD", lmtd:"SP SELL IN LMTD", target:"sellInSP", unit:" pcs" }
+    ];
 
-    // KPI GLOBAL: gunakan LMTD jika kolom/data tersedia; jika tidak, gunakan Target.
-    const globalIdxRevLmtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("REVENUE LMTD"));
-    const globalIdxTertLmtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("TERTIARY B# LMTD"));
-    const globalIdxTradeLmtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("TRADE SUPPLY LMTD"));
-    let globalRevLmtd=0, globalTertLmtd=0, globalTradeLmtd=0;
-    globalDataMS.forEach(r=>{
-        if(globalIdxRevLmtd!==-1) globalRevLmtd += parseNum(r[globalIdxRevLmtd]);
-        if(globalIdxTertLmtd!==-1) globalTertLmtd += parseNum(r[globalIdxTertLmtd]);
-        if(globalIdxTradeLmtd!==-1) globalTradeLmtd += parseNum(r[globalIdxTradeLmtd]);
-    });
-    const hasRevLmtd = globalIdxRevLmtd !== -1 && globalRevLmtd !== 0;
-    const hasTertLmtd = globalIdxTertLmtd !== -1 && globalTertLmtd !== 0;
-    const hasTradeLmtd = globalIdxTradeLmtd !== -1 && globalTradeLmtd !== 0;
     const setGlobal = (id,text)=>{const e=document.getElementById(id);if(e)e.innerText=text;};
-    const growthText=(m,l)=>{const g=l!==0?((m-l)/Math.abs(l))*100:0;return (g>=0?'+':'')+g.toFixed(2)+'%';};
-    setGlobal('exKpiRevCompare',hasRevLmtd?'LMTD: Rp '+Math.round(globalRevLmtd).toLocaleString('id-ID'):'Target: -');
-    setGlobal('exKpiRevGrowth',hasRevLmtd?'Growth: '+growthText(totalRev,globalRevLmtd):'');
-    setGlobal('exKpiTertiaryCompare',hasTertLmtd?'LMTD: Rp '+Math.round(globalTertLmtd).toLocaleString('id-ID'):'Target: -');
-    setGlobal('exKpiTertiaryGrowth',hasTertLmtd?'Growth: '+growthText(totalTertiary,globalTertLmtd):'');
-    setGlobal('exKpiTradeCompare',hasTradeLmtd?'LMTD: Rp '+Math.round(globalTradeLmtd).toLocaleString('id-ID'):'Target: '+Math.round(globalTargetRSE.tradeSupply).toLocaleString('id-ID'));
-    setGlobal('exKpiTradeGrowth',hasTradeLmtd?'Growth: '+growthText(totalTradeSupply,globalTradeLmtd):'Ach: '+(globalTargetRSE.tradeSupply>0?(totalTradeSupply/globalTargetRSE.tradeSupply*100).toFixed(1):'0.0')+'%');
-    setGlobal('exKpiSellInCompare','Target: '+Math.round(globalTargetRSE.sellInSP).toLocaleString('id-ID')+' pcs');
-    setGlobal('exKpiSellInGrowth','Ach: '+pctSellIn.toFixed(1)+'%');
-    setGlobal('exKpiOsaCompare','Target: Rp '+Math.round(targetOsa).toLocaleString('id-ID'));
-    setGlobal('exKpiOsaGrowth','Ach: '+pctOsa.toFixed(1)+'%');
-    const globalBioTarget=Math.ceil(totalOutlet*0.8), globalTagTarget=Math.ceil(totalOutlet*0.6);
-    setGlobal('exKpiBioCompare','Target: '+globalBioTarget.toLocaleString('id-ID')+' Outlet');
-    setGlobal('exKpiBioGrowth','Ach: '+(globalBioTarget>0?(globalBioAchCount/globalBioTarget*100).toFixed(1):'0.0')+'%');
-    setGlobal('exKpiTagCompare','Target: '+globalTagTarget.toLocaleString('id-ID')+' Outlet');
-    setGlobal('exKpiTagGrowth','Ach: '+(globalTagTarget>0?(globalTagAchCount/globalTagTarget*100).toFixed(1):'0.0')+'%');
+    const setGlobalValue = (cfg,text)=>{ setGlobal(cfg.mainId || ('exKpi' + cfg.key), text); };
+    const findGlobalCol = name => globalHeaderMS.findIndex(h => String(h || "").toUpperCase().includes(name));
+    const parsePstValue = value => {
+        if (typeof value === "number" && Number.isFinite(value)) return value;
+        let raw = String(value ?? "").trim();
+        if (!raw) return 0;
+        raw = raw.replace(/Rp\.?/gi, "").replace(/\s/g, "");
+        if (raw.includes(",") && raw.includes(".")) {
+            if (raw.lastIndexOf(".") > raw.lastIndexOf(",")) raw = raw.replace(/,/g, "");
+            else raw = raw.replace(/\./g, "").replace(",", ".");
+        } else if (raw.includes(",")) {
+            raw = raw.replace(/,/g, "");
+        } else if (raw.includes(".")) {
+            const parts = raw.split(".");
+            if (parts.length > 1 && parts.slice(1).every(p => /^\d{3}$/.test(p))) raw = parts.join("");
+        }
+        const n = Number(raw);
+        return Number.isFinite(n) ? n : 0;
+    };
+    const sumGlobalCol = idx => {
+        if (idx === -1) return 0;
+        let total = 0;
+        globalDataMS.forEach(r => total += parsePstValue(r[idx]));
+        return total;
+    };
+    const growthText = (m,l) => {
+        const g = l !== 0 ? ((m-l)/Math.abs(l))*100 : (m > 0 ? 100 : 0);
+        return (g >= 0 ? '+' : '') + g.toFixed(2) + '%';
+    };
+    const globalTotals = {};
+    globalPstConfig.forEach(cfg => {
+        const mtdVal = sumGlobalCol(findGlobalCol(cfg.mtd));
+        const lmtdIdx = findGlobalCol(cfg.lmtd);
+        const lmtdVal = sumGlobalCol(lmtdIdx);
+        const hasLmtd = lmtdIdx !== -1 && lmtdVal !== 0;
+        const targetVal = cfg.target ? Number(globalTargetRSE[cfg.target] || 0) : 0;
+        globalTotals[cfg.key] = { mtdVal, lmtdVal, hasLmtd, targetVal };
+
+        setGlobalValue(cfg, Math.round(mtdVal).toLocaleString('id-ID') + cfg.unit);
+        if (hasLmtd) {
+            setGlobal('exKpi' + cfg.key + 'Compare', 'LMTD: ' + Math.round(lmtdVal).toLocaleString('id-ID') + cfg.unit);
+            setGlobal('exKpi' + cfg.key + 'Growth', 'Growth: ' + growthText(mtdVal,lmtdVal));
+        } else if (targetVal > 0) {
+            setGlobal('exKpi' + cfg.key + 'Compare', 'Target: ' + Math.round(targetVal).toLocaleString('id-ID') + cfg.unit);
+            setGlobal('exKpi' + cfg.key + 'Growth', 'Ach: ' + ((mtdVal/targetVal)*100).toFixed(1) + '%');
+        } else {
+            setGlobal('exKpi' + cfg.key + 'Compare', 'LMTD: -');
+            setGlobal('exKpi' + cfg.key + 'Growth', 'Growth: -');
+        }
+    });
+
+    // Nilai total PST tetap dipakai oleh bagian RSE di bawah.
+    totalRev = globalTotals.Rev.mtdVal;
+    totalTertiary = globalTotals.Tertiary.mtdVal;
+    totalTradeSupply = globalTotals.Trade.mtdVal;
+    const totalPrimaryPstGlobal = globalTotals.Primary.mtdVal;
+    const totalSecondaryPstGlobal = globalTotals.Secondary.mtdVal;
+    const totalVlrPstGlobal = globalTotals.Vlr.mtdVal;
+    const totalRgugaPstGlobal = globalTotals.Rguga.mtdVal;
+    const totalSpSellInPstGlobal = globalTotals.SpSellIn.mtdVal;
+
+    // SAFEGUARD: Trade Supply KPI Global wajib mengikuti TOTAL TRADE SUPPLY MTD dari PST.
+    // PST.xlsx -> Sheet1 -> TRADE SUPPLY MTD = kolom O (index 14), sehingga tidak boleh tampil 0
+    // hanya karena ID kartu atau pencarian header berbeda.
+    if (globalDataMS.length) {
+        const tradeIdxDirect = globalHeaderMS.findIndex(h => String(h || '').trim().toUpperCase() === 'TRADE SUPPLY MTD');
+        if (tradeIdxDirect !== -1) {
+            const tradeDirect = globalDataMS.reduce((sum, row) => sum + parsePstValue(row[tradeIdxDirect]), 0);
+            totalTradeSupply = tradeDirect;
+            globalTotals.Trade.mtdVal = tradeDirect;
+            setGlobal('exKpiTradeSupply', Math.round(tradeDirect).toLocaleString('id-ID'));
+        }
+    }
 
     // TARGET DINAMIS dari Target RSE.xlsx
     let tradeTargetVal = globalTargetRSE.tradeSupply;
@@ -1720,29 +1821,45 @@ function updateExecutiveSummaryNew() {
         }
     });
 
-    document.getElementById("exMissionSellInTgt").innerText = Math.round(dailySellInTgt).toLocaleString('id-ID') + " pcs";
-    document.getElementById("exMissionOsaTgt").innerText = "Rp " + Math.round(dailyOsaTgt).toLocaleString('id-ID');
-    document.getElementById("exMissionBioUnach").innerText = mUnachBioFiltered.toLocaleString('id-ID') + " Outlet";
-    document.getElementById("exMissionTagUnach").innerText = mUnachTagFiltered.toLocaleString('id-ID') + " Outlet";
+    // YOUR'S PRIORITY ACTION — hanya 4 KPI execution.
+    const totalOutletCurrent = globalDataDO.length;
+    const targetBioOutlet = Math.ceil(totalOutletCurrent * 0.80);
+    const targetTagOutlet = Math.ceil(totalOutletCurrent * 0.60);
+    const targetFwaCurrent = Math.round(globalTargetRSE.fwa || 18);
+    const bioAchPct = targetBioOutlet > 0 ? (globalBioAchCount / targetBioOutlet) * 100 : 0;
+    const priorityTagAchPct = targetTagOutlet > 0 ? (globalTagAchCount / targetTagOutlet) * 100 : 0;
+    const fwaAchTotal = globalDataDO.reduce((sum,r) => sum + parseNum(r[19]), 0);
+    const priorityFwaAchPct = targetFwaCurrent > 0 ? (fwaAchTotal / targetFwaCurrent) * 100 : 0;
+    const gapFwaTotal = Math.max(0, targetFwaCurrent - fwaAchTotal);
+    const gapOsaDisplay = Math.max(0, targetOsa - achOsa);
+    const gapBioDisplay = Math.max(0, targetBioOutlet - globalBioAchCount);
+    const gapTagDisplay = Math.max(0, targetTagOutlet - globalTagAchCount);
+
+    const setPriority=(id,text)=>{const e=document.getElementById(id);if(e)e.innerText=text;};
+    // Semua angka actual berasal langsung dari DETAIL OUTLET.
+    // Tampilan priority sengaja tanpa prefix Rp sesuai request.
+    setPriority("exPriorityOsaAch", pctOsa.toFixed(1) + "%");
+    setPriority("exPriorityOsaActual", "Ach: " + Math.round(achOsa).toLocaleString('id-ID'));
+    setPriority("exPriorityOsaGap", "GAP Total OSA: " + Math.round(gapOsaDisplay).toLocaleString('id-ID'));
+    setPriority("exPriorityOsaTarget", "Target OSA: " + Math.round(targetOsa).toLocaleString('id-ID'));
+
+    setPriority("exPriorityBioAch", bioAchPct.toFixed(2) + "%");
+    setPriority("exPriorityBioActual", "Ach: " + globalBioAchCount.toLocaleString('id-ID') + " Outlet");
+    setPriority("exPriorityBioGap", "GAP Total: " + gapBioDisplay.toLocaleString('id-ID') + " Outlet");
+    setPriority("exPriorityBioTarget", "Target: " + targetBioOutlet.toLocaleString('id-ID') + " Outlet");
+
+    setPriority("exPriorityTagAch", priorityTagAchPct.toFixed(2) + "%");
+    setPriority("exPriorityTagActual", "Ach: " + globalTagAchCount.toLocaleString('id-ID') + " Outlet");
+    setPriority("exPriorityTagGap", "GAP Total: " + gapTagDisplay.toLocaleString('id-ID') + " Outlet");
+    setPriority("exPriorityTagTarget", "Target: " + targetTagOutlet.toLocaleString('id-ID') + " Outlet");
+
+    setPriority("exPriorityFwaAch", priorityFwaAchPct.toFixed(1) + "%");
+    setPriority("exPriorityFwaActual", "Ach: " + fwaAchTotal.toLocaleString('id-ID') + " pcs");
+    setPriority("exPriorityFwaGap", "GAP Total: " + gapFwaTotal.toLocaleString('id-ID') + " pcs");
+    setPriority("exPriorityFwaTarget", "Target: " + targetFwaCurrent.toLocaleString('id-ID') + " pcs");
 
     let hariLabelStr = selHari !== "ALL" ? `${selHari.charAt(0) + selHari.slice(1).toLowerCase()}` : `Hari`;
     document.getElementById("pjpDisplayLabel").innerText = `PJP ${hariLabelStr} : ${missionRows.length} Outlet`;
-
-    document.getElementById("exTotalGapSelIn").innerText = `GAP Total: ${Math.round(totalGapSellIn).toLocaleString('id-ID')} pcs`;
-    document.getElementById("exTotalGapOsa").innerText = `GAP Total: Rp ${Math.round(totalGapOsa).toLocaleString('id-ID')}`;
-    document.getElementById("exTotalBioGap").innerText = `GAP Total: ${dseTotalBioGap} Outlet`;
-    document.getElementById("exTotalTagGap").innerText = `GAP Total: ${dseTotalTagGap} Outlet`;
-
-    // REQ K2 — Target Total selalu global, sesuai definisi KPI.
-    const targetTotalSellInRSE = Math.round(globalTargetRSE.sellInSP || 0);
-    const targetTotalOsa = Math.round(targetOsa);
-    const targetTotalBio = Math.ceil(totalOutlet * 0.80);
-    const targetTotalTag = Math.ceil(totalOutlet * 0.60);
-    const setMissionTarget=(id,text)=>{const e=document.getElementById(id);if(e)e.innerText=text;};
-    setMissionTarget("exTotalTargetSellIn", `Target Total: ${targetTotalSellInRSE.toLocaleString('id-ID')} pcs`);
-    setMissionTarget("exTotalTargetOsa", `Target Total: Rp ${targetTotalOsa.toLocaleString('id-ID')}`);
-    setMissionTarget("exTotalTargetBio", `Target Total: ${targetTotalBio.toLocaleString('id-ID')} Outlet`);
-    setMissionTarget("exTotalTargetTag", `Target Total: ${targetTotalTag.toLocaleString('id-ID')} Outlet`);
 
     renderTargetNonKpiTable(selDse);
 }
@@ -2203,20 +2320,41 @@ function renderPstMainLineChart(rows) {
             if (territory.toUpperCase() === "TERRITORY") continue;
             if (!territory.toUpperCase().includes("BENGKAYANG")) continue;
 
-            return {
+            /*
+             * FORMAT KAB MS MOM YANG DIPAKAI DASHBOARD:
+             * B:G  = weekly IM3 (5 minggu + WoW)
+             * H:J  = IM3 LMTD / MTD / MoM
+             * K:M  = 3ID LMTD / MTD / MoM
+             * N:P  = TSEL LMTD / MTD / MoM
+             * Q:S  = XLS LMTD / MTD / MoM
+             *
+             * Sebelumnya block ini membaca B:D sebagai LMTD/MTD/MoM,
+             * sehingga nilai MoM terbaca sebagai 33.xx%. Ini yang menyebabkan
+             * Growth IM3 salah. Profil Market Share menggunakan H:J.
+             */
+            const kab = {
                 territory,
-                IM3:  {lmtd:msNum(r[1]),  mtd:msNum(r[2]),  growth:msNum(r[3])},
-                "3ID":{lmtd:msNum(r[4]),  mtd:msNum(r[5]),  growth:msNum(r[6])},
-                TSEL: {lmtd:msNum(r[7]),  mtd:msNum(r[8]),  growth:msNum(r[9])},
-                XLS:  {lmtd:msNum(r[10]), mtd:msNum(r[11]), growth:msNum(r[12])}
+                weekly:[1,2,3,4,5].map(idx => msNum(r[idx])),
+                weeklyWow:msNum(r[6]),
+                IM3:  {lmtd:msNum(r[7]),  mtd:msNum(r[8]),  growth:msNum(r[9])},
+                "3ID":{lmtd:msNum(r[10]), mtd:msNum(r[11]), growth:msNum(r[12])},
+                TSEL: {lmtd:msNum(r[13]), mtd:msNum(r[14]), growth:msNum(r[15])},
+                XLS:  {lmtd:msNum(r[16]), mtd:msNum(r[17]), growth:msNum(r[18])}
             };
+
+            window.__executiveMarketShareSnapshot = kab;
+            return kab;
         }
         throw new Error("MC-BENGKAYANG tidak ditemukan pada KAB MS MOM");
     }
 
+    let executiveMarketShareScriptChart = null;
+
     function renderMarketShare(kab){
         const container = document.getElementById("executiveMarketShareContainer");
-        if (!container) return;
+        if (!container || !kab) return;
+
+        window.__executiveMarketShareSnapshot = kab;
 
         const brands = [
             {key:"IM3",  label:"IM3",  cls:"im3"},
@@ -2226,45 +2364,98 @@ function renderPstMainLineChart(rows) {
         ];
 
         container.innerHTML = `
-            <div style="padding:18px 20px 14px;background:#fff;border-radius:16px;box-sizing:border-box;height:100%;">
-                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;">
+            <div class="ms-exec-chart-card">
+                <div class="ms-exec-chart-head">
                     <div>
-                        <div style="font-size:17px;font-weight:800;color:#111827;">Market Share MC Bengkayang</div>
-                        <div style="font-size:11px;color:#94a3b8;margin-top:3px;">MTD vs LMTD · MoM Growth</div>
+                        <div class="ms-exec-chart-title">Market Share MC Bengkayang</div>
+                        <div class="ms-exec-chart-subtitle">IM3 Weekly Performance · LMTD vs MTD · MoM Growth</div>
                     </div>
-                    <div style="font-size:10px;color:#64748b;text-align:right;">FB Market Share.xlsx<br>KAB MS MOM</div>
+                    <div class="ms-exec-chart-source">FB Market Share.xlsx<br>KAB MS MOM</div>
                 </div>
-                <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;">
+
+                <div class="ms-exec-mini-kpis">
                     ${brands.map(b => `
-                        <div style="border:1px solid #e5e7eb;border-radius:10px;padding:10px 8px;background:#fff;min-width:0;">
-                            <div style="font-size:11px;font-weight:800;color:#334155;">${b.label}</div>
-                            <div style="font-size:18px;font-weight:900;color:#111827;margin-top:3px;">${msPct(kab[b.key].mtd)}</div>
-                            <div style="font-size:10px;font-weight:700;color:${kab[b.key].growth >= 0 ? '#16a34a' : '#dc2626'};margin-top:2px;">${msGrowth(kab[b.key].growth)} MoM</div>
+                        <div class="ms-exec-mini-kpi">
+                            <span>${b.label}</span>
+                            <b>${msPct(kab[b.key].mtd)}</b>
+                            <small class="${kab[b.key].growth >= 0 ? 'ms-positive' : 'ms-negative'}">${msGrowth(kab[b.key].growth)} MoM</small>
                         </div>
                     `).join("")}
                 </div>
-                <div style="margin-top:14px;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;">
-                    <table style="width:100%;border-collapse:collapse;font-size:10px;">
-                        <thead><tr style="background:#17243a;color:#fff;">
-                            <th style="padding:8px;text-align:left;">Brand</th>
-                            <th style="padding:8px;text-align:right;">LMTD</th>
-                            <th style="padding:8px;text-align:right;">MTD</th>
-                            <th style="padding:8px;text-align:right;">MoM</th>
-                        </tr></thead>
-                        <tbody>
-                            ${brands.map(b => `
-                                <tr>
-                                    <td style="padding:7px 8px;border-bottom:1px solid #eef2f7;font-weight:800;">${b.label}</td>
-                                    <td style="padding:7px 8px;border-bottom:1px solid #eef2f7;text-align:right;">${msPct(kab[b.key].lmtd)}</td>
-                                    <td style="padding:7px 8px;border-bottom:1px solid #eef2f7;text-align:right;font-weight:800;">${msPct(kab[b.key].mtd)}</td>
-                                    <td style="padding:7px 8px;border-bottom:1px solid #eef2f7;text-align:right;font-weight:800;color:${kab[b.key].growth >= 0 ? '#16a34a' : '#dc2626'};">${msGrowth(kab[b.key].growth)}</td>
-                                </tr>
-                            `).join("")}
-                        </tbody>
-                    </table>
+
+                <div class="ms-exec-main-chart-wrap">
+                    <canvas id="executiveMarketShareChart"></canvas>
                 </div>
+                <div class="ms-exec-chart-foot">IM3 MTD ${msPct(kab.IM3.mtd)} · LMTD ${msPct(kab.IM3.lmtd)} · MoM ${msGrowth(kab.IM3.growth)}</div>
             </div>
         `;
+
+        const canvas = document.getElementById("executiveMarketShareChart");
+        if (!canvas || typeof Chart === "undefined") return;
+        if (executiveMarketShareScriptChart) {
+            try { executiveMarketShareScriptChart.destroy(); } catch(e) {}
+        }
+
+        const weeklyLabels = ["W4-Jul","W1-Aug","W2-Aug","W4-Aug","W5-Aug"];
+        const weeklyValues = (kab.weekly || []).map(v => v * 100);
+        const lmtd = msNum(kab.IM3.lmtd) * 100;
+        const mtd = msNum(kab.IM3.mtd) * 100;
+
+        executiveMarketShareScriptChart = new Chart(canvas.getContext("2d"), {
+            type:"line",
+            data:{
+                labels:weeklyLabels,
+                datasets:[
+                    {
+                        label:"IM3 Weekly",
+                        data:weeklyValues,
+                        borderColor:"#E51B4B",
+                        backgroundColor:"rgba(229,27,75,.10)",
+                        borderWidth:3,
+                        pointRadius:4,
+                        pointHoverRadius:6,
+                        pointBackgroundColor:"#E51B4B",
+                        pointBorderColor:"#FFFFFF",
+                        pointBorderWidth:2,
+                        fill:true,
+                        tension:.3
+                    },
+                    {
+                        label:"LMTD",
+                        data:weeklyLabels.map(()=>lmtd),
+                        borderColor:"#94A3B8",
+                        borderDash:[6,5],
+                        borderWidth:1.6,
+                        pointRadius:0,
+                        fill:false,
+                        tension:0
+                    },
+                    {
+                        label:"MTD",
+                        data:weeklyLabels.map(()=>mtd),
+                        borderColor:"#172236",
+                        borderDash:[3,4],
+                        borderWidth:1.6,
+                        pointRadius:0,
+                        fill:false,
+                        tension:0
+                    }
+                ]
+            },
+            options:{
+                responsive:true,
+                maintainAspectRatio:false,
+                interaction:{intersect:false,mode:"index"},
+                plugins:{
+                    legend:{position:"bottom",labels:{usePointStyle:true,boxWidth:8,font:{size:9,weight:"700"}}},
+                    tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${Number(c.raw).toFixed(2)}%`}}
+                },
+                scales:{
+                    x:{grid:{display:false},ticks:{font:{size:9,weight:"700"}}},
+                    y:{beginAtZero:true,suggestedMax:50,ticks:{callback:v=>`${v}%`,font:{size:9}},grid:{color:"rgba(148,163,184,.13)"}}
+                }
+            }
+        });
     }
 
     async function bootFinalMarketShare(){
