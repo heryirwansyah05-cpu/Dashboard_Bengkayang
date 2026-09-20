@@ -875,21 +875,21 @@ function updateDashboardMS() {
     if(idxSellInMtd!==-1) totalSellInMtd+=parseNum(r[idxSellInMtd]); if(idxSellInLmtd!==-1) totalSellInLmtd+=parseNum(r[idxSellInLmtd]);
   });
 
-  animateCounter("kpiRevenuePST", totalRevMtd, true);
+  animateCounter("kpiRevenuePST", totalRevMtd);
   animateCounter("kpiPrimaryPST", totalPrimaryMtd);
   animateCounter("kpiSecondaryPST", totalSecondaryMtd);
   animateCounter("kpiTertiaryPST", totalTertiaryMtd);
-  animateCounter("kpiTradeSupplyPST", totalTradeMtd, true);
+  animateCounter("kpiTradeSupplyPST", totalTradeMtd);
   animateCounter("kpiVlrPST", totalVlrMtd);
   animateCounter("kpiRguTradePST", totalRguMtd);
   animateCounter("kpiSpSellInPST", totalSellInMtd);
 
   const setText=(id,val)=>{const e=document.getElementById(id);if(e)e.innerText=val;};
-  setText("kpiRevLmtdPST","Rp "+Math.round(totalRevLmtd).toLocaleString("id-ID"));
+  setText("kpiRevLmtdPST",Math.round(totalRevLmtd).toLocaleString("id-ID"));
   setText("kpiPrimaryLmtdPST",Math.round(totalPrimaryLmtd).toLocaleString("id-ID"));
   setText("kpiSecondaryLmtdPST",Math.round(totalSecondaryLmtd).toLocaleString("id-ID"));
   setText("kpiTertiaryLmtdPST",Math.round(totalTertiaryLmtd).toLocaleString("id-ID"));
-  setText("kpiTradeLmtdPST","Rp "+Math.round(totalTradeLmtd).toLocaleString("id-ID"));
+  setText("kpiTradeLmtdPST",Math.round(totalTradeLmtd).toLocaleString("id-ID"));
   setText("kpiVlrLmtdPST",Math.round(totalVlrLmtd).toLocaleString("id-ID"));
   setText("kpiRguTradeLmtdPST",Math.round(totalRguLmtd).toLocaleString("id-ID"));
   setText("kpiSpSellInLmtdPST",Math.round(totalSellInLmtd).toLocaleString("id-ID")+" pcs");
@@ -1587,9 +1587,9 @@ function updateExecutiveSummaryNew() {
     let pctBio = totalOutlet > 0 ? (globalBioAchCount / totalOutlet) * 100 : 0;
     let pctTag = totalOutlet > 0 ? (globalTagAchCount / totalOutlet) * 100 : 0;
 
-    document.getElementById("exKpiRev").innerText = "Rp " + Math.round(totalRev).toLocaleString('id-ID');
-    document.getElementById("exKpiTertiary").innerText = "Rp " + Math.round(totalTertiary).toLocaleString('id-ID');
-    document.getElementById("exKpiTradeSupply").innerText = "Rp " + Math.round(totalTradeSupply).toLocaleString('id-ID');
+    document.getElementById("exKpiRev").innerText = Math.round(totalRev).toLocaleString('id-ID');
+    document.getElementById("exKpiTertiary").innerText = Math.round(totalTertiary).toLocaleString('id-ID');
+    document.getElementById("exKpiTradeSupply").innerText = Math.round(totalTradeSupply).toLocaleString('id-ID');
     document.getElementById("exKpiSellIn").innerText = pctSellIn.toFixed(1) + "%";
     document.getElementById("exKpiOsa").innerText = pctOsa.toFixed(1) + "%";
     document.getElementById("exKpiBio").innerText = pctBio.toFixed(1) + "%";
