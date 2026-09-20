@@ -678,7 +678,7 @@ function resetFilters(tabId) {
     else if (tabId === 'partner-performance') updateDashboardPP();
 }
 
-const p1 = fetch("MS BENGKAYANG 19 JULI 2026.xlsx")
+const p1 = fetch("PST.xlsx")
   .then((res) => res.arrayBuffer())
   .then((data) => {
     const wb = XLSX.read(data, { type: "array" });
@@ -841,23 +841,18 @@ function updateDashboardMS() {
 
   const selectedKecamatan = document.getElementById("kecamatanFilter")?.value || "ALL";
   const searchKeyword = document.getElementById("searchInput")?.value.toLowerCase().trim() || "";
-  
   let idxKec = 0;
   let idxPartner = globalHeaderMS.findIndex(h => h.toUpperCase().includes("PARTNER"));
-  let idxRevMtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("REVENUE MTD"));
-  let idxRevLmtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("REVENUE LMTD"));
-  let idxPrimMtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("PRIMARY MTD"));
-  let idxPrimLmtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("PRIMARY LMTD"));
-  let idxSecMtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("SECONDARY MTD"));
-  let idxSecLmtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("SECONDARY LMTD"));
-  let idxTertMtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("TERTIARY B# MTD"));
-  let idxTertLmtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("TERTIARY B# LMTD"));
-  let idxTradeMtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("TRADE SUPPLY MTD"));
-  let idxTradeLmtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("TRADE SUPPLY LMTD"));
-  let idxVlrMtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("VLR SUBS MTD"));
-  let idxVlrLmtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("VLR SUBS LMTD"));
-  let idxRguMtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("RGUGA TRADE MTD"));
-  let idxRguLmtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("RGUGA TRADE LMTD"));
+
+  const findCol = (name) => globalHeaderMS.findIndex(h => h.toUpperCase().includes(name));
+  const idxRevMtd = findCol("REVENUE MTD"), idxRevLmtd = findCol("REVENUE LMTD");
+  const idxPrimMtd = findCol("PRIMARY MTD"), idxPrimLmtd = findCol("PRIMARY LMTD");
+  const idxSecMtd = findCol("SECONDARY MTD"), idxSecLmtd = findCol("SECONDARY LMTD");
+  const idxTertMtd = findCol("TERTIARY B# MTD"), idxTertLmtd = findCol("TERTIARY B# LMTD");
+  const idxTradeMtd = findCol("TRADE SUPPLY MTD"), idxTradeLmtd = findCol("TRADE SUPPLY LMTD");
+  const idxVlrMtd = findCol("VLR SUBS MTD"), idxVlrLmtd = findCol("VLR SUBS LMTD");
+  const idxRguMtd = findCol("RGUGA TRADE MTD"), idxRguLmtd = findCol("RGUGA TRADE LMTD");
+  const idxSellInMtd = findCol("SP SELL IN MTD"), idxSellInLmtd = findCol("SP SELL IN LMTD");
 
   const filteredRows = globalDataMS.filter((r) => {
     const kecName = String(r[idxKec] || "").trim();
@@ -867,58 +862,45 @@ function updateDashboardMS() {
            r.join(" ").toLowerCase().includes(searchKeyword);
   });
 
-  let totalRevMtd = 0, totalRevLmtd = 0;
-  let totalPrimaryMtd = 0, totalPrimaryLmtd = 0;
-  let totalSecondaryMtd = 0, totalSecondaryLmtd = 0;
-  let totalTertiaryMtd = 0, totalTertiaryLmtd = 0;
-  let totalTradeMtd = 0, totalTradeLmtd = 0;
-  let totalVlrMtd = 0, totalVlrLmtd = 0;
-  let totalRguMtd = 0, totalRguLmtd = 0;
-
-  filteredRows.forEach((r) => {
-    if (idxRevMtd !== -1) totalRevMtd += parseNum(r[idxRevMtd]);
-    if (idxRevLmtd !== -1) totalRevLmtd += parseNum(r[idxRevLmtd]);
-    if (idxPrimMtd !== -1) totalPrimaryMtd += parseNum(r[idxPrimMtd]);
-    if (idxPrimLmtd !== -1) totalPrimaryLmtd += parseNum(r[idxPrimLmtd]);
-    if (idxSecMtd !== -1) totalSecondaryMtd += parseNum(r[idxSecMtd]);
-    if (idxSecLmtd !== -1) totalSecondaryLmtd += parseNum(r[idxSecLmtd]);
-    if (idxTertMtd !== -1) totalTertiaryMtd += parseNum(r[idxTertMtd]);
-    if (idxTertLmtd !== -1) totalTertiaryLmtd += parseNum(r[idxTertLmtd]);
-    if (idxTradeMtd !== -1) totalTradeMtd += parseNum(r[idxTradeMtd]);
-    if (idxTradeLmtd !== -1) totalTradeLmtd += parseNum(r[idxTradeLmtd]);
-    if (idxVlrMtd !== -1) totalVlrMtd += parseNum(r[idxVlrMtd]);
-    if (idxVlrLmtd !== -1) totalVlrLmtd += parseNum(r[idxVlrLmtd]);
-    if (idxRguMtd !== -1) totalRguMtd += parseNum(r[idxRguMtd]);
-    if (idxRguLmtd !== -1) totalRguLmtd += parseNum(r[idxRguLmtd]);
+  let totalRevMtd=0,totalRevLmtd=0,totalPrimaryMtd=0,totalPrimaryLmtd=0,totalSecondaryMtd=0,totalSecondaryLmtd=0;
+  let totalTertiaryMtd=0,totalTertiaryLmtd=0,totalTradeMtd=0,totalTradeLmtd=0,totalVlrMtd=0,totalVlrLmtd=0,totalRguMtd=0,totalRguLmtd=0,totalSellInMtd=0,totalSellInLmtd=0;
+  filteredRows.forEach(r => {
+    if(idxRevMtd!==-1) totalRevMtd+=parseNum(r[idxRevMtd]); if(idxRevLmtd!==-1) totalRevLmtd+=parseNum(r[idxRevLmtd]);
+    if(idxPrimMtd!==-1) totalPrimaryMtd+=parseNum(r[idxPrimMtd]); if(idxPrimLmtd!==-1) totalPrimaryLmtd+=parseNum(r[idxPrimLmtd]);
+    if(idxSecMtd!==-1) totalSecondaryMtd+=parseNum(r[idxSecMtd]); if(idxSecLmtd!==-1) totalSecondaryLmtd+=parseNum(r[idxSecLmtd]);
+    if(idxTertMtd!==-1) totalTertiaryMtd+=parseNum(r[idxTertMtd]); if(idxTertLmtd!==-1) totalTertiaryLmtd+=parseNum(r[idxTertLmtd]);
+    if(idxTradeMtd!==-1) totalTradeMtd+=parseNum(r[idxTradeMtd]); if(idxTradeLmtd!==-1) totalTradeLmtd+=parseNum(r[idxTradeLmtd]);
+    if(idxVlrMtd!==-1) totalVlrMtd+=parseNum(r[idxVlrMtd]); if(idxVlrLmtd!==-1) totalVlrLmtd+=parseNum(r[idxVlrLmtd]);
+    if(idxRguMtd!==-1) totalRguMtd+=parseNum(r[idxRguMtd]); if(idxRguLmtd!==-1) totalRguLmtd+=parseNum(r[idxRguLmtd]);
+    if(idxSellInMtd!==-1) totalSellInMtd+=parseNum(r[idxSellInMtd]); if(idxSellInLmtd!==-1) totalSellInLmtd+=parseNum(r[idxSellInLmtd]);
   });
 
-  animateCounter("kpiRevenuePST", totalRevMtd, false);
+  animateCounter("kpiRevenuePST", totalRevMtd, true);
   animateCounter("kpiPrimaryPST", totalPrimaryMtd);
   animateCounter("kpiSecondaryPST", totalSecondaryMtd);
   animateCounter("kpiTertiaryPST", totalTertiaryMtd);
-  animateCounter("kpiTradeSupplyPST", totalTradeMtd, false);
+  animateCounter("kpiTradeSupplyPST", totalTradeMtd, true);
   animateCounter("kpiVlrPST", totalVlrMtd);
   animateCounter("kpiRguTradePST", totalRguMtd);
+  animateCounter("kpiSpSellInPST", totalSellInMtd);
 
-  document.getElementById("kpiRevLmtdPST").innerText = Math.round(totalRevLmtd).toLocaleString("id-ID");
-  document.getElementById("kpiPrimaryLmtdPST").innerText = Math.round(totalPrimaryLmtd).toLocaleString("id-ID");
-  document.getElementById("kpiSecondaryLmtdPST").innerText = Math.round(totalSecondaryLmtd).toLocaleString("id-ID");
-  document.getElementById("kpiTertiaryLmtdPST").innerText = Math.round(totalTertiaryLmtd).toLocaleString("id-ID");
-  document.getElementById("kpiTradeLmtdPST").innerText = Math.round(totalTradeLmtd).toLocaleString("id-ID");
-  document.getElementById("kpiVlrLmtdPST").innerText = Math.round(totalVlrLmtd).toLocaleString("id-ID");
-  document.getElementById("kpiRguTradeLmtdPST").innerText = Math.round(totalRguLmtd).toLocaleString("id-ID");
+  const setText=(id,val)=>{const e=document.getElementById(id);if(e)e.innerText=val;};
+  setText("kpiRevLmtdPST","Rp "+Math.round(totalRevLmtd).toLocaleString("id-ID"));
+  setText("kpiPrimaryLmtdPST",Math.round(totalPrimaryLmtd).toLocaleString("id-ID"));
+  setText("kpiSecondaryLmtdPST",Math.round(totalSecondaryLmtd).toLocaleString("id-ID"));
+  setText("kpiTertiaryLmtdPST",Math.round(totalTertiaryLmtd).toLocaleString("id-ID"));
+  setText("kpiTradeLmtdPST","Rp "+Math.round(totalTradeLmtd).toLocaleString("id-ID"));
+  setText("kpiVlrLmtdPST",Math.round(totalVlrLmtd).toLocaleString("id-ID"));
+  setText("kpiRguTradeLmtdPST",Math.round(totalRguLmtd).toLocaleString("id-ID"));
+  setText("kpiSpSellInLmtdPST",Math.round(totalSellInLmtd).toLocaleString("id-ID")+" pcs");
 
-  updateGrowthBadge("kpiRevGrowthPST", totalRevMtd, totalRevLmtd);
-  updateGrowthBadge("kpiPrimaryGrowthPST", totalPrimaryMtd, totalPrimaryLmtd);
-  updateGrowthBadge("kpiSecondaryGrowthPST", totalSecondaryMtd, totalSecondaryLmtd);
-  updateGrowthBadge("kpiTertiaryGrowthPST", totalTertiaryMtd, totalTertiaryLmtd);
-  updateGrowthBadge("kpiTradeGrowthPST", totalTradeMtd, totalTradeLmtd);
-  updateGrowthBadge("kpiVlrGrowthPST", totalVlrMtd, totalVlrLmtd);
-  updateGrowthBadge("kpiRguTradeGrowthPST", totalRguMtd, totalRguLmtd);
+  updateGrowthBadge("kpiRevGrowthPST",totalRevMtd,totalRevLmtd); updateGrowthBadge("kpiPrimaryGrowthPST",totalPrimaryMtd,totalPrimaryLmtd);
+  updateGrowthBadge("kpiSecondaryGrowthPST",totalSecondaryMtd,totalSecondaryLmtd); updateGrowthBadge("kpiTertiaryGrowthPST",totalTertiaryMtd,totalTertiaryLmtd);
+  updateGrowthBadge("kpiTradeGrowthPST",totalTradeMtd,totalTradeLmtd); updateGrowthBadge("kpiVlrGrowthPST",totalVlrMtd,totalVlrLmtd);
+  updateGrowthBadge("kpiRguTradeGrowthPST",totalRguMtd,totalRguLmtd); updateGrowthBadge("kpiSpSellInGrowthPST",totalSellInMtd,totalSellInLmtd);
 
-  document.getElementById("stickyRev").innerText = "Rp " + Math.round(totalRevMtd).toLocaleString("id-ID");
-  renderPstMainLineChart(filteredRows);
-  renderTable("dataTable", globalHeaderMS, filteredRows);
+  const sticky=document.getElementById("stickyRev"); if(sticky) sticky.innerText="Rp "+Math.round(totalRevMtd).toLocaleString("id-ID");
+  currentPstFilteredRows=filteredRows; renderPstMainLineChart(filteredRows); renderTable("dataTable",globalHeaderMS,filteredRows);
 }
 
 function updateDashboardSM() {
@@ -1606,12 +1588,43 @@ function updateExecutiveSummaryNew() {
     let pctTag = totalOutlet > 0 ? (globalTagAchCount / totalOutlet) * 100 : 0;
 
     document.getElementById("exKpiRev").innerText = "Rp " + Math.round(totalRev).toLocaleString('id-ID');
-    document.getElementById("exKpiTertiary").innerText = Math.round(totalTertiary).toLocaleString('id-ID');
+    document.getElementById("exKpiTertiary").innerText = "Rp " + Math.round(totalTertiary).toLocaleString('id-ID');
     document.getElementById("exKpiTradeSupply").innerText = "Rp " + Math.round(totalTradeSupply).toLocaleString('id-ID');
     document.getElementById("exKpiSellIn").innerText = pctSellIn.toFixed(1) + "%";
     document.getElementById("exKpiOsa").innerText = pctOsa.toFixed(1) + "%";
     document.getElementById("exKpiBio").innerText = pctBio.toFixed(1) + "%";
     document.getElementById("exKpiTag").innerText = pctTag.toFixed(1) + "%";
+
+    // KPI GLOBAL: gunakan LMTD jika kolom/data tersedia; jika tidak, gunakan Target.
+    const globalIdxRevLmtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("REVENUE LMTD"));
+    const globalIdxTertLmtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("TERTIARY B# LMTD"));
+    const globalIdxTradeLmtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("TRADE SUPPLY LMTD"));
+    let globalRevLmtd=0, globalTertLmtd=0, globalTradeLmtd=0;
+    globalDataMS.forEach(r=>{
+        if(globalIdxRevLmtd!==-1) globalRevLmtd += parseNum(r[globalIdxRevLmtd]);
+        if(globalIdxTertLmtd!==-1) globalTertLmtd += parseNum(r[globalIdxTertLmtd]);
+        if(globalIdxTradeLmtd!==-1) globalTradeLmtd += parseNum(r[globalIdxTradeLmtd]);
+    });
+    const hasRevLmtd = globalIdxRevLmtd !== -1 && globalRevLmtd !== 0;
+    const hasTertLmtd = globalIdxTertLmtd !== -1 && globalTertLmtd !== 0;
+    const hasTradeLmtd = globalIdxTradeLmtd !== -1 && globalTradeLmtd !== 0;
+    const setGlobal = (id,text)=>{const e=document.getElementById(id);if(e)e.innerText=text;};
+    const growthText=(m,l)=>{const g=l!==0?((m-l)/Math.abs(l))*100:0;return (g>=0?'+':'')+g.toFixed(2)+'%';};
+    setGlobal('exKpiRevCompare',hasRevLmtd?'LMTD: Rp '+Math.round(globalRevLmtd).toLocaleString('id-ID'):'Target: -');
+    setGlobal('exKpiRevGrowth',hasRevLmtd?'Growth: '+growthText(totalRev,globalRevLmtd):'');
+    setGlobal('exKpiTertiaryCompare',hasTertLmtd?'LMTD: Rp '+Math.round(globalTertLmtd).toLocaleString('id-ID'):'Target: -');
+    setGlobal('exKpiTertiaryGrowth',hasTertLmtd?'Growth: '+growthText(totalTertiary,globalTertLmtd):'');
+    setGlobal('exKpiTradeCompare',hasTradeLmtd?'LMTD: Rp '+Math.round(globalTradeLmtd).toLocaleString('id-ID'):'Target: '+Math.round(globalTargetRSE.tradeSupply).toLocaleString('id-ID'));
+    setGlobal('exKpiTradeGrowth',hasTradeLmtd?'Growth: '+growthText(totalTradeSupply,globalTradeLmtd):'Ach: '+(globalTargetRSE.tradeSupply>0?(totalTradeSupply/globalTargetRSE.tradeSupply*100).toFixed(1):'0.0')+'%');
+    setGlobal('exKpiSellInCompare','Target: '+Math.round(globalTargetRSE.sellInSP).toLocaleString('id-ID')+' pcs');
+    setGlobal('exKpiSellInGrowth','Ach: '+pctSellIn.toFixed(1)+'%');
+    setGlobal('exKpiOsaCompare','Target: Rp '+Math.round(targetOsa).toLocaleString('id-ID'));
+    setGlobal('exKpiOsaGrowth','Ach: '+pctOsa.toFixed(1)+'%');
+    const globalBioTarget=Math.ceil(totalOutlet*0.8), globalTagTarget=Math.ceil(totalOutlet*0.6);
+    setGlobal('exKpiBioCompare','Target: '+globalBioTarget.toLocaleString('id-ID')+' Outlet');
+    setGlobal('exKpiBioGrowth','Ach: '+(globalBioTarget>0?(globalBioAchCount/globalBioTarget*100).toFixed(1):'0.0')+'%');
+    setGlobal('exKpiTagCompare','Target: '+globalTagTarget.toLocaleString('id-ID')+' Outlet');
+    setGlobal('exKpiTagGrowth','Ach: '+(globalTagTarget>0?(globalTagAchCount/globalTagTarget*100).toFixed(1):'0.0')+'%');
 
     // TARGET DINAMIS dari Target RSE.xlsx
     let tradeTargetVal = globalTargetRSE.tradeSupply;
@@ -1719,6 +1732,17 @@ function updateExecutiveSummaryNew() {
     document.getElementById("exTotalGapOsa").innerText = `GAP Total: Rp ${Math.round(totalGapOsa).toLocaleString('id-ID')}`;
     document.getElementById("exTotalBioGap").innerText = `GAP Total: ${dseTotalBioGap} Outlet`;
     document.getElementById("exTotalTagGap").innerText = `GAP Total: ${dseTotalTagGap} Outlet`;
+
+    // REQ K2 — Target Total selalu global, sesuai definisi KPI.
+    const targetTotalSellInRSE = Math.round(globalTargetRSE.sellInSP || 0);
+    const targetTotalOsa = Math.round(targetOsa);
+    const targetTotalBio = Math.ceil(totalOutlet * 0.80);
+    const targetTotalTag = Math.ceil(totalOutlet * 0.60);
+    const setMissionTarget=(id,text)=>{const e=document.getElementById(id);if(e)e.innerText=text;};
+    setMissionTarget("exTotalTargetSellIn", `Target Total: ${targetTotalSellInRSE.toLocaleString('id-ID')} pcs`);
+    setMissionTarget("exTotalTargetOsa", `Target Total: Rp ${targetTotalOsa.toLocaleString('id-ID')}`);
+    setMissionTarget("exTotalTargetBio", `Target Total: ${targetTotalBio.toLocaleString('id-ID')} Outlet`);
+    setMissionTarget("exTotalTargetTag", `Target Total: ${targetTotalTag.toLocaleString('id-ID')} Outlet`);
 
     renderTargetNonKpiTable(selDse);
 }
@@ -1991,7 +2015,8 @@ function switchPstMetric(metricKey) {
         'tertiary': 'btnPstTertiary',
         'trade': 'btnPstTrade',
         'vlr': 'btnPstVlr',
-        'rguga': 'btnPstRguga'
+        'rguga': 'btnPstRguga',
+        'sellin': 'btnPstSellIn'
     };
     
     Object.keys(btnMap).forEach(key => {
@@ -2045,6 +2070,11 @@ function renderPstMainLineChart(rows) {
     } else if (currentPstMetric === 'rguga') {
         idxMtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("RGUGA TRADE MTD"));
         idxLmtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("RGUGA TRADE LMTD"));
+        isCurrency = false;
+    }
+ else if (currentPstMetric === 'sellin') {
+        idxMtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("SP SELL IN MTD"));
+        idxLmtd = globalHeaderMS.findIndex(h => h.toUpperCase().includes("SP SELL IN LMTD"));
         isCurrency = false;
     }
 
@@ -2111,7 +2141,7 @@ function renderPstMainLineChart(rows) {
                     beginAtZero: true,
                     ticks: {
                         font: { size: 10 },
-                        callback: function(v) { return isCurrency ? 'Rp ' + Math.round(v/1e6) + 'Jt' : Math.round(v).toLocaleString('id-ID'); }
+                        callback: function(v) { return isCurrency ? 'Rp ' + Math.round(v).toLocaleString('id-ID') : Math.round(v).toLocaleString('id-ID'); }
                     }
                 }
             }

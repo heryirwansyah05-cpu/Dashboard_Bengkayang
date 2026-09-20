@@ -351,57 +351,14 @@ const EXECUTIVE_MONTHS = [
    ========================================================= */
 
 function formatExecutiveTrendValue(value) {
-
     value = Number(value) || 0;
 
-    if (
-        executiveTrendMetric === "rev" ||
-        executiveTrendMetric === "trade"
-    ) {
-
-        if (Math.abs(value) >= 1000000000) {
-
-            return "Rp " +
-                (value / 1000000000).toFixed(1) +
-                " M";
-
-        }
-
-        if (Math.abs(value) >= 1000000) {
-
-            return "Rp " +
-                (value / 1000000).toFixed(0) +
-                " Jt";
-
-        }
-
-        return "Rp " +
-            Math.round(value).toLocaleString("id-ID");
-
+    if (executiveTrendMetric === "rev" || executiveTrendMetric === "trade") {
+        return "Rp " + Math.round(value).toLocaleString("id-ID");
     }
 
-
-    if (Math.abs(value) >= 1000000) {
-
-        return (
-            value / 1000000
-        ).toFixed(1) + " M";
-
-    }
-
-    if (Math.abs(value) >= 1000) {
-
-        return (
-            value / 1000
-        ).toFixed(0) + " K";
-
-    }
-
-    return Math.round(value)
-        .toLocaleString("id-ID");
-
+    return Math.round(value).toLocaleString("id-ID");
 }
-
 
 /* =========================================================
    FILTER PT

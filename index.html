@@ -196,6 +196,30 @@
     grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
     gap: 8px !important;
 }
+#all-summary-tab .exec-kpi-box .kpi-global-compare,
+#all-summary-tab .exec-kpi-box .kpi-global-growth {
+    display:block !important;
+    margin-top:3px !important;
+    font-size:8.5px !important;
+    line-height:1.05 !important;
+    white-space:nowrap !important;
+    color:#64748B !important;
+}
+#all-summary-tab .exec-kpi-box .kpi-global-growth {
+    font-weight:800 !important;
+}
+#all-summary-tab .exec-kpi-box {
+    height:96px !important;
+}
+#all-summary-tab .mission-stat-card .m-target {
+    display:block !important;
+    margin-top:3px !important;
+    font-size:10px !important;
+    line-height:1.1 !important;
+    font-weight:800 !important;
+    color:#475569 !important;
+}
+
 #all-summary-tab .exec-kpi-box {
     min-width: 0 !important;
     height: 74px !important;
@@ -337,30 +361,44 @@
                     <div class="exec-kpi-box box-red">
                         <span class="box-lbl">REVENUE MTD</span>
                         <b class="box-val" id="exKpiRev" style="white-space: nowrap;">Rp 0</b>
+                        <div class="kpi-global-compare" id="exKpiRevCompare">LMTD: Rp 0</div>
+                        <div class="kpi-global-growth" id="exKpiRevGrowth">Growth: 0.00%</div>
                     </div>
                     <div class="exec-kpi-box box-yellow">
-                        <span class="box-lbl">TERTIARY B#</span>
+                        <span class="box-lbl">TERTIARY B# MTD</span>
                         <b class="box-val" id="exKpiTertiary">Rp 0</b>
+                        <div class="kpi-global-compare" id="exKpiTertiaryCompare">LMTD: Rp 0</div>
+                        <div class="kpi-global-growth" id="exKpiTertiaryGrowth">Growth: 0.00%</div>
                     </div>
                     <div class="exec-kpi-box box-magenta">
-                        <span class="box-lbl">TRADE SUPPLY</span>
+                        <span class="box-lbl">TRADE SUPPLY MTD</span>
                         <b class="box-val" id="exKpiTradeSupply">Rp 0</b>
+                        <div class="kpi-global-compare" id="exKpiTradeCompare">LMTD: Rp 0</div>
+                        <div class="kpi-global-growth" id="exKpiTradeGrowth">Growth: 0.00%</div>
                     </div>
                     <div class="exec-kpi-box box-cyan">
                         <span class="box-lbl">SELL IN ACH %</span>
                         <b class="box-val" id="exKpiSellIn">0.0%</b>
+                        <div class="kpi-global-compare" id="exKpiSellInCompare">Target: 0 pcs</div>
+                        <div class="kpi-global-growth" id="exKpiSellInGrowth">Ach: 0.0%</div>
                     </div>
                     <div class="exec-kpi-box box-green">
                         <span class="box-lbl">OSA ACH %</span>
                         <b class="box-val" id="exKpiOsa">0.0%</b>
+                        <div class="kpi-global-compare" id="exKpiOsaCompare">Target: Rp 0</div>
+                        <div class="kpi-global-growth" id="exKpiOsaGrowth">Ach: 0.0%</div>
                     </div>
                     <div class="exec-kpi-box box-purple">
                         <span class="box-lbl">BIOMETRIK ACH %</span>
                         <b class="box-val" id="exKpiBio">0.0%</b>
+                        <div class="kpi-global-compare" id="exKpiBioCompare">Target: 0 Outlet</div>
+                        <div class="kpi-global-growth" id="exKpiBioGrowth">Ach: 0.0%</div>
                     </div>
                     <div class="exec-kpi-box box-orange">
                         <span class="box-lbl">TAGGING ACH %</span>
                         <b class="box-val" id="exKpiTag">0.0%</b>
+                        <div class="kpi-global-compare" id="exKpiTagCompare">Target: 0 Outlet</div>
+                        <div class="kpi-global-growth" id="exKpiTagGrowth">Ach: 0.0%</div>
                     </div>
                 </div>
             </div>
@@ -392,21 +430,25 @@
                         <span class="m-lbl"><i class="fa-solid fa-cart-shopping color-cyan"></i> TARGET Today SP SELL IN</span>
                         <b class="m-val color-cyan" id="exMissionSellInTgt">0 pcs</b>
                         <span class="m-sub" id="exTotalGapSelIn">GAP Total: 0 pcs</span>
+                        <span class="m-target" id="exTotalTargetSellIn">Target Total: 0 pcs</span>
                     </div>
                     <div class="mission-stat-card" onclick="actionGotoOutletUnach('OSA')">
                         <span class="m-lbl"><i class="fa-solid fa-bullseye color-green"></i> TARGET Today OSA</span>
                         <b class="m-val color-green" id="exMissionOsaTgt">Rp 0</b>
                         <span class="m-sub" id="exTotalGapOsa">GAP Total: Rp 0</span>
+                        <span class="m-target" id="exTotalTargetOsa">Target Total: Rp 0</span>
                     </div>
                     <div class="mission-stat-card" onclick="actionGotoOutletUnach('BIO')">
                         <span class="m-lbl"><i class="fa-solid fa-fingerprint color-purple"></i> BELUM BIOMETRIK</span>
                         <b class="m-val color-purple" id="exMissionBioUnach">0 Outlet</b>
                         <span class="m-sub" id="exTotalBioGap">GAP Total: 0 Outlet</span>
+                        <span class="m-target" id="exTotalTargetBio">Target Total: 0 Outlet</span>
                     </div>
                     <div class="mission-stat-card" onclick="actionGotoOutletUnach('TAG')">
                         <span class="m-lbl"><i class="fa-solid fa-tags color-orange"></i> BELUM TAGGING 3PCS</span>
                         <b class="m-val color-orange" id="exMissionTagUnach">0 Outlet</b>
                         <span class="m-sub" id="exTotalTagGap">GAP Total: 0 Outlet</span>
+                        <span class="m-target" id="exTotalTargetTag">Target Total: 0 Outlet</span>
                     </div>
                 </div>
             </div>
@@ -590,7 +632,7 @@
                 <button class="btn-snapshot-section" onclick="takeSectionSnapshot('snapshotPstDashboard')"><i class="fa-solid fa-camera"></i> Snapshot PST Dashboard</button>
             </div>
             
-            <div class="kpi-grid" style="grid-template-columns: repeat(7, minmax(0, 1fr));">
+            <div class="kpi-grid" style="grid-template-columns: repeat(8, minmax(0, 1fr));">
                 <div class="card card-red">
                     <div class="icon"><i class="fa-solid fa-chart-line"></i></div>
                     <div class="card-body">
@@ -654,6 +696,15 @@
                         <div class="kpi-growth-row">Growth: <span id="kpiRguTradeGrowthPST" class="growth-badge">0%</span></div>
                     </div>
                 </div>
+                <div class="card card-cyan">
+                    <div class="icon"><i class="fa-solid fa-cart-shopping"></i></div>
+                    <div class="card-body">
+                        <h3>TOTAL SP SELL IN</h3>
+                        <div class="kpi-main-val" id="kpiSpSellInPST" style="font-size:14px;">0 pcs</div>
+                        <div class="kpi-compare-row">LMTD: <span id="kpiSpSellInLmtdPST">0</span></div>
+                        <div class="kpi-growth-row">Growth: <span id="kpiSpSellInGrowthPST" class="growth-badge">0%</span></div>
+                    </div>
+                </div>
             </div>
 
             <div style="background: #ffffff; padding: 20px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); margin-bottom: 20px;">
@@ -672,6 +723,7 @@
                         <button onclick="switchPstMetric('trade')" id="btnPstTrade" class="pst-metric-btn" style="padding: 6px 12px; border-radius: 8px; border: none; font-size: 11px; font-weight: 800; cursor: pointer; background: transparent; color: #64748b;">Trade Supply</button>
                         <button onclick="switchPstMetric('vlr')" id="btnPstVlr" class="pst-metric-btn" style="padding: 6px 12px; border-radius: 8px; border: none; font-size: 11px; font-weight: 800; cursor: pointer; background: transparent; color: #64748b;">VLR Subs</button>
                         <button onclick="switchPstMetric('rguga')" id="btnPstRguga" class="pst-metric-btn" style="padding: 6px 12px; border-radius: 8px; border: none; font-size: 11px; font-weight: 800; cursor: pointer; background: transparent; color: #64748b;">RGUGA Trade</button>
+                        <button onclick="switchPstMetric('sellin')" id="btnPstSellIn" class="pst-metric-btn" style="padding: 6px 12px; border-radius: 8px; border: none; font-size: 11px; font-weight: 800; cursor: pointer; background: transparent; color: #64748b;">SP Sell In</button>
                     </div>
                 </div>
                 <div style="height: 280px; position: relative;">
