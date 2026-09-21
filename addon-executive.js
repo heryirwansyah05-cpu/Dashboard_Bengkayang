@@ -5662,3 +5662,211 @@ document.addEventListener(
     setTimeout(forceDseRowNormal, 500);
     setTimeout(forceDseRowNormal, 1500);
 })();
+
+/* =========================================================
+   FINAL PATCH — TARGET RSE LAST UPDATE + KPI NUMBER SAFETY
+   21 SEPTEMBER 2026
+   ---------------------------------------------------------
+   ADDITIVE ONLY:
+   - Tidak menghapus / mengganti fungsi existing.
+   - Membaca TARGET RSE.xlsx, Sheet1, cell F2.
+   - Menampilkan nilainya pada #lastUpdateHeaderText.
+   - Fallback ke TARGET RSE(4).xlsx untuk file hasil upload saat ini.
+   ========================================================= */
+(function TARGET_RSE_LAST_UPDATE_PATCH () {
+    "use strict";
+
+    const TARGET_RSE_FILE_CANDIDATES = [
+        "TARGET RSE.xlsx",
+        "TARGET RSE(4).xlsx"
+    ];
+
+    function setHeaderLastUpdate(value) {
+        const el = document.getElementById("lastUpdateHeaderText");
+        if (!el) return false;
+
+        const text = String(value ?? "").trim();
+        if (!text) return false;
+
+        el.textContent = "Last Update: " + text;
+        el.title = "Sumber: TARGET RSE.xlsx — Sheet1!F2";
+        el.dataset.source = "TARGET RSE.xlsx!Sheet1!F2";
+        return true;
+    }
+
+    function normalizeExcelDate(value) {
+        if (value === null || value === undefined || value === "") return "";
+
+        // Jika XLSX mengembalikan Date.
+        if (value instanceof Date && !Number.isNaN(value.getTime())) {
+            return value.toLocaleDateString("id-ID", {
+                day: "2-digit",
+                month: "long",
+                year: "numeric"
+            }).toUpperCase();
+        }
+
+        // Nilai dari file TARGET RSE saat ini adalah string seperti:
+        // "19 SEPTEMBER 2026". Pertahankan isi aslinya.
+        return String(value).trim();
+    }
+
+    async function readTargetRseLastUpdate() {
+        if (typeof XLSX === "undefined") {
+            console.warn("[TARGET RSE] XLSX library belum tersedia.");
+            return false;
+        }
+
+        for (const fileName of TARGET_RSE_FILE_CANDIDATES) {
+            try {
+                const url = encodeURI("./" + fileName) + "?v=" + Date.now();
+                const response = await fetch(url, {
+                    cache: "no-store",
+                    credentials: "same-origin"
+                });
+
+                if (!response.ok) continue;
+
+                const buffer = await response.arrayBuffer();
+                const wb = XLSX.read(buffer, {
+                    type: "array",
+                    cellDates: true
+                });
+
+                const sheetName =
+                    wb.SheetNames.find(s =>
+                        String(s).trim().toUpperCase() === "SHEET1"
+                    ) || wb.SheetNames[0];
+
+                if (!sheetName) continue;
+
+                const ws = wb.Sheets[sheetName];
+                if (!ws) continue;
+
+                // Langsung baca cell F2 agar persis mengikuti requirement.
+                const cell = ws["F2"];
+                const rawValue = cell ? cell.v : "";
+
+                // Fallback jika cell F2 tersimpan sebagai formula / format lain.
+                let value = rawValue;
+                if (value === undefined || value === null || value === "") {
+                    const rows = XLSX.utils.sheet_to_json(ws, {
+                        header: 1,
+                        raw: true,
+                        defval: ""
+                    });
+                    value = rows?.[1]?.[5] ?? "";
+                }
+
+                const normalized = normalizeExcelDate(value);
+
+                if (normalized) {
+                    setHeaderLastUpdate(normalized);
+                    console.info(
+                        "[TARGET RSE] Last Update berhasil dibaca:",
+                        normalized,
+                        `(${fileName}!${sheetName}!F2)`
+                    );
+                    return true;
+                }
+            } catch (error) {
+                console.warn(
+                    `[TARGET RSE] Gagal membaca ${fileName}:`,
+                    error
+                );
+            }
+        }
+
+        console.warn(
+            "[TARGET RSE] File tidak ditemukan / F2 kosong. " +
+            "Pastikan TARGET RSE.xlsx berada di folder yang sama dengan index.html."
+        );
+        return false;
+    }
+
+    function bootTargetRseLastUpdate() {
+        // Jalankan beberapa kali karena script.js dapat memuat dashboard
+        // secara asynchronous. Tidak mengubah data KPI existing.
+        readTargetRseLastUpdate();
+
+        setTimeout(readTargetRseLastUpdate, 800);
+        setTimeout(readTargetRseLastUpdate, 2000);
+        setTimeout(readTargetRseLastUpdate, 5000);
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener(
+            "DOMContentLoaded",
+            bootTargetRseLastUpdate,
+            { once: true }
+        );
+    } else {
+        bootTargetRseLastUpdate();
+    }
+
+    window.addEventListener("load", () => {
+        setTimeout(readTargetRseLastUpdate, 300);
+    }, { once: true });
+
+    // Bisa dipanggil manual dari console jika diperlukan:
+    window.refreshTargetRseLastUpdate = readTargetRseLastUpdate;
+})();
+
+/* =========================================================
+   FINAL PATCH — KPI FONT OVERRIDE (BACKUP JS STYLE)
+   ---------------------------------------------------------
+   Dipasang juga lewat JS supaya ukuran tetap aman bila ada
+   style inline / addon lain yang memuat setelah CSS.
+   ========================================================= */
+(function KPI_FONT_SAFETY_PATCH () {
+    "use strict";
+
+    const STYLE_ID = "kpi-font-safety-patch-20260921";
+
+    function injectKpiSafetyStyle() {
+        if (document.getElementById(STYLE_ID)) return;
+
+        const style = document.createElement("style");
+        style.id = STYLE_ID;
+        style.textContent = `
+            #ms-bengkayang .kpi-grid .kpi-main-val {
+                font-size: 11.5px !important;
+                line-height: 1.12 !important;
+                white-space: nowrap !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+            }
+
+            #ms-bengkayang .kpi-grid .kpi-compare-row,
+            #ms-bengkayang .kpi-grid .kpi-growth-row {
+                font-size: 8.5px !important;
+                line-height: 1.1 !important;
+            }
+
+            #all-summary-tab #snapshotSectionGlobal .exec-kpi-box .box-val {
+                font-size: 11.5px !important;
+                line-height: 1.08 !important;
+                white-space: nowrap !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+            }
+
+            #all-summary-tab #snapshotSectionGlobal .exec-kpi-box .kpi-global-compare,
+            #all-summary-tab #snapshotSectionGlobal .exec-kpi-box .kpi-global-growth {
+                font-size: 8px !important;
+                line-height: 1.05 !important;
+            }
+        `;
+
+        document.head.appendChild(style);
+    }
+
+    injectKpiSafetyStyle();
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", injectKpiSafetyStyle, { once: true });
+    }
+
+    window.addEventListener("load", injectKpiSafetyStyle, { once: true });
+})();
+
