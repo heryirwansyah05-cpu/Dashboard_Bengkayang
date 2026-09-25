@@ -202,6 +202,8 @@ const pTargetRSE = (async function(){
 
 let globalHeaderSM = [], globalDataSM = [];
 let globalHeaderDO = [], globalDataDO = [];
+// Mapping Site ID -> Site Name + Kecamatan dari SITE PROFIL BENGKAYANG.xlsx
+let siteMetaById = new Map();
 let globalHeaderDailyOSA = [], globalDataDailyOSA = [];
 let globalHeaderDailySP = [], globalDataDailySP = [];
 
@@ -716,7 +718,10 @@ function resetFilters(tabId) {
     if (tabId === 'detail-outlet') {
         quickFilterTypeDO = 'ALL';
         filterUnachModeDO = false;
+        populateDetailOutletLocationFilters();
         handleMultiSelectSelectAll('multiSelectDropdownDO', 'multiSelectLabelDO', true, updateDashboardDO);
+    } else if (tabId === 'outlet-mc') {
+        populateKecamatanSM();
     } else if (tabId === 'daily-dse') {
         handleMultiSelectSelectAll('multiSelectDropdownDaily', 'multiSelectLabelDaily', true, updateDashboardDaily);
     }
@@ -725,6 +730,156 @@ function resetFilters(tabId) {
     else if (tabId === 'outlet-mc') updateDashboardSM();
     else if (tabId === 'partner-performance') updateDashboardPP();
 }
+
+
+// ================================================================
+// SITE MASTER MAPPING
+// Sumber: SITE PROFIL BENGKAYANG.xlsx
+// Dipakai untuk menghubungkan:
+// Site Monitoring: SITE ID -> SITE NAME -> KECAMATAN
+// Detail Outlet  : SITE ID -> SITE NAME -> KECAMATAN
+// ================================================================
+function normalizeSiteId(value) {
+  return String(value ?? "").trim().toUpperCase();
+}
+
+function normalizeKecamatan(value) {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "";
+  // Data Excel berbentuk "LEDO|BENGKAYANG"; filter memakai nama kecamatan saja.
+  return raw.split("|")[0].trim();
+}
+
+function getSiteMeta(siteId) {
+  const key = normalizeSiteId(siteId);
+  return siteMetaById.get(key) || { id: String(siteId ?? "").trim(), name: "", kec: "" };
+}
+
+function populateKecamatanSM() {
+  const select = document.getElementById("kecamatanFilterMC");
+  if (!select) return;
+
+  const vals = new Set();
+  (globalDataSM || []).forEach(r => {
+    const meta = getSiteMeta(r[0]);
+    if (meta.kec) vals.add(meta.kec);
+  });
+
+  const current = select.value || "ALL";
+  select.innerHTML = '<option value="ALL">Semua Kecamatan</option>';
+  Array.from(vals).sort((a,b) => a.localeCompare(b, 'id')).forEach(v => {
+    const opt = document.createElement("option");
+    opt.value = v;
+    opt.textContent = v;
+    select.appendChild(opt);
+  });
+  if (Array.from(vals).includes(current)) select.value = current;
+}
+
+function populateDetailOutletLocationFilters() {
+  const kecSelect = document.getElementById("kecamatanFilterDO");
+  const siteSelect = document.getElementById("siteFilterDO");
+  if (!kecSelect || !siteSelect) return;
+
+  const siteIdIdx = globalHeaderDO.findIndex(h => String(h || "").toUpperCase().trim() === "SITE ID");
+  if (siteIdIdx === -1) {
+    console.warn("SITE ID tidak ditemukan pada Detail Outlet.");
+    return;
+  }
+
+  const kecVals = new Set();
+  const siteMap = new Map();
+  const selectedKec = kecSelect.value || "ALL";
+
+  (globalDataDO || []).forEach(r => {
+    const siteId = String(r[siteIdIdx] ?? "").trim();
+    if (!siteId) return;
+    const meta = getSiteMeta(siteId);
+    if (!meta.kec) return;
+    kecVals.add(meta.kec);
+    siteMap.set(normalizeSiteId(siteId), meta);
+  });
+
+  const oldKec = selectedKec;
+  kecSelect.innerHTML = '<option value="ALL">Semua Kecamatan</option>';
+  Array.from(kecVals).sort((a,b) => a.localeCompare(b, 'id')).forEach(v => {
+    const opt = document.createElement("option");
+    opt.value = v;
+    opt.textContent = v;
+    kecSelect.appendChild(opt);
+  });
+  if (oldKec === "ALL" || kecVals.has(oldKec)) kecSelect.value = oldKec;
+  else kecSelect.value = "ALL";
+
+  const activeKec = kecSelect.value || "ALL";
+  const validSites = new Map();
+  siteMap.forEach((meta, id) => {
+    if (activeKec === "ALL" || meta.kec === activeKec) validSites.set(id, meta);
+  });
+
+  const oldSite = siteSelect.value || "ALL";
+  siteSelect.innerHTML = '<option value="ALL">Semua Site</option>';
+  Array.from(validSites.entries())
+    .sort((a,b) => String(a[1].name || a[0]).localeCompare(String(b[1].name || b[0]), 'id'))
+    .forEach(([id, meta]) => {
+      const opt = document.createElement("option");
+      opt.value = id;
+      opt.textContent = meta.name ? `${id} - ${meta.name}` : id;
+      siteSelect.appendChild(opt);
+    });
+
+  if (oldSite !== "ALL" && validSites.has(normalizeSiteId(oldSite))) {
+    siteSelect.value = normalizeSiteId(oldSite);
+  } else {
+    siteSelect.value = "ALL";
+  }
+}
+
+async function loadSiteMasterMapping() {
+  const candidates = ["SITE PROFIL BENGKAYANG.xlsx", "SITE PROFIL BENGKAYANG(5).xlsx"];
+  let response = null;
+  for (const fileName of candidates) {
+    try {
+      const res = await fetch(fileName, { cache: "no-store" });
+      if (res.ok) { response = res; break; }
+    } catch (e) {}
+  }
+  if (!response) throw new Error("SITE PROFIL BENGKAYANG.xlsx tidak ditemukan.");
+
+  const buffer = await response.arrayBuffer();
+  const wb = XLSX.read(buffer, { type: "array" });
+  const sheetName = wb.SheetNames.find(s => String(s).trim().toUpperCase() === "SITE") || wb.SheetNames[0];
+  const ws = wb.Sheets[sheetName];
+  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true });
+  if (!rows || !rows.length) return;
+
+  const headerIdx = rows.findIndex(r => r && r.some(c => String(c ?? "").trim().toUpperCase() === "SITE ID"));
+  if (headerIdx === -1) throw new Error("Header SITE ID pada SITE PROFIL tidak ditemukan.");
+
+  const headers = rows[headerIdx].map(h => String(h ?? "").trim());
+  const idxId = headers.findIndex(h => h.toUpperCase() === "SITE ID");
+  const idxName = headers.findIndex(h => h.toUpperCase() === "SITE NAME");
+  const idxKec = headers.findIndex(h => h.toUpperCase() === "KECAMATAN");
+  const idxMth = headers.findIndex(h => h.toUpperCase() === "MTH");
+
+  rows.slice(headerIdx + 1).forEach(r => {
+    const id = normalizeSiteId(r[idxId]);
+    if (!id) return;
+    const meta = {
+      id: String(r[idxId] ?? "").trim(),
+      name: String(r[idxName] ?? "").trim(),
+      kec: normalizeKecamatan(r[idxKec])
+    };
+    // Prefer row MTD when the same Site ID appears several times.
+    const existing = siteMetaById.get(id);
+    if (!existing || String(r[idxMth] ?? "").trim().toLowerCase() === "mtd") {
+      siteMetaById.set(id, meta);
+    }
+  });
+}
+
+const pSiteMaster = loadSiteMasterMapping()
+  .catch(e => console.warn("Site master mapping gagal dimuat:", e));
 
 const p1 = fetch("PST.xlsx")
   .then((res) => res.arrayBuffer())
@@ -746,7 +901,7 @@ const p1 = fetch("PST.xlsx")
     updateDashboardMS();
   }).catch(e => console.log("PST load skip"));
 
-const p2 = fetch("SITE MONITORING.xlsx")
+const p2 = pSiteMaster.then(() => fetch("SITE MONITORING.xlsx"))
   .then((res) => res.arrayBuffer())
   .then((data) => {
     const wb = XLSX.read(data, { type: "array" });
@@ -755,13 +910,14 @@ const p2 = fetch("SITE MONITORING.xlsx")
     if (!rows || rows.length === 0) return;
     globalHeaderSM = (rows[0] || []).map((h) => String(h || "").replace(/\r?\n|\r/g, " ").trim());
     globalDataSM = rows.slice(1).filter(r => r.length > 0 && r[0] && String(r[0]).toUpperCase() !== "SITE ID");
+    populateKecamatanSM();
     populateDropdown(globalDataSM, "partnerFilterMC", 2, "Semua Partner MC");
     populateDropdown(globalDataSM, "dseFilterMC", 3, "Semua DSE Code");
     populateDropdown(globalDataSM, "categoryFilterMC", 4, "Semua Category");
     updateDashboardSM();
   }).catch(e => console.log("SM load skip"));
 
-const p3 = fetch("DETAIL OUTLET.xlsx")
+const p3 = pSiteMaster.then(() => fetch("DETAIL OUTLET.xlsx"))
   .then((res) => res.arrayBuffer())
   .then((data) => {
     const wb = XLSX.read(data, { type: "array" });
@@ -778,6 +934,7 @@ const p3 = fetch("DETAIL OUTLET.xlsx")
         return newRow;
     });
 
+    populateDetailOutletLocationFilters();
     populateMultiSelectDse(globalDataDO, "multiSelectDropdownDO", "multiSelectLabelDO", selectedDseSetDO, 2, updateDashboardDO);
     populateDropdown(globalDataDO, "execDseFilter", 2, "Semua DSE Code");
     populateDropdown(globalDataDO, "categoryFilterDO", 3, "Semua Category");
@@ -963,6 +1120,7 @@ function updateDashboardSM() {
   if (userInfo && userInfo.type === "dse") selectedDse = userInfo.dseCode;
 
   const selectedCategory = document.getElementById("categoryFilterMC")?.value || "ALL";
+  const selectedKecamatan = document.getElementById("kecamatanFilterMC")?.value || "ALL";
   const searchKeyword = document.getElementById("searchInputMC")?.value.toLowerCase().trim() || "";
 
   let idxPartner = 2, idxDse = 3, idxCategory = 4;
@@ -976,9 +1134,11 @@ function updateDashboardSM() {
   let idxRguMtd = globalHeaderSM.findIndex(h => h.toUpperCase().includes("RGU GA MTD"));
 
   const filteredRows = globalDataSM.filter((r) => {
+    const siteMeta = getSiteMeta(r[0]);
     return (selectedPartner === "ALL" || String(r[idxPartner] || "").trim() === selectedPartner) &&
            (selectedDse === "ALL" || String(r[idxDse] || "").trim() === selectedDse) &&
            (selectedCategory === "ALL" || String(r[idxCategory] || "").trim() === selectedCategory) &&
+           (selectedKecamatan === "ALL" || siteMeta.kec === selectedKecamatan) &&
            r.join(" ").toLowerCase().includes(searchKeyword);
   });
 
@@ -1277,8 +1437,11 @@ function updateDashboardDO() {
   const selCategory = document.getElementById("categoryFilterDO")?.value || "ALL";
   const selIsimple = document.getElementById("isimpleFilterDO")?.value || "ALL";
   const selHari = document.getElementById("hariFilterDO")?.value.toUpperCase() || "ALL";
+  const selKecamatan = document.getElementById("kecamatanFilterDO")?.value || "ALL";
+  const selSite = document.getElementById("siteFilterDO")?.value || "ALL";
   const searchKeyword = document.getElementById("searchInputDO")?.value.toLowerCase().trim() || "";
   const colFilterIdx = document.getElementById("columnFilterDO")?.value || "ALL";
+  const siteIdIdxDO = globalHeaderDO.findIndex(h => String(h || "").toUpperCase().trim() === "SITE ID");
 
   let colIdxHari = selHari !== "ALL" ? globalHeaderDO.findIndex(h => h.toUpperCase() === selHari) : -1;
 
@@ -1313,9 +1476,13 @@ function updateDashboardDO() {
         }
     }
 
+    const rowSiteId = siteIdIdxDO >= 0 ? String(r[siteIdIdxDO] ?? "").trim() : "";
+    const rowSiteMeta = getSiteMeta(rowSiteId);
     return matchDSE &&
            (selCategory === "ALL" || String(r[3] || "").trim() === selCategory) &&
            (selIsimple === "ALL" || String(r[4] || "").trim() === selIsimple) &&
+           (selKecamatan === "ALL" || rowSiteMeta.kec === selKecamatan) &&
+           (selSite === "ALL" || normalizeSiteId(rowSiteId) === normalizeSiteId(selSite)) &&
            matchHari && matchQuick && matchColFilter && r.join(" ").toLowerCase().includes(searchKeyword);
   });
 
@@ -2112,7 +2279,17 @@ document.addEventListener("input", function (e) {
 
 document.addEventListener("change", function (e) {
   if (e.target.id === "partnerFilter" || e.target.id === "kecamatanFilter") updateDashboardMS();
+  if (e.target.id === "kecamatanFilterMC") updateDashboardSM();
   if (e.target.id.includes("MC")) updateDashboardSM();
+  if (e.target.id === "kecamatanFilterDO") {
+      populateDetailOutletLocationFilters();
+      updateDashboardDO();
+      return;
+  }
+  if (e.target.id === "siteFilterDO") {
+      updateDashboardDO();
+      return;
+  }
   if (e.target.id.includes("DO") || e.target.id === "columnFilterDO") updateDashboardDO();
   if (e.target.id.includes("Daily")) updateDashboardDaily();
   if (e.target.id === "partnerFilterPP") updateDashboardPP();
