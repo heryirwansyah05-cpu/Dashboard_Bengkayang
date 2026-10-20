@@ -525,34 +525,73 @@ function takeSectionSnapshot(sectionId) {
     if (!section) return;
 
     const snapBtns = section.querySelectorAll(".btn-snapshot-section, .btn-snapshot-table");
-    const originalOverflow = section.style.overflow;
-    const originalWidth = section.style.width;
+    const original = {
+        overflow: section.style.overflow,
+        width: section.style.width,
+        maxWidth: section.style.maxWidth
+    };
     snapBtns.forEach(btn => btn.style.visibility = "hidden");
-    // Pastikan seluruh isi section, termasuk tiga tabel TOP 10, masuk ke canvas.
-    section.style.overflow = "visible";
-    section.style.width = section.scrollWidth + "px";
+
+    // Capture the complete section at high resolution, including all three TOP 10 tables.
+    section.style.setProperty("overflow", "visible", "important");
+    section.style.setProperty("width", Math.max(section.scrollWidth, section.getBoundingClientRect().width) + "px", "important");
+    section.style.setProperty("max-width", "none", "important");
 
     html2canvas(section, {
-        scale: 2,
+        scale: 4,
         useCORS: true,
-        allowTaint: true,
+        allowTaint: false,
         backgroundColor: "#ffffff",
         logging: false,
+        imageTimeout: 20000,
         scrollX: 0,
-        scrollY: -window.scrollY
+        scrollY: 0,
+        windowWidth: Math.max(window.innerWidth, section.scrollWidth, 1600),
+        windowHeight: Math.max(window.innerHeight, section.scrollHeight),
+        onclone: (clonedDoc) => {
+            const clonedSection = clonedDoc.getElementById(sectionId);
+            if (!clonedSection) return;
+            clonedSection.style.setProperty("overflow", "visible", "important");
+            clonedSection.style.setProperty("max-width", "none", "important");
+            clonedSection.querySelectorAll(".btn-snapshot-section, .btn-snapshot-table").forEach(btn => btn.style.display = "none");
+            // Prevent scroll containers from cutting off table columns/rows in the exported image.
+            clonedSection.querySelectorAll(".top10-do-card, .top10-do-table-wrap, .top10-do-table-container, .table-responsive").forEach(el => {
+                el.style.setProperty("overflow", "visible", "important");
+                el.style.setProperty("max-height", "none", "important");
+                el.style.setProperty("height", "auto", "important");
+            });
+            clonedSection.querySelectorAll("table").forEach(table => {
+                table.style.setProperty("width", "100%", "important");
+                table.style.setProperty("max-width", "none", "important");
+            });
+        }
     }).then(canvas => {
         snapBtns.forEach(btn => btn.style.visibility = "visible");
-        section.style.overflow = originalOverflow;
-        section.style.width = originalWidth;
-        let link = document.createElement('a');
-        link.download = `Snapshot-HD-${sectionId}-${new Date().toISOString().slice(0,10)}.png`;
-        link.href = canvas.toDataURL("image/png", 1.0);
-        link.click();
+        section.style.overflow = original.overflow;
+        section.style.width = original.width;
+        section.style.maxWidth = original.maxWidth;
+
+        canvas.toBlob(blob => {
+            if (!blob) {
+                alert("Snapshot gagal dibuat. Coba lagi setelah halaman selesai dimuat.");
+                return;
+            }
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.download = `Snapshot-HD-${sectionId}-${new Date().toISOString().slice(0,10)}.png`;
+            link.href = url;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 15000);
+        }, "image/png");
     }).catch(err => {
         snapBtns.forEach(btn => btn.style.visibility = "visible");
-        section.style.overflow = originalOverflow;
-        section.style.width = originalWidth;
+        section.style.overflow = original.overflow;
+        section.style.width = original.width;
+        section.style.maxWidth = original.maxWidth;
         console.error("Section snapshot error:", err);
+        alert("Snapshot gagal. Silakan coba lagi; pastikan dashboard sudah selesai dimuat.");
     });
 }
 
