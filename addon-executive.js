@@ -4561,11 +4561,14 @@ document.addEventListener(
         IM3:  { color:"#E51B4B", lt:1, mtd:2, growth:3, monthStart:29, monthEnd:33, blockStart:29 },
         "3ID": { color:"#F5B800", lt:4, mtd:5, growth:6, monthStart:40, monthEnd:44, blockStart:40 },
         TSEL: { color:"#08A9C7", lt:7, mtd:8, growth:9, monthStart:51, monthEnd:55, blockStart:51 },
-        XLS:  { color:"#8B5CF6", lt:10, mtd:11, growth:12, monthStart:62, monthEnd:66, blockStart:62 }
+        XLS:  { color:"#8B5CF6", lt:10, mtd:11, growth:12, monthStart:62, monthEnd:66, blockStart:62 },
+        IOH:  { color:"#0F766E", lt:31, mtd:32, growth:33 }
     };
 
     let kabRows = [];
     let kecRows = [];
+    let kecRawHeaders = [];
+    let kecGroupHeaders = [];
     let kabLoaded = false;
     let kecLoaded = false;
     let profileChart = null;
@@ -4645,11 +4648,17 @@ document.addEventListener(
             if (!territory || territory.toUpperCase() === "TERRITORY") continue;
             data.push({
                 territory,
-                weekly:[num(r[1]),num(r[2]),num(r[3]),num(r[4]),num(r[5]),num(r[6])],
+                // Weekly terbaru dibaca dari header aktual KAB MS MOM.
+                weeklyLabels:["W5-Aug","W1-Sep","W2-Sep","W4-Sep","W1-Oct"],
+                weekly3IDLabels:["W5-Aug","W1-Sep","W2-Sep","W4-Sep","W1-Oct"],
+                weekly:[num(r[1]),num(r[2]),num(r[3]),num(r[4]),num(r[5])],
+                // Kolom K:O (index 10:14) adalah weekly 3ID.
+                weekly3ID:[num(r[10]),num(r[11]),num(r[12]),num(r[13]),num(r[14])],
                 IM3:{lmtd:num(r[7]),mtd:num(r[8]),growth:num(r[9])},
-                "3ID":{lmtd:num(r[10]),mtd:num(r[11]),growth:num(r[12])},
-                TSEL:{lmtd:num(r[13]),mtd:num(r[14]),growth:num(r[15])},
-                XLS:{lmtd:num(r[16]),mtd:num(r[17]),growth:num(r[18])}
+                "3ID":{lmtd:num(r[16]),mtd:num(r[17]),growth:num(r[18])},
+                TSEL:{lmtd:num(r[19]),mtd:num(r[20]),growth:num(r[21])},
+                XLS:{lmtd:num(r[22]),mtd:num(r[23]),growth:num(r[24])},
+                IOH:{lmtd:num(r[31]),mtd:num(r[32]),growth:num(r[33])}
             });
         }
         kabRows = data;
@@ -4660,6 +4669,8 @@ document.addEventListener(
     async function loadKEC(){
         if (kecLoaded) return kecRows;
         const rows = await readSheet(MS_SHEET_KEC);
+        kecGroupHeaders = (rows[2] || []).slice();
+        kecRawHeaders = (rows[3] || []).slice();
         const data = [];
 
         // KEC MS MOM: header row Excel 4 (JS index 3), data starts Excel row 5.
@@ -4734,7 +4745,7 @@ document.addEventListener(
         if (!container || !kab) return;
 
         window.__executiveMarketShareSnapshot = kab;
-        const brands = ["IM3","3ID","TSEL","XLS"];
+        const brands = ["IOH","3ID","IM3","XLS","TSEL"];
 
         container.innerHTML = `
             <div class="ms-v2-content">
@@ -4899,120 +4910,108 @@ document.addEventListener(
 
     function renderProfileKpi(kab,brand){
         const grid=document.getElementById("msProfileKpiGrid");
-        if(!grid||!kab||!kab[brand])return;
-        const meta=BRAND_META[brand];
-        const source=kab[brand];
+        if(!grid||!kab)return;
+        const brands=["IOH","3ID","IM3","XLS","TSEL"];
         grid.innerHTML=`
-            <div class="ms-profile-kpi" style="border-left-color:${meta.color}"><span>MTD ${brand}</span><b>${pct(source.mtd)}</b><small>KAB MS MOM · Market Share saat ini</small></div>
-            <div class="ms-profile-kpi" style="border-left-color:#64748B"><span>LMTD ${brand}</span><b>${pct(source.lmtd)}</b><small>KAB MS MOM · Periode sebelumnya</small></div>
-            <div class="ms-profile-kpi ${pctClass(source.growth)}" style="border-left-color:${meta.color}"><span>GROWTH ${brand}</span><b>${pctSigned(source.growth)}</b><small>KAB MS MOM · MTD vs LMTD</small></div>
-        `;
+            <div class="ms-brand-kpi-table-wrap">
+                <table class="ms-brand-kpi-table">
+                    <thead><tr><th>BRAND</th><th>MTD</th><th>LMTD</th><th>GROWTH</th></tr></thead>
+                    <tbody>${brands.map(b=>{
+                        const x=kab[b]||{mtd:0,lmtd:0,growth:0};
+                        const meta=BRAND_META[b]||{color:"#64748B"};
+                        return `<tr><td><span class="ms-brand-dot" style="background:${meta.color}"></span><b>${b}</b></td><td>${pct(x.mtd)}</td><td>${pct(x.lmtd)}</td><td class="${pctClass(x.growth)}">${pctSigned(x.growth)}</td></tr>`;
+                    }).join("")}</tbody>
+                </table>
+                <div class="ms-brand-kpi-note">Sumber KPI: FB Market Share.xlsx · KAB MS MOM · MC Bengkayang Inner</div>
+            </div>`;
     }
+
 
     function renderProfileCharts(){
         const leftCanvas=document.getElementById("msProfileWeeklyChart");
         const rightCanvas=document.getElementById("msProfileKabChart");
         if(typeof Chart==="undefined")return;
 
-        if(profileChart){
-            try{profileChart.destroy();}catch(e){}
-            profileChart=null;
-        }
-        if(window.msProfileKabChart){
-            try{window.msProfileKabChart.destroy();}catch(e){}
-            window.msProfileKabChart=null;
-        }
+        if(profileChart){try{profileChart.destroy();}catch(e){} profileChart=null;}
+        if(window.msProfileKabChart){try{window.msProfileKabChart.destroy();}catch(e){} window.msProfileKabChart=null;}
 
-        // =====================================================
-        // CHART KIRI — WEEKLY, sumber KAB MS MOM kolom B:G
-        // B W4-Jul | C W1-Aug | D W2-Aug | E W4-Aug | F W5-Aug | G WoW
-        // WoW adalah perubahan, sehingga ditampilkan sebagai badge,
-        // sedangkan line chart memakai titik weekly B:F.
-        // =====================================================
         const kab=getCurrentKab();
-        if(leftCanvas && kab){
-            const weekly=[
-                num(kab.weekly?.[0]),
-                num(kab.weekly?.[1]),
-                num(kab.weekly?.[2]),
-                num(kab.weekly?.[3]),
-                num(kab.weekly?.[4])
-            ];
-            profileChart=new Chart(leftCanvas.getContext("2d"),{
+        const labels=(kab && Array.isArray(kab.weeklyLabels) && kab.weeklyLabels.length)
+            ? kab.weeklyLabels : ["W5-Aug","W1-Sep","W2-Sep","W4-Sep","W1-Oct"];
+        const labels3ID=(kab && Array.isArray(kab.weekly3IDLabels) && kab.weekly3IDLabels.length)
+            ? kab.weekly3IDLabels : labels;
+
+        // Plugin lokal agar nilai setiap titik selalu terlihat tanpa hover.
+        const weeklyValueLabels={
+            id:"weeklyValueLabels",
+            afterDatasetsDraw(chart){
+                const ctx=chart.ctx;
+                ctx.save();
+                chart.data.datasets.forEach((dataset,di)=>{
+                    const meta=chart.getDatasetMeta(di);
+                    meta.data.forEach((point,i)=>{
+                        const raw=dataset.data[i];
+                        if(raw===null || raw===undefined || !Number.isFinite(Number(raw)))return;
+                        const pos=point.tooltipPosition();
+                        ctx.font="700 10px Arial, sans-serif";
+                        ctx.textAlign="center";
+                        ctx.textBaseline="bottom";
+                        ctx.lineWidth=3;
+                        ctx.strokeStyle="rgba(255,255,255,.96)";
+                        ctx.strokeText(`${Number(raw).toFixed(2)}%`,pos.x,pos.y-7);
+                        ctx.fillStyle=dataset.borderColor || "#0f172a";
+                        ctx.fillText(`${Number(raw).toFixed(2)}%`,pos.x,pos.y-7);
+                    });
+                });
+                ctx.restore();
+            }
+        };
+
+        function buildWeeklyChart(canvas, brand, values, color, fillColor){
+            if(!canvas || !kab)return null;
+            const data=(values||[]).slice(0,labels.length).map(v=>num(v)*100);
+            return new Chart(canvas.getContext("2d"),{
                 type:"line",
-                data:{
-                    labels:["W4-Jul","W1-Aug","W2-Aug","W4-Aug","W5-Aug"],
-                    datasets:[{
-                        label:"IM3 Weekly",
-                        data:weekly.map(v=>v*100),
-                        borderColor:"#E51B4B",
-                        backgroundColor:"rgba(229,27,75,.10)",
-                        borderWidth:3,
-                        pointRadius:4,
-                        pointHoverRadius:6,
-                        pointBackgroundColor:"#E51B4B",
-                        pointBorderColor:"#FFFFFF",
-                        pointBorderWidth:2,
-                        fill:true,
-                        tension:.3
-                    }]
-                },
+                data:{labels,datasets:[{
+                    label:`${brand} Weekly`,data,
+                    borderColor:color,backgroundColor:fillColor,
+                    borderWidth:2.8,pointRadius:3.5,pointHoverRadius:5,
+                    pointBackgroundColor:color,pointBorderColor:"#FFFFFF",pointBorderWidth:1.5,
+                    fill:true,tension:.25
+                }]},
+                plugins:[weeklyValueLabels],
                 options:{
-                    responsive:true,
-                    maintainAspectRatio:false,
+                    responsive:true,maintainAspectRatio:false,
+                    layout:{padding:{top:18,left:4,right:8,bottom:2}},
                     interaction:{intersect:false,mode:"index"},
                     plugins:{
-                        legend:{position:"bottom",labels:{usePointStyle:true,boxWidth:7,font:{size:8,weight:"700"}}},
-                        tooltip:{callbacks:{label:c=>`IM3 Weekly: ${Number(c.raw).toFixed(2)}%`}}
+                        legend:{position:"bottom",labels:{usePointStyle:true,boxWidth:7,padding:8,font:{size:9,weight:"700"}}},
+                        tooltip:{callbacks:{label:c=>`${brand}: ${Number(c.raw).toFixed(2)}%`}}
                     },
                     scales:{
-                        x:{grid:{display:false},ticks:{font:{size:8,weight:"700"}}},
+                        x:{grid:{display:false},ticks:{font:{size:9,weight:"700"},maxRotation:0}},
                         y:{beginAtZero:true,suggestedMax:50,ticks:{callback:v=>`${v}%`,font:{size:8}},grid:{color:"rgba(148,163,184,.13)"}}
                     }
                 }
             });
         }
 
-        // =====================================================
-        // CHART KANAN — H:J KAB MS MOM khusus IM3
-        // H LMTD | I MTD | J MoM
-        // =====================================================
-        if(rightCanvas && kab){
-            const vals=[num(kab.IM3.lmtd),num(kab.IM3.mtd),num(kab.IM3.growth)];
-            window.msProfileKabChart=new Chart(rightCanvas.getContext("2d"),{
-                type:"bar",
-                data:{
-                    labels:["LMTD","MTD","MoM"],
-                    datasets:[{
-                        label:"IM3",
-                        data:vals.map(v=>v*100),
-                        backgroundColor:["#94A3B8","#E51B4B",vals[2]>=0?"#079455":"#E51B4B"],
-                        borderRadius:7,
-                        maxBarThickness:55
-                    }]
-                },
-                options:{
-                    responsive:true,
-                    maintainAspectRatio:false,
-                    plugins:{
-                        legend:{display:false},
-                        tooltip:{callbacks:{label:c=>`IM3 ${c.label}: ${Number(c.raw).toFixed(2)}%`}}
-                    },
-                    scales:{
-                        x:{grid:{display:false},ticks:{font:{size:9,weight:"800"}}},
-                        y:{suggestedMin:-5,suggestedMax:40,ticks:{callback:v=>`${v}%`,font:{size:8}},grid:{color:"rgba(148,163,184,.13)"}}
-                    }
-                }
-            });
+        // KIRI = 3ID weekly (K:O pada KAB MS MOM).
+        // Header mingguan 3ID dibaca dari kolom K:O, terpisah dari label IM3 B:F.
+        if(leftCanvas && kab && labels3ID.length){
+            const data=(kab.weekly3ID||[]).slice(0,labels3ID.length).map(v=>num(v)*100);
+            profileChart=new Chart(leftCanvas.getContext("2d"),{type:"line",data:{labels:labels3ID,datasets:[{label:"3ID Weekly",data,borderColor:"#08A9C7",backgroundColor:"rgba(8,169,199,.10)",borderWidth:2.8,pointRadius:3.5,pointBackgroundColor:"#08A9C7",fill:true,tension:.25}]},plugins:[weeklyValueLabels],options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:18,left:4,right:8,bottom:2}},plugins:{legend:{position:"bottom",labels:{usePointStyle:true,boxWidth:7,font:{size:9,weight:"700"}}},tooltip:{callbacks:{label:c=>`3ID: ${Number(c.raw).toFixed(2)}%`}}},scales:{x:{grid:{display:false},ticks:{font:{size:9,weight:"700"},maxRotation:0}},y:{beginAtZero:true,suggestedMax:50,ticks:{callback:v=>`${v}%`,font:{size:8}},grid:{color:"rgba(148,163,184,.13)"}}}}});
         }
+        // KANAN = IM3 weekly (B:F pada KAB MS MOM).
+        window.msProfileKabChart=buildWeeklyChart(rightCanvas,"IM3",kab?.weekly,"#E51B4B","rgba(229,27,75,.10)");
 
         const weeklySub=document.getElementById("msProfileWeeklySubtitle");
         if(weeklySub && kab){
-            weeklySub.textContent=`IM3 Weekly · W4-Jul → W5-Aug · WoW ${pctSigned(kab.IM3.growth)} vs periode sebelumnya`;
+            weeklySub.textContent=labels.join(" · ");
         }
         const kabSub=document.getElementById("msProfileKabSubtitle");
         if(kabSub && kab){
-            kabSub.textContent=`MC-BENGKAYANG · IM3 · LMTD ${pct(kab.IM3.lmtd)} · MTD ${pct(kab.IM3.mtd)} · MoM ${pctSigned(kab.IM3.growth)}`;
+            kabSub.textContent=labels.join(" · ");
         }
     }
 
@@ -5020,36 +5019,43 @@ document.addEventListener(
         const table=document.getElementById("msProfileDetailTable");
         if(!table)return;
 
-        // Hanya IM3 — sumber KEC MS MOM — kolom AC:AM.
-        const monthLabels=["Apr-26","May-26","Jun-26","Jul-26","Aug-26"];
+        const headers = kecRawHeaders.length ? kecRawHeaders : [];
+        const dataRows = rows || [];
+        const isPercentColumn = (idx, header) => {
+            const h = String(header ?? "").trim().toUpperCase();
+            // Semua blok historical market share berisi persentase, kecuali kolom identitas/revenue/NCP/site/rank.
+            return idx >= 12 && !["REVENUE","NCP","SITE ADR","RANK MTD IOH"].includes(h);
+        };
+        const fmtCell = (value, idx, header) => {
+            if(value === null || value === undefined || value === "") return "—";
+            if(value instanceof Date && !isNaN(value)) return value.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"2-digit"});
+            if(isPercentColumn(idx,header) && typeof value === "number") return `${(value*100).toFixed(2)}%`;
+            return escapeHtml(value);
+        };
+        const visibleHeaders = headers.map((h,i)=>({h, i}));
         table.innerHTML=`
             <thead>
+                <tr class="ms-detail-group-row">
+                    ${visibleHeaders.map(({i})=>{
+                        const group=cleanText(kecGroupHeaders[i]);
+                        const label=group && group.toUpperCase()!==cleanText(headers[i]).toUpperCase() ? group : "";
+                        return `<th title="${escapeHtml(label)}">${escapeHtml(label)}</th>`;
+                    }).join("")}
+                </tr>
                 <tr>
-                    <th>Kecamatan</th>
-                    <th>PT</th>
-                    ${monthLabels.map(m=>`<th style="text-align:right">${m}</th>`).join("")}
-                    <th style="text-align:right">LMTD</th>
-                    <th style="text-align:right">MTD</th>
-                    <th style="text-align:right">IOH / MoM</th>
-                    <th style="text-align:right">LLW</th>
-                    <th style="text-align:right">LW</th>
-                    <th style="text-align:right">WOW</th>
+                    ${visibleHeaders.map(({h})=>`<th>${escapeHtml(h instanceof Date ? h.toLocaleDateString("en-GB",{month:"short",year:"2-digit"}) : h)}</th>`).join("")}
                 </tr>
             </thead>
             <tbody>
-                ${rows.map(r=>`
-                    <tr>
-                        <td>${escapeHtml(r.kecamatan)}</td>
-                        <td>${escapeHtml(r.pt)}</td>
-                        ${r.im3Monthly.values.map(v=>`<td style="text-align:right">${pct(v)}</td>`).join("")}
-                        <td style="text-align:right">${pct(r.im3.lmtd)}</td>
-                        <td style="text-align:right;font-weight:900">${pct(r.im3.mtd)}</td>
-                        <td style="text-align:right" class="${pctClass(r.im3.mom)}">${pctSigned(r.im3.mom)}</td>
-                        <td style="text-align:right">${pct(r.im3.llw)}</td>
-                        <td style="text-align:right">${pct(r.im3.lw)}</td>
-                        <td style="text-align:right" class="${pctClass(r.im3.wow)}">${pctSigned(r.im3.wow)}</td>
-                    </tr>
-                `).join("")}
+                ${dataRows.map(obj=>{
+                    const raw=obj.row||[];
+                    return `<tr>${visibleHeaders.map(({h,i})=>{
+                        let value=raw[i];
+                        if(i===0 && value) value=String(value).split("|")[0].trim();
+                        const align = i>=7 ? "text-align:right;" : "text-align:left;";
+                        return `<td style="${align}">${fmtCell(value,i,h)}</td>`;
+                    }).join("")}</tr>`;
+                }).join("")}
             </tbody>`;
     }
 
@@ -5327,48 +5333,32 @@ document.addEventListener(
             const kab=getCurrentKab();
             if(kab)renderProfileKpi(kab,brandVal);
 
-            // Ranking mengikuti PT + Kecamatan yang dipilih.
-            const rankSource=selected.length?selected:ptRows;
-            const mtdRank=rankSource
-                .map(r=>({kecamatan:r.kecamatan,value:r.im3.mtd}))
-                .sort((a,b)=>b.value-a.value);
-            const growthRank=rankSource
-                .map(r=>({kecamatan:r.kecamatan,value:r.im3.mom}))
-                .sort((a,b)=>b.value-a.value);
-
-            const topMtd=document.getElementById("msTopMtd");
-            const bottomMtd=document.getElementById("msBottomMtd");
-            const topGrowth=document.getElementById("msTopGrowth");
-            const bottomGrowth=document.getElementById("msBottomGrowth");
-            if(topMtd)topMtd.innerHTML=rankMtdHtml(mtdRank.slice(0,3));
-            if(bottomMtd)bottomMtd.innerHTML=rankMtdHtml(mtdRank.slice(-3).reverse());
-            if(topGrowth)topGrowth.innerHTML=rankHtml(growthRank.filter(x=>x.value>0).slice(0,3),"Tidak ada growth positif");
-            if(bottomGrowth)bottomGrowth.innerHTML=rankHtml(growthRank.filter(x=>x.value<0).slice(-3).reverse(),"Tidak ada growth negatif");
+            // Bagian Top/Bottom diganti menjadi tabel KPI per brand (IOH, 3ID, IM3, XLS, TSEL).
 
             const chartCard=document.querySelector("#market-share-profile .ms-profile-chart-card");
             if(chartCard){
                 chartCard.innerHTML=`
                     <div class="ms-profile-chart-grid">
                         <div class="ms-profile-chart-panel">
-                            <h3><i class="fa-solid fa-chart-line" style="color:#E51B4B"></i> WEEKLY PERFORMANCE — IM3</h3>
-                            <small id="msProfileWeeklySubtitle">W4-Jul → W5-Aug</small>
+                            <h3><i class="fa-solid fa-chart-line" style="color:#08A9C7"></i> 3ID WEEKLY PERFORMANCE</h3>
+                            <small id="msProfileWeeklySubtitle">W5-Aug · W1-Sep · W2-Sep · W4-Sep · W1-Oct</small>
                             <div class="ms-profile-chart-wrap"><canvas id="msProfileWeeklyChart"></canvas></div>
                         </div>
                         <div class="ms-profile-chart-panel">
-                            <h3><i class="fa-solid fa-chart-column" style="color:#E51B4B"></i> LMTD vs MTD — IM3</h3>
-                            <small id="msProfileKabSubtitle">MC-BENGKAYANG · KAB MS MOM</small>
+                            <h3><i class="fa-solid fa-chart-line" style="color:#E51B4B"></i> IM3 WEEKLY PERFORMANCE</h3>
+                            <small id="msProfileKabSubtitle">W5-Aug · W1-Sep · W2-Sep · W4-Sep · W1-Oct</small>
                             <div class="ms-profile-chart-wrap"><canvas id="msProfileKabChart"></canvas></div>
                         </div>
                     </div>`;
             }
             renderProfileCharts();
-            renderDetailTable(selected.length?selected:ptRows);
+            renderDetailTable(kecVal==="ALL" ? ptRows : selected);
             ensureMarketShareDetailSnapshotButton();
 
             const sub=document.querySelector(".ms-profile-sub");
             if(sub){
                 const scope=ptVal==="ALL"?"Semua PT":ptVal;
-                sub.textContent=`Analisis Market Share Kecamatan · IM3 · ${scope} · Sumber KEC MS MOM + KAB MS MOM`;
+                sub.textContent=`Analisis Market Share Kecamatan · IOH, 3ID, IM3, XLS, TSEL · ${scope} · Sumber KEC MS MOM + KAB MS MOM`;
             }
         }catch(err){
             console.warn("Profil Market Share:",err);
@@ -5414,6 +5404,36 @@ document.addEventListener(
             .ms-profile-kpi b{display:block;font-size:21px;font-weight:900;color:#172236;margin-top:5px;}
             .ms-profile-kpi small{display:block;font-size:8px;color:#94a3b8;font-weight:700;margin-top:3px;}
             .ms-profile-analysis-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+            #msProfileKpiGrid{display:block!important;width:100%;}
+            .ms-brand-kpi-table-wrap{width:100%;background:#fff;border:1px solid #dce5ef;border-radius:12px;overflow:hidden;box-shadow:0 3px 12px rgba(23,34,54,.04);}
+            .ms-brand-kpi-table{width:100%;border-collapse:collapse;font-size:10px;}
+            .ms-brand-kpi-table th{background:#172b49;color:#fff;text-align:right;padding:10px 14px;font-size:10px;font-weight:900;white-space:nowrap;}
+            .ms-brand-kpi-table th:first-child,.ms-brand-kpi-table td:first-child{text-align:left;}
+            .ms-brand-kpi-table td{padding:9px 14px;text-align:right;border-bottom:1px solid #e7edf4;font-weight:800;color:#172236;font-variant-numeric:tabular-nums;}
+            .ms-brand-kpi-table tbody tr:nth-child(even){background:#f7fafd;}
+            .ms-brand-kpi-table tbody tr:last-child td{border-bottom:0;}
+            .ms-brand-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;}
+            .ms-brand-kpi-note{padding:7px 12px;color:#64748b;background:#f8fafc;font-size:8px;font-weight:700;border-top:1px solid #e7edf4;}
+            #msProfileDetailTable{min-width:2600px;}
+            #msProfileDetailTable th{background:#0b5ea8!important;color:#fff!important;font-size:8px;max-width:180px;}
+            #msProfileDetailTable thead .ms-detail-group-row th{background:#084a87!important;color:#fff!important;height:18px;padding:3px 5px;font-size:7px;}
+            #msProfileDetailTable td{font-size:8px;padding:6px 7px;}
+            /* FINAL LAYOUT FIX: compact square weekly panels + source-accurate table headers */
+            .ms-profile-chart-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;align-items:stretch!important;}
+            .ms-profile-chart-panel{min-width:0!important;height:300px!important;padding:12px!important;border-radius:14px!important;overflow:hidden!important;}
+            .ms-profile-chart-panel h3{font-size:12px!important;line-height:1.25!important;white-space:normal!important;}
+            .ms-profile-chart-panel small{font-size:9px!important;line-height:1.4!important;white-space:normal!important;}
+            .ms-profile-chart-wrap{height:230px!important;min-height:230px!important;max-height:230px!important;width:100%!important;position:relative!important;overflow:hidden!important;}
+            .ms-profile-chart-wrap canvas{width:100%!important;height:100%!important;display:block!important;}
+            .ms-profile-table-wrap .mini-table-wrapper{overflow:auto!important;max-width:100%!important;max-height:70vh!important;}
+            #msProfileDetailTable{width:max-content!important;min-width:100%!important;table-layout:auto!important;border-collapse:separate!important;border-spacing:0!important;font-size:8px!important;}
+            #msProfileDetailTable th,#msProfileDetailTable td{box-sizing:border-box!important;white-space:nowrap!important;word-break:normal!important;overflow:visible!important;text-overflow:clip!important;vertical-align:middle!important;}
+            #msProfileDetailTable th{min-width:64px!important;padding:7px 8px!important;font-size:8px!important;line-height:1.2!important;}
+            #msProfileDetailTable th:first-child,#msProfileDetailTable td:first-child{min-width:150px!important;}
+            #msProfileDetailTable td{padding:6px 8px!important;font-size:8px!important;line-height:1.25!important;}
+            #msProfileDetailTable thead{position:sticky!important;top:0!important;z-index:5!important;}
+            #msProfileDetailTable thead .ms-detail-group-row th{height:20px!important;padding:4px 6px!important;line-height:1!important;}
+            @media(max-width:800px){.ms-profile-chart-grid{grid-template-columns:1fr!important}.ms-profile-chart-panel{height:280px!important}.ms-profile-chart-wrap{height:210px!important;min-height:210px!important;max-height:210px!important;}}
             .ms-topbottom-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
             .ms-rank-card{border:1px solid #e4eaf1;border-radius:10px;padding:9px;background:#fbfdff;}
             .ms-rank-card h4{font-size:8px;font-weight:900;color:#172236;margin:0 0 7px;}

@@ -2734,7 +2734,7 @@ function renderPstMainLineChart(rows) {
             try { executiveMarketShareScriptChart.destroy(); } catch(e) {}
         }
 
-        const weeklyLabels = ["W4-Jul","W1-Aug","W2-Aug","W4-Aug","W5-Aug"];
+        const weeklyLabels = ["W5-Aug","W1-Sep","W2-Sep","W4-Sep","W1-Oct"];
         const weeklyValues = (kab.weekly || []).map(v => v * 100);
         const lmtd = msNum(kab.IM3.lmtd) * 100;
         const mtd = msNum(kab.IM3.mtd) * 100;
@@ -2745,7 +2745,7 @@ function renderPstMainLineChart(rows) {
                 labels:weeklyLabels,
                 datasets:[
                     {
-                        label:"IM3 Weekly",
+                        label:"IM3 Weekly Performance",
                         data:weeklyValues,
                         borderColor:"#E51B4B",
                         backgroundColor:"rgba(229,27,75,.10)",
