@@ -262,6 +262,19 @@
 #dataTableDO thead th, #dataTableDO thead .do-group-header th { background:#1d4ed8 !important; color:#ffffff !important; border-color:#3b82f6 !important; }
 #dataTableDO thead th { font-weight:800 !important; }
 </style>
+
+<style>
+.top10-do-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:14px 0 20px;align-items:start;width:100%;box-sizing:border-box}
+.top10-do-card{min-width:0;max-width:100%;overflow:hidden;background:#fff;border:1px solid #dbe5f1;border-radius:10px;padding:8px;box-shadow:0 3px 10px rgba(15,23,42,.05);box-sizing:border-box}
+.top10-do-card h3{font-size:12px;font-weight:800;color:#14233b;margin:0 0 7px;padding-bottom:6px;border-bottom:2px solid #f5b400}
+.top10-do-table-wrap{overflow:hidden;max-height:none;width:100%;}
+.top10-do-table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:9px;line-height:1.2}
+.top10-do-table th{background:#1b2b45;color:#fff;padding:6px 4px;text-align:left;white-space:normal;overflow-wrap:anywhere}
+.top10-do-table td{padding:5px 4px;border-bottom:1px solid #e5edf5;color:#24334a;vertical-align:top;overflow-wrap:anywhere;word-break:normal}
+.top10-do-table tbody tr:nth-child(even){background:#f6f9fc}
+@media(max-width:1050px){.top10-do-grid{grid-template-columns:1fr}}
+</style>
+
 </head>
 
 <body>
@@ -834,6 +847,7 @@
     <!-- ================= TAB 4: DETAIL OUTLET ================= -->
     <div id="detail-outlet" class="report-content" style="display: none;">
         <div id="snapshotDoDashboard" style="margin-bottom: 20px;">
+        <div id="snapshotDoDashboardInner">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                 <h2 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0;"><i class="fa-solid fa-store color-cyan"></i> DETAIL OUTLET DASHBOARD SUMMARY</h2>
                 <button class="btn-snapshot-section" onclick="takeSectionSnapshot('snapshotDoDashboard')"><i class="fa-solid fa-camera"></i> Snapshot Dashboard Outlet</button>
@@ -898,6 +912,8 @@
                     </div>
                 </div>
             </div>
+        </div>
+        <section id="top10DetailOutlet" class="top10-do-grid" aria-label="Top 10 KPI Detail Outlet"></section>
         </div>
 
         <div class="toolbar">

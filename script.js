@@ -525,10 +525,15 @@ function takeSectionSnapshot(sectionId) {
     if (!section) return;
 
     const snapBtns = section.querySelectorAll(".btn-snapshot-section, .btn-snapshot-table");
+    const originalOverflow = section.style.overflow;
+    const originalWidth = section.style.width;
     snapBtns.forEach(btn => btn.style.visibility = "hidden");
+    // Pastikan seluruh isi section, termasuk tiga tabel TOP 10, masuk ke canvas.
+    section.style.overflow = "visible";
+    section.style.width = section.scrollWidth + "px";
 
     html2canvas(section, {
-        scale: 3,
+        scale: 2,
         useCORS: true,
         allowTaint: true,
         backgroundColor: "#ffffff",
@@ -537,12 +542,16 @@ function takeSectionSnapshot(sectionId) {
         scrollY: -window.scrollY
     }).then(canvas => {
         snapBtns.forEach(btn => btn.style.visibility = "visible");
+        section.style.overflow = originalOverflow;
+        section.style.width = originalWidth;
         let link = document.createElement('a');
         link.download = `Snapshot-HD-${sectionId}-${new Date().toISOString().slice(0,10)}.png`;
         link.href = canvas.toDataURL("image/png", 1.0);
         link.click();
     }).catch(err => {
         snapBtns.forEach(btn => btn.style.visibility = "visible");
+        section.style.overflow = originalOverflow;
+        section.style.width = originalWidth;
         console.error("Section snapshot error:", err);
     });
 }
@@ -1641,6 +1650,42 @@ function updateDashboardDO() {
     groups.forEach(g => { const th=document.createElement("th"); th.colSpan=g.span; th.textContent=g.label; th.style.cssText="background:#24334a;color:#fff;text-align:center;font-weight:800;border-right:1px solid #475569;padding:8px;position:sticky;top:0;z-index:4;"; groupRow.appendChild(th); });
     doHead.insertBefore(groupRow, doHead.firstChild);
   }
+  renderTop10DetailOutlet(filteredRows);
+}
+
+function renderTop10DetailOutlet(rows) {
+  const host = document.getElementById("top10DetailOutlet");
+  if (!host) return;
+  const headers = globalHeaderDORaw || [];
+  const idx = (name) => headers.findIndex(h => String(h || "").trim().toUpperCase() === name);
+  const ixSales = idx("NAMA SALES");
+  const ixCodeIM3 = idx("OUTLET CODE IM3");
+  const ixNameIM3 = idx("OUTLET IM3 NAME");
+  const ixCode3ID = idx("OUTLET CODE 3ID");
+  const ixName3ID = idx("OUTLET 3ID NAME");
+  const ixOSA = 29; // Kolom AD: OSA IOH
+  const ixSell = 30; // Kolom AE: SELL IN SP IOH
+  const ixRGU = 31; // Kolom AF: RGU GA IOH
+  const number = v => {
+    if (typeof v === "number") return Number.isFinite(v) ? v : 0;
+    const n = Number(String(v ?? "").replace(/[^0-9,.-]/g, "").replace(/\.(?=\d{3}(?:\D|$))/g, "").replace(",", "."));
+    return Number.isFinite(n) ? n : 0;
+  };
+  const records = (rows || []).map(r => {
+    const raw = r.__raw || r;
+    const code = String(raw[ixCodeIM3] || raw[ixCode3ID] || "").trim();
+    const name = String(raw[ixNameIM3] || raw[ixName3ID] || "Outlet tanpa nama").trim();
+    return { sales: String(raw[ixSales] || "-").trim(), code: code || "-", name, osa: number(raw[ixOSA]), sell: number(raw[ixSell]), rgu: number(raw[ixRGU]) };
+  });
+  const fmt = n => Math.round(n).toLocaleString("id-ID");
+  const makeTable = (title, key, label, money=false) => {
+    const sorted = [...records].sort((a,b) => b[key] - a[key]).slice(0,10);
+    return `<div class="top10-do-card"><h3>${title}</h3><div class="table-container top10-do-table-wrap"><table class="top10-do-table"><thead><tr><th>#</th><th>Nama Outlet</th><th>ID Outlet</th><th>Nama Sales</th><th>${label}</th></tr></thead><tbody>${sorted.length ? sorted.map((r,i)=>`<tr><td>${i+1}</td><td>${escapeHtmlDO(r.name)}</td><td>${escapeHtmlDO(r.code)}</td><td>${escapeHtmlDO(r.sales)}</td><td>${money ? "Rp " : ""}${fmt(r[key])}${key === "sell" ? " pcs" : ""}</td></tr>`).join("") : `<tr><td colspan="5">Tidak ada data</td></tr>`}</tbody></table></div></div>`;
+  };
+  host.innerHTML = makeTable("TOP 10 OSA IOH", "osa", "OSA IOH", true) + makeTable("TOP 10 RGU GA IOH", "rgu", "RGU GA IOH") + makeTable("TOP 10 SELL IN SP", "sell", "Sell In SP");
+}
+function escapeHtmlDO(value) {
+  return String(value ?? "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
 }
 
 function updateDashboardDaily() {
