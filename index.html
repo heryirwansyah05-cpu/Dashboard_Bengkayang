@@ -257,6 +257,11 @@
 }
 </style>
 
+
+<style id="detail-outlet-header-fix">
+#dataTableDO thead th, #dataTableDO thead .do-group-header th { background:#1d4ed8 !important; color:#ffffff !important; border-color:#3b82f6 !important; }
+#dataTableDO thead th { font-weight:800 !important; }
+</style>
 </head>
 
 <body>
@@ -286,7 +291,7 @@
     <span><b>Revenue MTD:</b> <span id="stickyRev">Rp 0</span></span>
     <span><b>OSA:</b> <span id="stickyOsa">0%</span></span>
     <span><b>Sell In:</b> <span id="stickySellIn">0%</span></span>
-    <span><b>Biometrik:</b> <span id="stickyBio">0%</span></span>
+    <span><b>RGU GA IOH:</b> <span id="stickyBio">0</span></span>
     <button class="sticky-top-btn" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">↑ Top</button>
 </div>
 
@@ -299,7 +304,7 @@
                     <h1>EXECUTIVE PERFORMANCE SUMMARY</h1>
                     <div class="dashboard-subtitle-line">
                         <span class="sub-header-title">Micro Cluster Bengkayang</span>
-                        <span class="header-period-badge" id="headerExecutivePeriod">MTD - September 2026</span>
+                        <span class="header-period-badge" id="headerExecutivePeriod">MTD - Memuat periode...</span>
                     </div>
                     <div id="lastUpdateHeaderText" style="margin-top:4px; font-size:10px; line-height:1.1; font-weight:800; color:#64748b; white-space:nowrap;">Last Update: -</div>
                 </div>
@@ -441,14 +446,14 @@
                         <span class="m-target" id="exPriorityOsaTarget">Target OSA: 0</span>
                     </div>
                     <div class="mission-stat-card" onclick="actionGotoOutletUnach('BIO')">
-                        <span class="m-lbl"><i class="fa-solid fa-fingerprint color-purple"></i> BIOMETRIC ACH</span>
+                        <span class="m-lbl"><i class="fa-solid fa-fingerprint color-purple"></i> RGUGA IOH ACH</span>
                         <b class="m-val color-purple" id="exPriorityBioAch">0.0%</b>
                         <span class="m-ach" id="exPriorityBioActual">Ach: 0 Outlet</span>
                         <span class="m-sub" id="exPriorityBioGap">GAP Total: 0 Outlet</span>
                         <span class="m-target" id="exPriorityBioTarget">Target: 0 Outlet</span>
                     </div>
                     <div class="mission-stat-card" onclick="actionGotoOutletUnach('TAG')">
-                        <span class="m-lbl"><i class="fa-solid fa-tags color-orange"></i> TAGGING 3PCS ACH</span>
+                        <span class="m-lbl"><i class="fa-solid fa-tags color-orange"></i> TAGGING 5PCS ACH</span>
                         <b class="m-val color-orange" id="exPriorityTagAch">0.0%</b>
                         <span class="m-ach" id="exPriorityTagActual">Ach: 0 Outlet</span>
                         <span class="m-sub" id="exPriorityTagGap">GAP Total: 0 Outlet</span>
@@ -533,7 +538,7 @@
             <!-- SECTION NON KPI PANEL -->
             <div class="exec-card-panel border-top-blue" id="snapshotSectionNonKpi">
                 <div class="exec-panel-header-flex">
-                    <div class="exec-panel-header"><i class="fa-solid fa-table-list color-blue"></i> TARGET NON KPI PER DSE (FWA, TAGGING 50%, BIOMETRIK 80%)</div>
+                    <div class="exec-panel-header"><i class="fa-solid fa-table-list color-blue"></i> TARGET NON KPI PER DSE (FWA, TAGGING, RGU GA IOH)</div>
                     <button class="btn-snapshot-section" onclick="takeSectionSnapshot('snapshotSectionNonKpi')"><i class="fa-solid fa-camera"></i> Snapshot Non KPI</button>
                 </div>
                 <div class="mini-table-wrapper">
@@ -542,8 +547,8 @@
                             <tr>
                                 <th>Nama DSE</th>
                                 <th>Target RGUGA FWA</th>
-                                <th>Ach Tagging 3PCS (50%) & GAP</th>
-                                <th>Ach GA Biometrik (80%) & GAP</th>
+                                <th>Tagging 5PCS</th>
+                                <th>RGU GA IOH & GAP</th>
                             </tr>
                         </thead>
                         <tbody id="nonKpiTableBody"></tbody>
@@ -551,15 +556,15 @@
                 </div>
             </div>
 
-            <!-- SECTION 4: KPI RSE PERFORMANCE SCORECARD -->
+            <!-- SECTION 4: KPI DSP PERFORMANCE SCORECARD -->
             <div class="exec-card-panel border-top-red" id="snapshotSectionRse">
                 <div class="exec-panel-header-flex">
-                    <div class="exec-panel-header"><i class="fa-solid fa-square-poll-vertical color-red"></i> KPI RSE PERFORMANCE SCORECARD </div>
+                    <div class="exec-panel-header"><i class="fa-solid fa-square-poll-vertical color-red"></i> KPI DSP PERFORMANCE SCORECARD </div>
                     <div style="display: flex; gap: 10px; align-items: center;">
                         <div class="status-badge badge-success" style="font-size: 13px; font-weight: 800; padding: 6px 14px;">
-                            Total RSE Score: <span id="rseTotalScoreText">44.62%</span>
+                            Total DSP Score: <span id="rseTotalScoreText">44.62%</span>
                         </div>
-                        <button class="btn-snapshot-section" onclick="takeSectionSnapshot('snapshotSectionRse')"><i class="fa-solid fa-camera"></i> Snapshot RSE Scorecard</button>
+                        <button class="btn-snapshot-section" onclick="takeSectionSnapshot('snapshotSectionRse')"><i class="fa-solid fa-camera"></i> Snapshot DSP Scorecard</button>
                     </div>
                 </div>
                 
@@ -596,7 +601,7 @@
                                 <td><b id="rseWScoreSellIn">0.00%</b></td>
                             </tr>
                             <tr>
-                                <td style="text-align: left; font-weight: 700;">Retailer Tagging (min 3pcs)</td>
+                                <td style="text-align: left; font-weight: 700;">Retailer Tagging (min 5pcs)</td>
                                 <td><span class="badge-target">17.5%</span></td>
                                 <td><span id="rseTgtTag">155</span></td>
                                 <td><span id="rseActTag">0</span></td>
@@ -622,7 +627,7 @@
                         </tbody>
                         <tfoot>
                             <tr class="rse-total-score-row">
-                                <td style="text-align: left;">TOTAL SCORE RSE</td>
+                                <td style="text-align: left;">TOTAL SCORE DSP</td>
                                 <td>100.0%</td>
                                 <td colspan="3"></td>
                                 <td id="rseFooterTotal" style="font-size: 14px;">44.62%</td>
@@ -857,22 +862,32 @@
                 <div class="card card-yellow">
                     <div class="icon"><i class="fa-solid fa-fingerprint"></i></div>
                     <div class="card-body">
-                        <div class="card-header-flex"><h3>BIOMETRIX GA OUTLET</h3><span class="status-badge" id="badgeBiometrixDO">-</span></div>
-                        <div class="kpi-main-val"><span id="kpiPctBiometrixDO">0.0%</span></div>
-                        <div class="kpi-compare-row">Ach: <span id="kpiBiometrixOutletDO">0</span> / Total: <span id="kpiTotalOutletBioDO">0</span> Outlet</div>
+                        <div class="card-header-flex"><h3>RGUGA IOH</h3><span class="status-badge" id="badgeBiometrixDO" style="display:none">-</span></div>
+                        <div class="kpi-main-val"><span id="kpiPctBiometrixDO">0</span></div>
+                        <div class="kpi-compare-row">Outlet memiliki RGU GA: <span id="kpiBiometrixOutletDO">0</span> / <span id="kpiTotalOutletBioDO">0</span></div>
                         <div class="progress-bar-bg"><div class="progress-bar-fill fill-yellow" id="progressBiometrixDO"></div></div>
                     </div>
                 </div>
                 <div class="card card-magenta">
                     <div class="icon"><i class="fa-solid fa-tags"></i></div>
                     <div class="card-body">
-                        <div class="card-header-flex"><h3>TAGGING 3PCS</h3><span class="status-badge" id="badgeTaggingDO">-</span></div>
+                        <div class="card-header-flex"><h3>TAG 5PCS</h3><span class="status-badge" id="badgeTaggingDO">-</span></div>
                         <div class="kpi-main-val"><span id="kpiPctTaggingDO">0.0%</span></div>
                         <div class="kpi-compare-row">Ach: <span id="kpiTagging3pcsDO">0</span> / Total: <span id="kpiTotalOutletTagDO">0</span> Outlet</div>
                         <div class="progress-bar-bg"><div class="progress-bar-fill fill-magenta" id="progressTaggingDO"></div></div>
                     </div>
                 </div>
-                <div class="card card-purple" style="border-left: 5px solid #8b5cf6;">
+                <div class="card card-red" id="cardOsaBelow300DO" style="border-top:5px solid #ef4444;">
+                    <div class="icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                    <div class="card-body">
+                        <div class="card-header-flex"><h3>OSA IOH &gt; Rp300K</h3><span class="status-badge" id="badgeOsaBelow300DO" style="display:none">-</span></div>
+                        <div class="kpi-main-val"><span id="kpiOsaBelow300PctDO">0.0%</span></div>
+                        <div class="kpi-compare-row">Outlet OSA &gt; Rp300K: <span id="kpiOsaBelow300AchDO">0</span> / Target: <span id="kpiOsaBelow300TargetDO">233</span></div>
+                        <div class="kpi-row-info">GAP: <span id="kpiOsaBelow300GapDO">0</span> outlet</div>
+                        <div class="progress-bar-bg"><div class="progress-bar-fill fill-red" id="progressOsaBelow300DO"></div></div>
+                    </div>
+                </div>
+                <div class="card card-purple" id="legacyRgugaBioCardDO" style="border-left: 5px solid #8b5cf6; display:none !important;">
                     <div class="icon" style="background: #ede9fe; color: #8b5cf6;"><i class="fa-solid fa-chart-pie"></i></div>
                     <div class="card-body">
                         <div class="card-header-flex"><h3>RGUGA BIOMETRIX MTD</h3><span class="status-badge" id="badgeRgugaBioDO">-</span></div>
@@ -908,10 +923,22 @@
                 <option value="JUMAT">Jumat</option>
                 <option value="SABTU">Sabtu</option>
             </select>
-            <select id="columnFilterDO" style="font-weight:700; background:#f0fdf4; border-color:#86efac; color:#166534;">
-                <option value="ALL">🔍 Pilih Kolom Filter (ID s/d Biometrix)</option>
+            <select id="filterOsaIohDO" aria-label="Filter OSA IOH">
+                <option value="ALL">Semua OSA IOH</option>
+                <option value="LT300">OSA &lt; Rp300K</option>
+                <option value="GE300">OSA ≥ Rp300K</option>
+                <option value="GT500">OSA &gt; Rp500K</option>
+                <option value="GT1M">OSA &gt; Rp1 Juta</option>
+                <option value="GT3M">OSA &gt; Rp3 Juta</option>
+                <option value="GT5M">OSA &gt; Rp5 Juta</option>
             </select>
-            <input type="number" id="columnFilterValDO" placeholder="Min (Pcs/Nilai)..." style="max-width:140px;" />
+            <select id="filterRgugaIohDO" aria-label="Filter jumlah RGU GA IOH">
+                <option value="ALL">Semua RGU GA IOH</option>
+                <option value="0">RGU GA = 0</option>
+                <option value="1-5">RGU GA 1–5</option>
+                <option value="6-10">RGU GA 6–10</option>
+                <option value="GT10">RGU GA &gt; 10</option>
+            </select>
             <input type="text" id="searchInputDO" placeholder="🔍 Cari Outlet ID / Nama / Site...">
             <button class="reset-btn" onclick="resetFilters('detail-outlet')"><i class="fa-solid fa-rotate-left"></i> Reset</button>
             <button class="btn-snapshot-table" onclick="takeTableSnapshotDO()"><i class="fa-solid fa-camera"></i> Snapshot Tabel</button>

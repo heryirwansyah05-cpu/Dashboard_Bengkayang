@@ -48,6 +48,13 @@ function applyLastUpdateRSEFromRows(rows) {
     if (headerEl) headerEl.innerText = `Last Update: ${globalLastUpdateRSE}`;
     const legacyEl = document.getElementById("lastUpdateText");
     if (legacyEl) legacyEl.innerText = `Last Update : ${globalLastUpdateRSE}`;
+    // MTD period follows the month/year stated in Target RSE.xlsx!F2.
+    const periodEl = document.getElementById("headerExecutivePeriod");
+    if (periodEl && globalLastUpdateRSE && globalLastUpdateRSE !== "-") {
+        const parts = globalLastUpdateRSE.match(/(?:\d{1,2}\s+)?([A-Za-z]+)\s+(\d{4})/);
+        if (parts) periodEl.innerText = `MTD - ${parts[1]} ${parts[2]}`;
+        else periodEl.innerText = `MTD - ${globalLastUpdateRSE}`;
+    }
 }
 
 function normalizeTargetLabel(value) {
@@ -202,6 +209,8 @@ const pTargetRSE = (async function(){
 
 let globalHeaderSM = [], globalDataSM = [];
 let globalHeaderDO = [], globalDataDO = [];
+let globalHeaderDORaw = [], globalDataDORaw = [];
+let DO_HAS_TAGGING_DATA = false; // Excel Detail Outlet terbaru tidak menyediakan kolom Tagging/Biometrik.
 // Mapping Site ID -> Site Name + Kecamatan dari SITE PROFIL BENGKAYANG.xlsx
 let siteMetaById = new Map();
 let globalHeaderDailyOSA = [], globalDataDailyOSA = [];
@@ -781,7 +790,7 @@ function populateDetailOutletLocationFilters() {
   const siteSelect = document.getElementById("siteFilterDO");
   if (!kecSelect || !siteSelect) return;
 
-  const siteIdIdx = globalHeaderDO.findIndex(h => String(h || "").toUpperCase().trim() === "SITE ID");
+  const siteIdIdx = globalHeaderDORaw.findIndex(h => String(h || "").toUpperCase().trim() === "SITE ID");
   if (siteIdIdx === -1) {
     console.warn("SITE ID tidak ditemukan pada Detail Outlet.");
     return;
@@ -791,7 +800,7 @@ function populateDetailOutletLocationFilters() {
   const siteMap = new Map();
   const selectedKec = kecSelect.value || "ALL";
 
-  (globalDataDO || []).forEach(r => {
+  (globalDataDORaw || []).forEach(r => {
     const siteId = String(r[siteIdIdx] ?? "").trim();
     if (!siteId) return;
     const meta = getSiteMeta(siteId);
@@ -918,51 +927,108 @@ const p2 = pSiteMaster.then(() => fetch("SITE MONITORING.xlsx"))
   }).catch(e => console.log("SM load skip"));
 
 const p3 = pSiteMaster.then(() => fetch("DETAIL OUTLET.xlsx"))
-  .then((res) => res.arrayBuffer())
+  .then((res) => {
+    if (!res.ok) throw new Error("DETAIL OUTLET.xlsx HTTP " + res.status);
+    return res.arrayBuffer();
+  })
   .then((data) => {
     const wb = XLSX.read(data, { type: "array" });
     const ws = wb.Sheets[wb.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, range: 4, raw: true });
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: "" });
     if (!rows || rows.length === 0) return;
-    globalHeaderDO = (rows[0] || []).map((h) => String(h || "").replace(/\r?\n|\r/g, " ").trim());
-    let targetRgugaIdx = globalHeaderDO.findIndex(h => h.toUpperCase().includes("TARGET RGUGA BIOMETRIX"));
-    globalDataDO = rows.slice(1).filter(r => r.length > 0 && r[0] && String(r[0]).toUpperCase() !== "OUTLET ID").map(r => {
-        let newRow = [...r];
-        if (targetRgugaIdx !== -1 && newRow[targetRgugaIdx] !== undefined) {
-            newRow[targetRgugaIdx] = Math.floor(parseNum(newRow[targetRgugaIdx]));
-        }
-        return newRow;
+
+    // Cari header sebenarnya berdasarkan nama kolom, bukan nomor baris tetap.
+    const headerIdx = rows.findIndex(row => (row || []).some(c => String(c ?? "").trim().toUpperCase() === "NAMA SALES"));
+    if (headerIdx < 0) throw new Error("Header NAMA SALES tidak ditemukan pada DETAIL OUTLET.xlsx");
+    globalHeaderDORaw = (rows[headerIdx] || []).map(h => String(h ?? "").replace(/\r?\n|\r/g, " ").trim());
+    globalDataDORaw = rows.slice(headerIdx + 1).filter(row => {
+      if (!row || !row.length) return false;
+      const outletId = String(row[3] ?? "").trim();
+      const outletName = String(row[4] ?? "").trim();
+      const outletId3ID = String(row[5] ?? "").trim();
+      const outletName3ID = String(row[6] ?? "").trim();
+      const sales = String(row[0] ?? "").trim();
+      return !!(outletId || outletName || outletId3ID || outletName3ID) && sales.toUpperCase() !== "NAMA SALES";
+    });
+
+    const col = (name) => globalHeaderDORaw.findIndex(h => String(h ?? "").trim().toUpperCase() === name);
+    const ix = {
+      sales: col("NAMA SALES"), dseIm3: col("DSE CODE IM3"), dse3id: globalHeaderDORaw.findIndex((h,i) => String(h ?? "").trim().toUpperCase() === "DSE CODE 3ID" && i < 9),
+      outletIm3: col("OUTLET CODE IM3"), nameIm3: col("OUTLET IM3 NAME"), category: col("IM3-OUTLET CATEGORY"), pairing: col("PAIRING OUTLET STATUS"),
+      siteId: col("SITE ID"), kecamatan: col("KECAMATAN"),
+      osaIm3: col("OSA"), sellIm3: col("SELL IN SP"), rguIm3: col("RGU GA"),
+      osa3id: -1, sell3id: -1, rgu3id: -1, osaIoh: -1, sellIoh: -1, rguIoh: -1
+    };
+    // Cari kolom produk berdasar posisi kelompok IM3 / 3ID / IOH pada header bertingkat.
+    const headerUpper = globalHeaderDORaw.map(h => String(h ?? "").trim().toUpperCase());
+    const iohGroupStart = headerUpper.findIndex((h,i) => h === "OSA" && i >= 25 && i < 34);
+    // Header baris 5 memiliki grup IM3/3ID/IOH; baris 6 berisi label yang berulang.
+    // Struktur file saat ini: T:X IM3, Y:AC 3ID, AD:AH IOH.
+    ix.osaIm3 = 19; ix.sellIm3 = 20; ix.rguIm3 = 21;
+    ix.osa3id = 24; ix.sell3id = 25; ix.rgu3id = 26;
+    ix.osaIoh = 29; ix.sellIoh = 30; ix.rguIoh = 31;
+
+    // globalDataDO dipertahankan sebagai schema kompatibilitas untuk fungsi lama.
+    // Data tabel mentah disimpan terpisah supaya tabel tetap mengikuti Excel baru.
+    globalHeaderDO = [
+      "OUTLET CODE", "NAMA OUTLET", "DSE CODE", "CATEGORY", "PAIRING OUTLET STATUS", "NAMA SALES", "PARTNER",
+      "TARGET SELL IN SP", "SELL IN SP IOH", "SENIN", "SELASA", "TARGET OSA", "OSA IOH",
+      "KPI 13", "KPI 14", "TARGET TAGGING", "ACH TAGGING", "TARGET RGU GA IOH", "RGU GA IOH", "FWA RGU GA"
+    ];
+    DO_HAS_TAGGING_DATA = true;
+    globalDataDO = globalDataDORaw.map(raw => {
+      const dseIm3 = String(raw[ix.dseIm3] ?? "").trim();
+      const dse3id = String(raw[ix.dse3id] ?? "").trim();
+      const dseCode = dseIm3 || dse3id;
+      const outletCode = raw[ix.outletIm3] || raw[col("OUTLET CODE 3ID")] || "";
+      const outletName = raw[ix.nameIm3] || raw[col("OUTLET 3ID NAME")] || "";
+      const osa = Number(raw[ix.osaIoh]) || 0;
+      const sell = Number(raw[ix.sellIoh]) || 0;
+      const rgu = Number(raw[ix.rguIoh]) || 0;
+      const targetOsa = 300000; // Ambang OSA per outlet untuk instruksi harian.
+      const targetSell = 3; // ambang Sell In yang memang digunakan pada aturan kritis lama.
+      const tag5 = Number(raw[40]) || 0; // AO: nilai tagging sesuai instruksi terbaru
+      const fwaRguga = Number(raw[42]) || 0; // AQ: FWA RGUGA
+      const row = [outletCode, outletName, dseCode, raw[ix.category] || "", raw[ix.pairing] || "", raw[ix.sales] || "", "PT-JAGOI BABANG",
+        targetSell, sell, raw[20] || 0, raw[21] || 0, targetOsa, osa, "", "", tag5, tag5, 0, rgu, fwaRguga];
+      // Simpan referensi baris Excel asli untuk filter dan render tabel.
+      Object.defineProperty(row, "__raw", { value: raw, enumerable: false });
+      Object.defineProperty(row, "__dseIm3", { value: dseIm3, enumerable: false });
+      Object.defineProperty(row, "__dse3id", { value: dse3id, enumerable: false });
+      Object.defineProperty(row, "__siteId", { value: String(raw[ix.siteId] ?? "").trim(), enumerable: false });
+      Object.defineProperty(row, "__kecamatan", { value: String(raw[ix.kecamatan] ?? "").trim(), enumerable: false });
+      return row;
     });
 
     populateDetailOutletLocationFilters();
     populateMultiSelectDse(globalDataDO, "multiSelectDropdownDO", "multiSelectLabelDO", selectedDseSetDO, 2, updateDashboardDO);
     populateDropdown(globalDataDO, "execDseFilter", 2, "Semua DSE Code");
     populateDropdown(globalDataDO, "categoryFilterDO", 3, "Semua Category");
-    populateDropdown(globalDataDO, "isimpleFilterDO", 4, "Semua ISIMPLE");
+    populateDropdown(globalDataDO, "isimpleFilterDO", 4, "Semua Pairing Status");
     populateColumnFilterDO();
     updateDashboardDO();
-  }).catch(e => console.log("DO load skip"));
+  }).catch(e => console.error("DETAIL OUTLET load failed:", e));
 
 const p4 = fetch("GAP DAILY KPI DSE.xlsx")
-  .then((res) => res.arrayBuffer())
-  .then((data) => {
+  .then(res => { if (!res.ok) throw new Error("GAP DAILY KPI DSE.xlsx HTTP " + res.status); return res.arrayBuffer(); })
+  .then(data => {
     const wb = XLSX.read(data, { type: "array" });
     const ws = wb.Sheets[wb.SheetNames[0]];
-    const jsonData = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true });
-    if (!jsonData || jsonData.length === 0) return;
-    let idxOsaHeader = jsonData.findIndex(r => r && r.some(c => String(c).toUpperCase().includes("TARGET OSA")));
-    let idxSpHeader = jsonData.findIndex(r => r && r.some(c => String(c).toUpperCase().includes("TARGET SP SELL IN")));
-    if (idxOsaHeader !== -1) {
-        let endIdx = idxSpHeader !== -1 ? idxSpHeader : jsonData.length;
-        globalDataDailyOSA = jsonData.slice(idxOsaHeader + 1, endIdx).filter(r => r && r.some(c => c !== undefined && c !== null && c !== ''));
-    }
-    if (idxSpHeader !== -1) {
-        globalDataDailySP = jsonData.slice(idxSpHeader + 1).filter(r => r && r.some(c => c !== undefined && c !== null && c !== ''));
-    }
-    let combinedData = globalDataDailyOSA.length > 0 ? globalDataDailyOSA : globalDataDailySP;
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: "" });
+    if (!rows || !rows.length) return;
+    const headerIdx = rows.findIndex(r => String((r || [])[0] ?? "").trim().toUpperCase() === "DSE NAME");
+    if (headerIdx < 0) throw new Error("Header DSE NAME tidak ditemukan pada GAP DAILY KPI DSE.xlsx");
+    const dataRows = rows.slice(headerIdx + 1).filter(r => r && String(r[0] ?? "").trim() && !String(r[0]).toUpperCase().includes("TOTAL"));
+    // Kolom file baru: C-H target, I-N achievement, O-T achievement %.
+    // Format internal lama dipertahankan: [DSE, kode, target, achievement, %, GAP].
+    globalDataDailyOSA = dataRows.map(r => [String(r[0] ?? "").trim(), String(r[1] ?? "").trim(), parseNum(r[6]), parseNum(r[12]), parseNum(r[18]) * 100, parseNum(r[6]) - parseNum(r[12])]);
+    globalDataDailySP = dataRows.map(r => [String(r[0] ?? "").trim(), String(r[1] ?? "").trim(), parseNum(r[7]), parseNum(r[13]), parseNum(r[19]) * 100, parseNum(r[7]) - parseNum(r[13])]);
+    globalHeaderDailyOSA = ["DSE NAME", "DSE CODE", "TARGET OSA IOH", "ACHIEVEMENT OSA IOH", "ACHIEVEMENT %", "GAP OSA IOH"];
+    globalHeaderDailySP = ["DSE NAME", "DSE CODE", "TARGET SELL IN SP IOH", "ACHIEVEMENT SELL IN SP IOH", "ACHIEVEMENT %", "GAP SELL IN SP IOH"];
+    const combinedData = globalDataDailyOSA;
     populateMultiSelectDse(combinedData, "multiSelectDropdownDaily", "multiSelectLabelDaily", selectedDseSetDaily, 0, updateDashboardDaily);
     updateDashboardDaily();
-  }).catch(e => console.log("GAP DAILY KPI DSE load skip"));
+  }).catch(e => console.error("GAP DAILY KPI DSE load failed:", e));
 
 const p5 = fetch("PARTNER PERFORMANCE.xlsx")
   .then((res) => res.arrayBuffer())
@@ -1017,8 +1083,8 @@ function populateColumnFilterDO() {
     const colSelect = document.getElementById("columnFilterDO");
     if (!colSelect || !globalHeaderDO || globalHeaderDO.length === 0) return;
     colSelect.innerHTML = `<option value="ALL">🔍 Pilih Kolom Filter (ID s/d Biometrix)</option>`;
-    for (let i = 0; i <= Math.min(18, globalHeaderDO.length - 1); i++) {
-        let hName = globalHeaderDO[i];
+    for (let i = 0; i < globalHeaderDORaw.length; i++) {
+        let hName = globalHeaderDORaw[i];
         if (hName) {
             const opt = document.createElement("option");
             opt.value = i;
@@ -1064,7 +1130,7 @@ function updateDashboardMS() {
     const partnerName = String(r[idxPartner !== -1 ? idxPartner : 1] || "").trim();
     return (selectedPartner === "ALL" || partnerName === selectedPartner) &&
            (selectedKecamatan === "ALL" || kecName === selectedKecamatan) &&
-           r.join(" ").toLowerCase().includes(searchKeyword);
+           String((r.__raw || r).join(" ")).toLowerCase().includes(searchKeyword);
   });
 
   let totalRevMtd=0,totalRevLmtd=0,totalPrimaryMtd=0,totalPrimaryLmtd=0,totalSecondaryMtd=0,totalSecondaryLmtd=0;
@@ -1440,8 +1506,9 @@ function updateDashboardDO() {
   const selKecamatan = document.getElementById("kecamatanFilterDO")?.value || "ALL";
   const selSite = document.getElementById("siteFilterDO")?.value || "ALL";
   const searchKeyword = document.getElementById("searchInputDO")?.value.toLowerCase().trim() || "";
-  const colFilterIdx = document.getElementById("columnFilterDO")?.value || "ALL";
-  const siteIdIdxDO = globalHeaderDO.findIndex(h => String(h || "").toUpperCase().trim() === "SITE ID");
+  const osaBucket = document.getElementById("filterOsaIohDO")?.value || "ALL";
+  const rguBucket = document.getElementById("filterRgugaIohDO")?.value || "ALL";
+  const siteIdIdxDO = globalHeaderDORaw.findIndex(h => String(h || "").toUpperCase().trim() === "SITE ID");
 
   let colIdxHari = selHari !== "ALL" ? globalHeaderDO.findIndex(h => h.toUpperCase() === selHari) : -1;
 
@@ -1455,56 +1522,63 @@ function updateDashboardDO() {
         if (quickFilterTypeDO === 'SELL_IN') matchQuick = (parseNum(r[8]) === 0);
         else if (quickFilterTypeDO === 'OSA') matchQuick = (parseNum(r[12]) < parseNum(r[11]) || parseNum(r[12]) === 0);
         else if (quickFilterTypeDO === 'BIO') matchQuick = (parseNum(r[18]) < 1);
-        else if (quickFilterTypeDO === 'TAG') matchQuick = (parseNum(r[15]) < 3 && parseNum(r[16]) < 1);
+        else if (quickFilterTypeDO === 'TAG') matchQuick = DO_HAS_TAGGING_DATA && (parseNum(r[15]) < 3 && parseNum(r[16]) < 1);
     } else {
         if (quickFilterTypeDO === 'BIO') matchQuick = (parseNum(r[18]) >= 1);
-        else if (quickFilterTypeDO === 'TAG') matchQuick = (parseNum(r[15]) >= 3 || parseNum(r[16]) >= 1);
+        else if (quickFilterTypeDO === 'TAG') matchQuick = DO_HAS_TAGGING_DATA && (parseNum(r[15]) >= 3 || parseNum(r[16]) >= 1);
         else if (quickFilterTypeDO === 'OSA') matchQuick = (parseNum(r[12]) > 0);
     }
 
-    let matchColFilter = true;
-    const rawInputVal = document.getElementById("columnFilterValDO")?.value.trim();
+    const osaVal = parseNum(r[12]); // Kolom AD: OSA IOH
+    const rguVal = parseNum(r[18]); // Kolom AF: RGU GA IOH
+    let matchOsaBucket = true;
+    if (osaBucket === "LT300") matchOsaBucket = osaVal < 300000;
+    else if (osaBucket === "GE300") matchOsaBucket = osaVal >= 300000;
+    else if (osaBucket === "GT500") matchOsaBucket = osaVal > 500000;
+    else if (osaBucket === "GT1M") matchOsaBucket = osaVal > 1000000;
+    else if (osaBucket === "GT3M") matchOsaBucket = osaVal > 3000000;
+    else if (osaBucket === "GT5M") matchOsaBucket = osaVal > 5000000;
+    let matchRguBucket = true;
+    if (rguBucket === "0") matchRguBucket = rguVal === 0;
+    else if (rguBucket === "1-5") matchRguBucket = rguVal >= 1 && rguVal <= 5;
+    else if (rguBucket === "6-10") matchRguBucket = rguVal >= 6 && rguVal <= 10;
+    else if (rguBucket === "GT10") matchRguBucket = rguVal > 10;
 
-    if (colFilterIdx !== "ALL" && rawInputVal !== "" && rawInputVal !== undefined) {
-        let inputNum = parseNum(rawInputVal);
-        let cellVal = parseNum(r[parseInt(colFilterIdx)]);
-
-        if (inputNum === 0) {
-            matchColFilter = (cellVal === 0);
-        } else {
-            matchColFilter = (cellVal >= inputNum);
-        }
-    }
-
-    const rowSiteId = siteIdIdxDO >= 0 ? String(r[siteIdIdxDO] ?? "").trim() : "";
+    const rowSiteId = String(r.__siteId || "").trim();
     const rowSiteMeta = getSiteMeta(rowSiteId);
     return matchDSE &&
            (selCategory === "ALL" || String(r[3] || "").trim() === selCategory) &&
            (selIsimple === "ALL" || String(r[4] || "").trim() === selIsimple) &&
            (selKecamatan === "ALL" || rowSiteMeta.kec === selKecamatan) &&
            (selSite === "ALL" || normalizeSiteId(rowSiteId) === normalizeSiteId(selSite)) &&
-           matchHari && matchQuick && matchColFilter && r.join(" ").toLowerCase().includes(searchKeyword);
+           matchHari && matchQuick && matchOsaBucket && matchRguBucket && r.join(" ").toLowerCase().includes(searchKeyword);
   });
 
   let totalOutlet = filteredRows.length;
   let targetSellIn = 0, achSellIn = 0, targetOsa = 0, achOsa = 0, outletWithBio = 0, outletWithTag = 0;
+  let outletOsaBelow300k = 0;
   let targetRgugaBio = 0, achRgugaBio = 0;
 
   filteredRows.forEach((r) => {
-    targetSellIn += Math.ceil(parseNum(r[7]));
+    targetSellIn += 0; // target sell-in resmi ditetapkan pada ringkasan
     achSellIn += parseNum(r[8]);
-    targetOsa += parseNum(r[11]);
+    targetOsa += 0; // target OSA resmi dibaca dari GAP DAILY KPI DSE / target total yang ditetapkan
     achOsa += parseNum(r[12]);
+    if (parseNum(r[12]) < 300000) outletOsaBelow300k++;
     if (parseNum(r[18]) >= 1) outletWithBio++;
-    if (parseNum(r[15]) >= 3 || parseNum(r[16]) >= 1) outletWithTag++;
+    if (parseNum(r[16]) >= 5) outletWithTag++; // Tagging diambil dari kolom AO (nilai pcs), ambang 5 pcs
     targetRgugaBio += parseNum(r[17]);
     achRgugaBio += parseNum(r[18]);
   });
 
+  // Target summary resmi: mengikuti target global yang ditetapkan, bukan penjumlahan ambang per outlet.
+  targetSellIn = 2012;
+  targetOsa = 1123620647;
   let pctSellIn = targetSellIn > 0 ? ((achSellIn / targetSellIn) * 100) : 0;
   let pctOsa = targetOsa > 0 ? ((achOsa / targetOsa) * 100) : 0;
   let pctBio = totalOutlet > 0 ? ((outletWithBio / totalOutlet) * 100) : 0;
-  let pctTag = totalOutlet > 0 ? ((outletWithTag / totalOutlet) * 100) : 0;
+  const targetTagSummary = 140;
+  let pctTag = targetTagSummary > 0 ? ((outletWithTag / targetTagSummary) * 100) : 0;
   let pctRgugaBio = targetRgugaBio > 0 ? ((achRgugaBio / targetRgugaBio) * 100) : 0;
 
   animateCounter("kpiPctSellInDO", pctSellIn, false, true);
@@ -1520,16 +1594,32 @@ function updateDashboardDO() {
   document.getElementById("kpiAchOsaDO").innerText = "Rp " + Math.round(achOsa).toLocaleString("id-ID");
   document.getElementById("kpiGapOsaDO").innerText = "Rp " + Math.round(targetOsa - achOsa).toLocaleString("id-ID");
   updateProgressBarAndBadge(pctOsa, "gaugeOsaFill", "badgeOsaDO");
+  const mappedOutletCount = (globalDataDO || []).length;
+  const osaBelow300kAll = (globalDataDO || []).filter(r => parseNum(r[12]) > 300000).length;
+  const osaBelowPct = mappedOutletCount > 0 ? osaBelow300kAll / mappedOutletCount * 100 : 0;
+  const setText = (id, val) => { const el = document.getElementById(id); if (el) el.innerText = val; };
+  setText("kpiOsaBelow300AchDO", osaBelow300kAll.toLocaleString("id-ID"));
+  setText("kpiOsaBelow300TargetDO", mappedOutletCount.toLocaleString("id-ID"));
+  setText("kpiOsaBelow300PctDO", osaBelowPct.toFixed(1) + "%");
+  setText("kpiOsaBelow300GapDO", Math.max(0, mappedOutletCount - osaBelow300kAll).toLocaleString("id-ID"));
+  const osaBelowBar = document.getElementById("progressOsaBelow300DO"); if (osaBelowBar) osaBelowBar.style.width = Math.min(100, osaBelowPct) + "%";
 
-  animateCounter("kpiPctBiometrixDO", pctBio, false, true);
+  document.getElementById("kpiPctBiometrixDO").innerText = (totalOutlet > 0 ? (outletWithBio / totalOutlet * 100).toFixed(1) : "0.0") + "% outlet";
   document.getElementById("kpiBiometrixOutletDO").innerText = outletWithBio.toLocaleString("id-ID");
   document.getElementById("kpiTotalOutletBioDO").innerText = totalOutlet.toLocaleString("id-ID");
-  updateProgressBarAndBadge(pctBio, "progressBiometrixDO", "badgeBiometrixDO");
+  const rguCoverageBar = document.getElementById("progressBiometrixDO"); if (rguCoverageBar) rguCoverageBar.style.width = (totalOutlet > 0 ? (outletWithBio / totalOutlet * 100) : 0) + "%";
+  const rguCoverageBadge = document.getElementById("badgeBiometrixDO"); if (rguCoverageBadge) rguCoverageBadge.innerText = "";
 
-  animateCounter("kpiPctTaggingDO", pctTag, false, true);
-  document.getElementById("kpiTagging3pcsDO").innerText = outletWithTag.toLocaleString("id-ID");
-  document.getElementById("kpiTotalOutletTagDO").innerText = totalOutlet.toLocaleString("id-ID");
-  updateProgressBarAndBadge(pctTag, "progressTaggingDO", "badgeTaggingDO");
+  if (DO_HAS_TAGGING_DATA) {
+    animateCounter("kpiPctTaggingDO", pctTag, false, true);
+    document.getElementById("kpiTagging3pcsDO").innerText = outletWithTag.toLocaleString("id-ID");
+    document.getElementById("kpiTotalOutletTagDO").innerText = targetTagSummary.toLocaleString("id-ID");
+    updateProgressBarAndBadge(pctTag, "progressTaggingDO", "badgeTaggingDO");
+  } else {
+    const tagPct = document.getElementById("kpiPctTaggingDO"); if (tagPct) tagPct.innerText = "N/A";
+    const tagAch = document.getElementById("kpiTagging3pcsDO"); if (tagAch) tagAch.innerText = "Tidak tersedia";
+    const tagTotal = document.getElementById("kpiTotalOutletTagDO"); if (tagTotal) tagTotal.innerText = "-";
+  }
 
   animateCounter("kpiPctRgugaBioDO", pctRgugaBio, false, true);
   document.getElementById("kpiTargetRgugaBioDO").innerText = Math.round(targetRgugaBio).toLocaleString("id-ID");
@@ -1539,9 +1629,18 @@ function updateDashboardDO() {
 
   document.getElementById("stickyOsa").innerText = `${pctOsa.toFixed(1)}%`;
   document.getElementById("stickySellIn").innerText = `${pctSellIn.toFixed(1)}%`;
-  document.getElementById("stickyBio").innerText = `${pctBio.toFixed(1)}%`;
+  document.getElementById("stickyBio").innerText = `${Math.round(achRgugaBio).toLocaleString("id-ID")}`;
 
-  renderTable("dataTableDO", globalHeaderDO, filteredRows);
+  renderTable("dataTableDO", globalHeaderDORaw, filteredRows.map(r => r.__raw || r));
+  // Tambahkan header kelompok seperti Excel: INFORMASI OUTLET, IM3, 3ID, IOH, PROGRAM.
+  const doTable = document.getElementById("dataTableDO");
+  const doHead = doTable?.querySelector("thead");
+  if (doHead && !doHead.querySelector(".do-group-header")) {
+    const groupRow = document.createElement("tr"); groupRow.className = "do-group-header";
+    const groups = [{label:"INFORMASI OUTLET",span:19},{label:"IM3",span:5},{label:"3ID",span:5},{label:"IOH",span:5},{label:"PROGRAM",span:1}];
+    groups.forEach(g => { const th=document.createElement("th"); th.colSpan=g.span; th.textContent=g.label; th.style.cssText="background:#24334a;color:#fff;text-align:center;font-weight:800;border-right:1px solid #475569;padding:8px;position:sticky;top:0;z-index:4;"; groupRow.appendChild(th); });
+    doHead.insertBefore(groupRow, doHead.firstChild);
+  }
 }
 
 function updateDashboardDaily() {
@@ -1555,14 +1654,16 @@ function updateDashboardDaily() {
 
   const filteredOsaRows = globalDataDailyOSA.filter((r) => {
     let dseVal = String(r[0] || "").trim();
-    let matchDSE = selectedDseSetDaily.size === 0 || selectedDseSetDaily.has(dseVal);
+    let codePair = String(r[1] || "");
+    let matchDSE = selectedDseSetDaily.size === 0 || selectedDseSetDaily.has(dseVal) || Array.from(selectedDseSetDaily).some(code => codePair.includes(code));
     return matchDSE && r.join(" ").toLowerCase().includes(searchKeyword);
   });
   renderDailyOsaSection(filteredOsaRows, hkInfo.remainingDays);
 
   const filteredSpRows = globalDataDailySP.filter((r) => {
     let dseVal = String(r[0] || "").trim();
-    let matchDSE = selectedDseSetDaily.size === 0 || selectedDseSetDaily.has(dseVal);
+    let codePair = String(r[1] || "");
+    let matchDSE = selectedDseSetDaily.size === 0 || selectedDseSetDaily.has(dseVal) || Array.from(selectedDseSetDaily).some(code => codePair.includes(code));
     return matchDSE && r.join(" ").toLowerCase().includes(searchKeyword);
   });
   renderDailySpSection(filteredSpRows, hkInfo.remainingDays);
@@ -1797,9 +1898,9 @@ function updateExecutiveSummaryNew() {
     globalDataDO.forEach(r => {
         let matchDse = (selDse === "ALL" || String(r[2] || "").trim() === selDse);
         if (matchDse) {
-            if (parseNum(r[18]) >= 1) globalBioAchCount++;
+            globalBioAchCount += parseNum(r[18]);
             // Detail Outlet: TAGGING 3PCS achievement = outlet with TAGGING 3PCS >= 1.
-            if (parseNum(r[16]) >= 1) globalTagAchCount++;
+            if (parseNum(r[16]) >= 5) globalTagAchCount++;
         }
     });
     let pctBio = totalOutlet > 0 ? (globalBioAchCount / totalOutlet) * 100 : 0;
@@ -1975,7 +2076,7 @@ function updateExecutiveSummaryNew() {
     let mUnachBioFiltered = 0, mUnachTagFiltered = 0;
     missionRows.forEach(r => {
         if (parseNum(r[18]) < 1) mUnachBioFiltered++;
-        if (parseNum(r[15]) < 3 && parseNum(r[16]) < 1) mUnachTagFiltered++;
+        if (DO_HAS_TAGGING_DATA && parseNum(r[15]) < 3 && parseNum(r[16]) < 1) mUnachTagFiltered++;
     });
 
     let dseTotalBioGap = 0, dseTotalTagGap = 0;
@@ -1984,36 +2085,38 @@ function updateExecutiveSummaryNew() {
         let matchDse = (selDse === "ALL" || dName === selDse);
         if (matchDse) {
             if (parseNum(r[18]) < 1) dseTotalBioGap++;
-            if (parseNum(r[15]) < 3 && parseNum(r[16]) < 1) dseTotalTagGap++;
+            if (DO_HAS_TAGGING_DATA && parseNum(r[15]) < 3 && parseNum(r[16]) < 1) dseTotalTagGap++;
         }
     });
 
     // YOUR'S PRIORITY ACTION — hanya 4 KPI execution.
     const totalOutletCurrent = globalDataDO.length;
-    const targetBioOutlet = Math.ceil(totalOutletCurrent * 0.80);
+    const targetBioOutlet = 2404; // Target RGUGA IOH ditetapkan user.
     const targetTagOutlet = Math.ceil(totalOutletCurrent * 0.60);
     const targetFwaCurrent = Math.round(globalTargetRSE.fwa || 18);
-    const bioAchPct = targetBioOutlet > 0 ? (globalBioAchCount / targetBioOutlet) * 100 : 0;
+    const bioAchPct = totalOutletCurrent > 0 ? ((globalDataDO.filter(r => parseNum(r[18]) > 0).length / totalOutletCurrent) * 100) : 0;
     const priorityTagAchPct = targetTagOutlet > 0 ? (globalTagAchCount / targetTagOutlet) * 100 : 0;
     const fwaAchTotal = globalDataDO.reduce((sum,r) => sum + parseNum(r[19]), 0);
     const priorityFwaAchPct = targetFwaCurrent > 0 ? (fwaAchTotal / targetFwaCurrent) * 100 : 0;
     const gapFwaTotal = Math.max(0, targetFwaCurrent - fwaAchTotal);
-    const gapOsaDisplay = Math.max(0, targetOsa - achOsa);
-    const gapBioDisplay = Math.max(0, targetBioOutlet - globalBioAchCount);
+    const priorityOsaTarget = 1123620647; // Target OSA gabungan 6 sales.
+    const gapOsaDisplay = Math.max(0, priorityOsaTarget - achOsa);
+    const gapBioDisplay = Math.max(0, totalOutletCurrent - globalDataDO.filter(r => parseNum(r[18]) > 0).length);
     const gapTagDisplay = Math.max(0, targetTagOutlet - globalTagAchCount);
 
     const setPriority=(id,text)=>{const e=document.getElementById(id);if(e)e.innerText=text;};
     // Semua angka actual berasal langsung dari DETAIL OUTLET.
     // Tampilan priority sengaja tanpa prefix Rp sesuai request.
-    setPriority("exPriorityOsaAch", pctOsa.toFixed(1) + "%");
+    const priorityOsaPct = priorityOsaTarget > 0 ? (achOsa / priorityOsaTarget) * 100 : 0;
+    setPriority("exPriorityOsaAch", priorityOsaPct.toFixed(1) + "%");
     setPriority("exPriorityOsaActual", "Ach: " + Math.round(achOsa).toLocaleString('id-ID'));
     setPriority("exPriorityOsaGap", "GAP Total OSA: " + Math.round(gapOsaDisplay).toLocaleString('id-ID'));
-    setPriority("exPriorityOsaTarget", "Target OSA: " + Math.round(targetOsa).toLocaleString('id-ID'));
+    setPriority("exPriorityOsaTarget", "Target OSA: " + priorityOsaTarget.toLocaleString('id-ID'));
 
-    setPriority("exPriorityBioAch", bioAchPct.toFixed(2) + "%");
-    setPriority("exPriorityBioActual", "Ach: " + globalBioAchCount.toLocaleString('id-ID') + " Outlet");
-    setPriority("exPriorityBioGap", "GAP Total: " + gapBioDisplay.toLocaleString('id-ID') + " Outlet");
-    setPriority("exPriorityBioTarget", "Target: " + targetBioOutlet.toLocaleString('id-ID') + " Outlet");
+    setPriority("exPriorityBioAch", bioAchPct.toFixed(1) + "%");
+    setPriority("exPriorityBioActual", "Outlet sudah RGU GA IOH: " + globalDataDO.filter(r => parseNum(r[18]) > 0).length.toLocaleString('id-ID'));
+    setPriority("exPriorityBioGap", "Outlet belum RGU GA IOH: " + Math.round(gapBioDisplay).toLocaleString('id-ID'));
+    setPriority("exPriorityBioTarget", "Target: " + targetBioOutlet.toLocaleString('id-ID'));
 
     setPriority("exPriorityTagAch", priorityTagAchPct.toFixed(2) + "%");
     setPriority("exPriorityTagActual", "Ach: " + globalTagAchCount.toLocaleString('id-ID') + " Outlet");
@@ -2034,67 +2137,39 @@ function updateExecutiveSummaryNew() {
 function renderTargetNonKpiTable(selectedDseFilter) {
     const tbody = document.getElementById("nonKpiTableBody");
     if (!tbody) return;
-
-    let dseMap = {};
-    globalDataDO.forEach(r => {
-        let dName = String(r[2] || '').trim();
-        if (!dName || dName === 'undefined') return;
-        if (selectedDseFilter !== "ALL" && dName !== selectedDseFilter) return;
-
-        if (!dseMap[dName]) {
-            dseMap[dName] = { name: dName, fwaAch: 0, tagAch: 0, bioAch: 0, totalOutlet: 0 };
-        }
-        dseMap[dName].totalOutlet++;
-        dseMap[dName].fwaAch += parseNum(r[19]);
-        if (parseNum(r[15]) >= 3 || parseNum(r[16]) >= 1) dseMap[dName].tagAch++;
-        if (parseNum(r[18]) >= 1) dseMap[dName].bioAch++;
+    const bySales = {};
+    (globalDataDO || []).forEach(r => {
+        const salesName = String(r[5] || "").trim();
+        if (!salesName || salesName.toUpperCase() === "NAMA SALES") return;
+        if (!bySales[salesName]) bySales[salesName] = { name: salesName, fwaAch: 0, tagAch: 0, bioAch: 0, bioDone: 0, bioMissing: 0, totalOutlet: 0 };
+        const o = bySales[salesName];
+        o.totalOutlet++;
+        o.fwaAch += parseNum(r[19]);
+        if (parseNum(r[16]) >= 5) o.tagAch++;
+        if (parseNum(r[18]) > 0) { o.bioAch++; o.bioDone++; } else { o.bioMissing++; }
     });
-
-    let dseKeys = Object.keys(dseMap).sort();
-    if (dseKeys.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#94a3b8;">Tidak ada data DSE yang sesuai filter</td></tr>`;
+    let salesKeys = Object.keys(bySales).sort((a,b)=>a.localeCompare(b, 'id'));
+    if (salesKeys.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#94a3b8;">Data sales belum tersedia</td></tr>`;
         return;
     }
-
-    tbody.innerHTML = dseKeys.map(k => {
-        let tgtFwa = 4; // Target RGUGA FWA Default Per DSE
-        let fwaAch = dseMap[k].fwaAch;
-        let gapFwa = Math.max(0, tgtFwa - fwaAch);
-        let pctFwa = Math.min(100, (fwaAch / tgtFwa) * 100);
-
-        let tgtTag50 = Math.ceil(dseMap[k].totalOutlet * 0.5);
-        let tagAch = dseMap[k].tagAch;
-        let gapTag = Math.max(0, tgtTag50 - tagAch);
-        let pctTag = tgtTag50 > 0 ? Math.min(100, (tagAch / tgtTag50) * 100) : 0;
-
-        let tgtBio80 = Math.ceil(dseMap[k].totalOutlet * 0.8);
-        let bioAch = dseMap[k].bioAch;
-        let gapBio = Math.max(0, tgtBio80 - bioAch);
-        let pctBio = tgtBio80 > 0 ? Math.min(100, (bioAch / tgtBio80) * 100) : 0;
-
-        return `
-            <tr style="border-bottom: 1px solid #cbd5e1;">
-                <td style="border-right: 1px solid #cbd5e1; padding: 10px;"><b>${k}</b></td>
-                <td style="border-right: 1px solid #cbd5e1; padding: 10px;">
-                    <div style="font-size:11px; margin-bottom:2px; font-weight:700;">Ach: ${fwaAch} | Target: ${tgtFwa} <b style="color:#e11d48;">(GAP: ${gapFwa})</b></div>
-                    <div style="background:#e2e8f0; border-radius:4px; height:8px; width:100%; overflow:hidden;">
-                        <div style="background:#0284c7; height:100%; width:${pctFwa}%;"></div>
-                    </div>
-                </td>
-                <td style="border-right: 1px solid #cbd5e1; padding: 10px;">
-                    <div style="font-size:11px; margin-bottom:2px; font-weight:700;">Ach: ${tagAch} | Target: ${tgtTag50} <b style="color:#e11d48;">(GAP: ${gapTag})</b></div>
-                    <div style="background:#e2e8f0; border-radius:4px; height:8px; width:100%; overflow:hidden;">
-                        <div style="background:#0284c7; height:100%; width:${pctTag}%;"></div>
-                    </div>
-                </td>
-                <td style="padding: 10px;">
-                    <div style="font-size:11px; margin-bottom:2px; font-weight:700;">Ach: ${bioAch} | Target: ${tgtBio80} <b style="color:#e11d48;">(GAP: ${gapBio})</b></div>
-                    <div style="background:#e2e8f0; border-radius:4px; height:8px; width:100%; overflow:hidden;">
-                        <div style="background:#0284c7; height:100%; width:${pctBio}%;"></div>
-                    </div>
-                </td>
-            </tr>
-        `;
+    tbody.innerHTML = salesKeys.map(name => {
+        const d = bySales[name];
+        const tgtFwa = 4;
+        const gapFwa = Math.max(0, tgtFwa - d.fwaAch);
+        const pctFwa = Math.min(100, d.fwaAch / tgtFwa * 100);
+        const tgtTag = Math.ceil(d.totalOutlet * .60);
+        const gapTag = Math.max(0, tgtTag - d.tagAch);
+        const pctTag = tgtTag ? Math.min(100, d.tagAch / tgtTag * 100) : 0;
+        const tgtBio = d.totalOutlet;
+        const gapBio = d.bioMissing;
+        const pctBio = tgtBio ? Math.min(100, d.bioDone / tgtBio * 100) : 0;
+        return `<tr style="border-bottom:1px solid #cbd5e1;">
+          <td style="border-right:1px solid #cbd5e1;padding:10px;"><b>${name}</b></td>
+          <td style="border-right:1px solid #cbd5e1;padding:10px;text-align:center;"><div style="font-size:11px;font-weight:700;">Ach: ${d.fwaAch} | Target: ${tgtFwa} <b style="color:#e11d48;">GAP: ${gapFwa}</b></div><div style="background:#e2e8f0;border-radius:4px;height:8px;width:100%;overflow:hidden;"><div style="background:#0284c7;height:100%;width:${pctFwa}%;"></div></div></td>
+          <td style="border-right:1px solid #cbd5e1;padding:10px;text-align:center;"><div style="font-size:11px;font-weight:700;">Ach: ${d.tagAch} | Target: ${tgtTag} <b style="color:#e11d48;">GAP: ${gapTag}</b></div><div style="background:#e2e8f0;border-radius:4px;height:8px;width:100%;overflow:hidden;"><div style="background:#0284c7;height:100%;width:${pctTag}%;"></div></div></td>
+          <td style="padding:10px;text-align:center;"><div style="font-size:11px;font-weight:700;">Ach: ${d.bioDone.toLocaleString('id-ID')} outlet | Target: ${tgtBio.toLocaleString('id-ID')} <b style="color:#e11d48;">GAP: ${gapBio.toLocaleString('id-ID')} outlet</b></div><div style="background:#e2e8f0;border-radius:4px;height:8px;width:100%;overflow:hidden;"><div style="background:#0284c7;height:100%;width:${pctBio}%;"></div></div></td>
+        </tr>`;
     }).join('');
 }
 
@@ -2124,30 +2199,30 @@ function renderTable(tableId, header, data) {
   let activeData = data;
 
   if (tableId === "dataTableDO") {
-      const allowedColNames = [
-          "OUTLET ID", "OUTLET NAME", "DSE CODE", "NEW CATEGORY OUTLET", "ISIMPLE", 
-          "TARGET SP SELL IN", "SP SELL IN", "ACH 3PCS", "ACH % SP SELL IN", 
-          "SP TAGGING", "TAGGING 3PCS", "TARGET RGUGA BIOMETRIX", "RGUGA BIOMETRIX MTD", 
-          "ACH OSA", "OUTLET 300K", "TARGET OSA", "ACH % OSA"
-      ];
-      let allowedIndices = [];
-      header.forEach((h, idx) => {
-          let cleanH = String(h || "").trim().toUpperCase();
-          if (allowedColNames.some(targetName => cleanH.includes(targetName))) allowedIndices.push(idx);
-      });
-      let selHari = document.getElementById("hariFilterDO")?.value.toUpperCase() || "ALL";
-      if (selHari !== "ALL") {
-          let hariIdx = header.findIndex(h => String(h || "").trim().toUpperCase() === selHari);
-          if (hariIdx !== -1 && !allowedIndices.includes(hariIdx)) allowedIndices.push(hariIdx);
-      }
-      if (allowedIndices.length > 0) {
-          activeHeader = allowedIndices.map(i => header[i]);
-          activeData = data.map(row => allowedIndices.map(i => row[i]));
-      }
+      // Tampilkan SEMUA kolom yang tersedia di sheet DETAIL OUTLET, urutannya sama seperti Excel.
+      activeHeader = header;
+      activeData = data;
   }
 
   const thead = document.createElement("thead");
   const trHead = document.createElement("tr");
+  const isDetailOutletTable = tableId === "dataTableDO";
+  if (isDetailOutletTable) {
+    const groupRow = document.createElement("tr");
+    const groups = [
+      { label: "INFORMASI OUTLET", start: 0, span: 19 },
+      { label: "IM3", start: 19, span: 5 },
+      { label: "3ID", start: 24, span: 5 },
+      { label: "IOH", start: 29, span: Math.max(1, activeHeader.length - 29) }
+    ];
+    groups.forEach(g => {
+      if (g.start >= activeHeader.length) return;
+      const th = document.createElement("th"); th.colSpan = Math.min(g.span, activeHeader.length - g.start); th.textContent = g.label;
+      th.style.cssText = "background:#f59e0b !important;color:#111827 !important;font-weight:900 !important;text-align:center;padding:10px 8px;border:1px solid #d97706;position:sticky;top:0;z-index:1060;";
+      groupRow.appendChild(th);
+    });
+    thead.appendChild(groupRow);
+  }
   
   const isFreeze2Col = (tableId === "dataTablePP" || tableId === "dataTableMC" || tableId === "dataTableDO" || tableId === "dataTable");
   const colWidths = ["150px", "200px"];
@@ -2158,7 +2233,9 @@ function renderTable(tableId, header, data) {
     th.innerText = judul || "";
     let baseStyle = "padding: 12px 16px !important; font-size: 12px !important; font-weight: 800 !important; text-align: center; border-right: 1px solid rgba(255,255,255,0.1);";
     
-    if (isFreeze2Col && index === 0) {
+    if (isDetailOutletTable) {
+      th.style.cssText = baseStyle + ` background-color: #f59e0b !important; color: #000000 !important; position: sticky; top: 38px; z-index: 1040; white-space: normal; word-break: break-word; border-color: #d97706 !important; min-width: 120px; text-shadow:none !important;`;
+    } else if (isFreeze2Col && index === 0) {
       th.style.cssText = baseStyle + ` background-color: #be123c !important; color: #FFFFFF !important; position: sticky; left: 0px; top: 0; z-index: 1050; min-width: ${colWidths[0]}; max-width: ${colWidths[0]}; white-space: normal; word-break: break-word; border-right: 2px solid #f59e0b;`;
     } else if (isFreeze2Col && index === 1) {
       th.style.cssText = baseStyle + ` background-color: #be123c !important; color: #FFFFFF !important; position: sticky; left: ${colWidths[0]}; top: 0; z-index: 1050; min-width: ${colWidths[1]}; max-width: ${colWidths[1]}; white-space: normal; word-break: break-word; border-right: 2px solid #f59e0b;`;
@@ -2272,7 +2349,7 @@ function switchReport(reportId, btnObj) {
 document.addEventListener("input", function (e) {
   if (e.target.id === "searchInput" || e.target.id === "partnerFilter" || e.target.id === "kecamatanFilter") updateDashboardMS();
   if (e.target.id.includes("MC")) updateDashboardSM();
-  if (e.target.id.includes("DO") || e.target.id === "columnFilterValDO") updateDashboardDO();
+  if (e.target.id.includes("DO")) updateDashboardDO();
   if (e.target.id.includes("Daily")) updateDashboardDaily();
   if (e.target.id.includes("PP")) updateDashboardPP();
 });
@@ -2290,7 +2367,7 @@ document.addEventListener("change", function (e) {
       updateDashboardDO();
       return;
   }
-  if (e.target.id.includes("DO") || e.target.id === "columnFilterDO") updateDashboardDO();
+  if (e.target.id.includes("DO")) updateDashboardDO();
   if (e.target.id.includes("Daily")) updateDashboardDaily();
   if (e.target.id === "partnerFilterPP") updateDashboardPP();
   if (e.target.id === "execDseFilter" || e.target.id === "execHariFilter") updateExecutiveSummaryNew();

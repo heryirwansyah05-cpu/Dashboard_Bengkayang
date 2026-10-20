@@ -34,23 +34,21 @@ function setupTiEventListeners() {
     }
 }
 
-// 1. Populate Dropdown DSE Berdasarkan Index 2 (DSE Code)
+// 1. Populate dropdown berdasarkan NAMA SALES
 function populateTiDseDropdown() {
     const dseSelect = document.getElementById("tiDseFilter");
     if (!dseSelect || typeof globalDataDO === "undefined" || !globalDataDO || globalDataDO.length === 0) return;
 
     const dseSet = new Set();
     globalDataDO.forEach(r => {
-        let dse = String(r[2] || "").trim();
-        if (dse && dse.toUpperCase() !== "NAN" && dse.toUpperCase() !== "DSE CODE" && !dse.toUpperCase().includes("HEADER")) {
-            dseSet.add(dse);
-        }
+        let dse = String(r[5] || "").trim();
+        if (dse && dse.toUpperCase() !== "NAN" && dse.toUpperCase() !== "NAMA SALES" && !dse.toUpperCase().includes("HEADER")) dseSet.add(dse);
     });
 
     const sortedDse = Array.from(dseSet).sort((a, b) => a.localeCompare(b, 'id', { numeric: true }));
 
     let currentVal = dseSelect.value;
-    let options = '<option value="ALL">Semua DSE Code</option>';
+    let options = '<option value="ALL">Semua Nama Sales</option>';
     sortedDse.forEach(dse => {
         options += `<option value="${dse}">${dse}</option>`;
     });
@@ -96,8 +94,8 @@ function renderTodayInstructionAddon() {
 
     // Filter Baris Data Berdasarkan DSE & Hari
     let filteredRows = globalDataDO.filter(r => {
-        let dseVal = String(r[2] || "").trim();
-        if (!dseVal || dseVal.toUpperCase() === "DSE CODE" || dseVal.toUpperCase() === "NAN") return false;
+        let dseVal = String(r[5] || "").trim();
+        if (!dseVal || dseVal.toUpperCase() === "NAMA SALES" || dseVal.toUpperCase() === "NAN") return false;
 
         const dseMatch = (selectedDse === "ALL") || (dseVal === selectedDse);
         const hariMatch = (colHariIdx === -1 || parseNum(r[colHariIdx]) > 0);
@@ -105,10 +103,10 @@ function renderTodayInstructionAddon() {
         return dseMatch && hariMatch;
     });
 
-    // Grouping Data Berdasarkan DSE Code (Index 2)
+    // Grouping Data berdasarkan Nama Sales agar hanya muncul satu kelompok per sales.
     const dseGroups = {};
     filteredRows.forEach(r => {
-        let dse = String(r[2] || "DSE UNKNOWN").trim();
+        let dse = String(r[5] || "SALES UNKNOWN").trim();
         if (!dseGroups[dse]) dseGroups[dse] = [];
         dseGroups[dse].push(r);
     });
@@ -128,16 +126,16 @@ function renderTodayInstructionAddon() {
         const criticalOutlets = outlets.filter(r => {
             const sellIn = parseNum(r[8]);      // Index 8: SP SELL IN
             const osa = parseNum(r[12]);        // Index 12: ACH OSA
-            const tagSp = parseNum(r[15]);     // Index 15: SP TAGGING
-            const tag3Pcs = parseNum(r[16]);   // Index 16: TAGGING 3PCS
-            const bio = parseNum(r[18]);        // Index 18: RGUGA BIOMETRIX MTD
+            const tagSp = parseNum(r[16]);     // Index 16: Tagging 5PCS (kolom AP)
+            const tag3Pcs = parseNum(r[16]);   // Index 16: TAGGING 5PCS (kolom AP)
+            const bio = parseNum(r[18]);        // Index 18: RGU GA IOH (kolom AF)
 
-            const isBioKritis = bio < 1;
-            const isTagKritis = (tagSp < 3 && tag3Pcs < 1);
+            const isRgugaKritis = bio < 1;
+            const isTagKritis = tag3Pcs < 5;
             const isOsaKritis = osa < 300000;
-            const isSellInKritis = sellIn < 3;
+            const isSellInKritis = sellIn < 5;
 
-            return isBioKritis || isTagKritis || isOsaKritis || isSellInKritis;
+            return isRgugaKritis || isTagKritis || isOsaKritis || isSellInKritis;
         });
 
         const sectionId = `tiDseCard_${idx}`;
@@ -155,7 +153,7 @@ function renderTodayInstructionAddon() {
                 <div class="mini-table-wrapper">
                     ${criticalOutlets.length === 0 ? `
                         <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-left:5px solid #16a34a; border-radius:10px; padding:12px; color:#15803d; font-size:12px; font-weight:800;">
-                            ✅ PJP DSE Ini Aman: Seluruh outlet PJP sudah memenuhi target Biometrik, Tagging >=3, OSA, dan SP Sell In.
+                            ✅ PJP DSE Ini Aman: Seluruh outlet PJP memenuhi kriteria RGU GA IOH, OSA, dan SP Sell In.
                         </div>
                     ` : `
                         <table class="mini-exec-table" style="width:100%; border-collapse:collapse; font-size:11.5px;">
@@ -165,7 +163,7 @@ function renderTodayInstructionAddon() {
                                     <th style="padding:8px; text-align:left;">Nama Outlet</th>
                                     <th style="padding:8px;">Sell In SP</th>
                                     <th style="padding:8px;">OSA Rp</th>
-                                    <th style="padding:8px;">Biometrik</th>
+                                    <th style="padding:8px;">RGU GA IOH</th>
                                     <th style="padding:8px;">Tagging</th>
                                     <th style="padding:8px; background:#e11d48; color:#fff; text-align:left;">Instruksi Kritis</th>
                                 </tr>
@@ -181,10 +179,10 @@ function renderTodayInstructionAddon() {
                                     const bio = parseNum(r[18]);
 
                                     let notes = [];
-                                    if (bio < 1) notes.push("⚠️ Belum Bio");
-                                    if (tagSp < 3 && tag3Pcs < 1) notes.push("⚠️ Tagging < 3 Pcs");
+                                    if (bio < 1) notes.push("⚠️ RGUGA IOH = 0");
+                                    if (tag3Pcs < 5) notes.push("⚠️ Tagging 5PCS belum tercapai");
                                     if (osa < 300000) notes.push("⚠️ OSA < 300rb");
-                                    if (sellIn < 3) notes.push("⚠️ SP Sell in < 3 Pcs");
+                                    if (sellIn < 5) notes.push("⚠️ Sell In < 5 Pcs");
 
                                     return `
                                         <tr style="border-bottom:1px solid #e2e8f0; text-align:center;">
@@ -1356,7 +1354,7 @@ document.addEventListener(
                 background:linear-gradient(90deg,#008FCA,#08A9C7) !important;
             }
 
-            /* ===== RSE score ===== */
+            /* ===== DSP score ===== */
             #snapshotSectionRse .badge-success {
                 background:#E1F7EC !important;
                 border:1px solid #BFE9D2 !important;
@@ -1481,7 +1479,7 @@ document.addEventListener(
    Visual + presentation layer only.
    Existing KPI/data functions remain untouched.
    Adds:
-   - RSE Score visual beside Today's Priority Action
+   - DSP Score visual beside Today's Priority Action
    - Sebaran Outlet & Site Tower map
    - Executive Insight
    - Quick Links
@@ -1510,7 +1508,7 @@ document.addEventListener(
                 font-family: Inter, "Segoe UI", Arial, sans-serif !important;
             }
 
-            /* ----- Today's Priority + RSE Score ----- */
+            /* ----- Today's Priority + DSP Score ----- */
             #snapshotSectionMission .exec-mission-stats-grid {
                 display:grid !important;
                 grid-template-columns:repeat(4,minmax(0,1fr)) !important;
@@ -1968,9 +1966,11 @@ document.addEventListener(
 
     function readRseScore() {
         const el = document.getElementById("rseTotalScoreText");
-        if (!el) return 35.03;
-        const n = parseFloat(String(el.textContent || "").replace(/,/g, ".").replace(/[^0-9.]/g, ""));
-        return Number.isFinite(n) ? n : 35.03;
+        if (!el) return 0;
+        const raw = String(el.textContent || "").trim().replace(/%/g, "").replace(/\s/g, "");
+        const normalized = raw.includes(",") && raw.includes(".") ? raw.replace(/\./g, "").replace(",", ".") : raw.replace(",", ".");
+        const n = Number(normalized);
+        return Number.isFinite(n) ? n : 0;
     }
 
     function ensureRseVisual() {
@@ -2003,7 +2003,7 @@ document.addEventListener(
                 <span class="rse-ring-value">${score.toFixed(2)}%</span>
             </div>
             <div class="rse-copy">
-                <div class="rse-label"><i class="fa-solid fa-trophy"></i> RSE Score</div>
+                <div class="rse-label"><i class="fa-solid fa-trophy"></i> DSP Score</div>
                 <div class="rse-status">${score < 70 ? "Needs Attention" : "On Track"}</div>
                 <div class="rse-target">Target Minimal <b>70%</b></div>
             </div>
@@ -2037,6 +2037,12 @@ document.addEventListener(
             rseSection.insertAdjacentElement("afterend", bottom);
         }
 
+        // Bagian Sebaran Outlet & Site Tower, Executive Insight, dan Quick Links diminta dihapus.
+        bottom.innerHTML = "";
+        bottom.style.display = "none";
+        const oldCards = ["executiveCommandMapCard", "executiveInsightCard", "executiveQuickLinksCard"];
+        oldCards.forEach(id => { const el = document.getElementById(id); if (el) el.remove(); });
+        return;
         if (!document.getElementById("executiveCommandMapCard")) {
             bottom.innerHTML = `
                 <div class="final-command-card" id="executiveCommandMapCard">
@@ -2149,16 +2155,16 @@ document.addEventListener(
             : "Data Market Share sedang diperbarui.";
 
         const sentences = [];
-        sentences.push(`RSE Score saat ini <b>${score.toFixed(2)}%</b>, masih ${scoreGap.toFixed(2)} poin dari target 70%.`);
+        sentences.push(`DSP Score saat ini <b>${score.toFixed(2)}%</b>, masih ${scoreGap.toFixed(2)} poin dari target 70%.`);
         if(negative) sentences.push(`Di PST, tekanan terbesar datang dari <b>${negative.name}</b> (${negative.growth.toFixed(2)}%).`);
         if(positive) sentences.push(`Pertumbuhan tertinggi saat ini ada pada <b>${positive.name}</b> (+${positive.growth.toFixed(2)}%).`);
-        sentences.push(`Priority Action: OSA ${osaAch} (Ach ${osaActual}; gap ${osaGap}), Biometric ${bioAch} (Ach ${bioActual}; gap ${bioGap}), Tagging ${tagAch} (Ach ${tagActual}; gap ${tagGap}), dan FWA ${fwaAch} (Ach ${fwaActual}; gap ${fwaGap}).`);
+        sentences.push(`Priority Action: OSA ${osaAch} (Ach ${osaActual}; gap ${osaGap}), RGU GA IOH ${bioAch} (Ach ${bioActual}; gap ${bioGap}), Tagging ${tagAch} (Ach ${tagActual}; gap ${tagGap}), dan FWA ${fwaAch} (Ach ${fwaActual}; gap ${fwaGap}).`);
         sentences.push(msText);
 
         const actions=[];
         if(negative) actions.push(`Recovery ${negative.name}: fokuskan follow-up pada outlet/DSE yang menyumbang penurunan.`);
         if(osaAch!="-") actions.push(`Dorong OSA lebih dulu karena pencapaiannya ${osaAch} dengan gap ${osaGap}.`);
-        if(tagAch!="-" && bioAch!="-") actions.push(`Percepat outlet yang belum Tagging 3PCS dan Biometric agar gap outlet turun bersamaan.`);
+        if(tagAch!="-" && bioAch!="-") actions.push(`Percepat outlet yang belum Tagging 5PCS dan RGU GA IOH minimal 1PCS agar gap outlet turun bersamaan.`);
         if(fwaAch!="-") actions.push(`Kejar FWA RGUGA sampai target 18 pcs tercapai; posisi saat ini ${fwaAch}.`);
         if(ms) actions.push(`Pertahankan momentum Market Share IM3 ${pct(ms.IM3.mtd)} sambil menjaga MoM ${pctSigned(ms.IM3.growth)}.`);
 
@@ -2482,7 +2488,7 @@ document.addEventListener(
    Fokus:
    1. Target Non KPI per DSE tidak terpotong / tidak sesak
    2. Tampilan Non KPI menjadi lebih modern seperti BI card-grid
-   3. RSE Scorecard lebih clean, readable, premium
+   3. DSP Scorecard lebih clean, readable, premium
    4. TIDAK mengubah data / perhitungan existing
    ========================================================= */
 (function () {
@@ -2635,7 +2641,7 @@ document.addEventListener(
             }
 
             /* =====================================================
-               RSE SCORECARD — MODERN BI TABLE
+               DSP SCORECARD — MODERN BI TABLE
                ===================================================== */
 
             #all-summary-tab #snapshotSectionRse .mini-table-wrapper {
@@ -4053,7 +4059,7 @@ document.addEventListener(
         }
 
         /* =====================================================
-           6. RSE SCORECARD — KEEP CLEAN / COMPACT
+           6. DSP SCORECARD — KEEP CLEAN / COMPACT
            ===================================================== */
         #snapshotSectionRse .mini-table-wrapper {
             width: 100% !important;
