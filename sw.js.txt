@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bengkayang-v12-target-ms-fix';
+const CACHE_NAME = 'bengkayang-v13-marketshare-snapshot';
 
 // Cache hanya file statis yang aman untuk disimpan.
 // addon-executive.js dan FB Market Share.xlsx sengaja TIDAK dicache

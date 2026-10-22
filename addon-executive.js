@@ -4694,8 +4694,12 @@ document.addEventListener(
 
                 // IM3 AC:AM = JS index 28:39
                 im3Monthly:{
-                    labels:["Apr-26","May-26","Jun-26","Jul-26","Aug-26"],
+                    labels:["Jun-26","Jul-26","Aug-26","Sep-26","Oct-26"],
                     values:r.slice(28,33).map(num)
+                },
+                threeMonthly:{
+                    labels:["Jun-26","Jul-26","Aug-26","Sep-26","Oct-26"],
+                    values:r.slice(39,44).map(num)
                 },
                 im3:{
                     lmtd:num(r[33]),
@@ -4869,17 +4873,42 @@ document.addEventListener(
         if(["ALL",...names].includes(current))sel.value=current;
     }
 
+    function getSelectedMarketShareKec(){
+        const box=document.getElementById("msProfileKecMulti");
+        if(!box)return [];
+        return [...box.querySelectorAll('input[type="checkbox"]:checked')].map(x=>x.value);
+    }
     function fillKecFilter(){
         const sel=document.getElementById("msProfileKec");
-        if(!sel || !kecRows.length)return;
+        const box=document.getElementById("msProfileKecMulti");
+        if(!kecRows.length)return;
         const ptVal=document.getElementById("msProfilePT")?.value||"ALL";
-        const current=sel.value||"ALL";
         const source=ptVal==="ALL"?kecRows:kecRows.filter(r=>cleanText(r.pt)===ptVal);
-        const names=[...new Set(source.map(r=>r.kecamatan))].sort((a,b)=>a.localeCompare(b,"id"));
-        sel.innerHTML=`<option value="ALL">Semua Kecamatan</option>`+
-            names.map(k=>`<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`).join("");
-        if(["ALL",...names].includes(current))sel.value=current;
-        else sel.value="ALL";
+        // Pastikan kecamatan Bengkayang tetap muncul pada pilihan 10 kecamatan,
+        // termasuk bila variasi penulisan/nama pada sumber berbeda.
+        const canonicalKec = v => cleanText(v).split("|")[0].trim()
+            .replace(/^KECAMATAN\s+/i, "").replace(/^KEC\.?\s*/i, "").replace(/\s+/g, " ");
+        const rawNames=[...new Set(source.map(r=>canonicalKec(r.kecamatan)).filter(Boolean))];
+        // Label checkbox mengikuti nama yang diminta: BENGKAYANG.
+        // Nama ini cocok untuk kedua format Excel: "BENGKAYANG|BENGKAYANG"
+        // maupun "KEC. BENGKAYANG|BENGKAYANG".
+        const names=[...new Set([...rawNames.filter(k=>!/^bengkayang$/i.test(k)), "BENGKAYANG"])]
+            .sort((a,b)=>a.localeCompare(b,"id"));
+        if(sel){sel.innerHTML='<option value="ALL">Semua Kecamatan</option>'+names.map(k=>`<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`).join("");sel.style.display="none";}
+        if(box){
+            // Simpan pilihan berdasarkan nama yang dinormalisasi, bukan label mentah.
+            // Jadi pilihan lama "KEC. BENGKAYANG" tetap terbaca sebagai "BENGKAYANG".
+            const normalizeKecLabel = v => canonicalKec(v).toLocaleLowerCase("id-ID");
+            const previous=new Set(getSelectedMarketShareKec().map(normalizeKecLabel));
+            const firstLoad=box.dataset.filled!=="1";
+            box.innerHTML=names.map(k=>`<label class="ms-v3-kec-option"><input type="checkbox" value="${escapeHtml(k)}" ${firstLoad||previous.has(normalizeKecLabel(k))?"checked":""}><span>${escapeHtml(k)}</span></label>`).join("");
+            box.dataset.filled="1";
+            box.querySelectorAll('input[type="checkbox"]').forEach(input=>input.addEventListener("change",()=>{if(sel)sel.value="ALL";renderMarketShareProfile();}));
+        }
+        const allBtn=document.getElementById("msKecSelectAll"),clearBtn=document.getElementById("msKecClearAll");
+        if(allBtn && allBtn.dataset.bound!=="1"){allBtn.dataset.bound="1";allBtn.addEventListener("click",()=>{box?.querySelectorAll('input[type="checkbox"]').forEach(x=>x.checked=true);renderMarketShareProfile();});}
+        if(clearBtn && clearBtn.dataset.bound!=="1"){clearBtn.dataset.bound="1";clearBtn.addEventListener("click",()=>{box?.querySelectorAll('input[type="checkbox"]').forEach(x=>x.checked=false);renderMarketShareProfile();});}
+        document.querySelectorAll('input[name="msProfileMode"]').forEach(r=>{if(r.dataset.bound!=="1"){r.dataset.bound="1";r.addEventListener("change",renderMarketShareProfile);}});
     }
 
     function escapeHtml(v){
@@ -5272,7 +5301,10 @@ document.addEventListener(
                 `Snapshot-Detail-Kecamatan-${getMsSnapshotFilterLabel()}-${stamp}.png`;
 
             link.href = canvas.toDataURL("image/png",1.0);
+            link.style.display = "none";
+            document.body.appendChild(link);
             link.click();
+            link.remove();
 
         }catch(err){
             console.error("Snapshot Detail Kecamatan error:",err);
@@ -5303,6 +5335,25 @@ document.addEventListener(
     window.takeMarketShareDetailTableSnapshot =
         takeMarketShareDetailTableSnapshot;
 
+    let msCompareChart=null;
+    function renderMarketShareComparisonChart(rows,mode,brandFilter){
+        const canvas=document.getElementById("msProfileCompareChart");
+        if(!canvas||typeof Chart==="undefined")return;
+        if(msCompareChart){try{msCompareChart.destroy();}catch(e){}}
+        const brands=["IOH","3ID","IM3","XLS","TSEL"].filter(b=>brandFilter==="ALL"||b===brandFilter);
+        const palette={IOH:"#0F8B8D","3ID":"#F5B800",IM3:"#E51B4B",XLS:"#9333EA",TSEL:"#06B6D4"};
+        let labels=[],datasets=[];
+        if(mode==="brand"){
+            const selected=rows.slice(0,1);
+            labels=brands;
+            datasets=selected.map((r,i)=>({label:r.kecamatan,data:brands.map(b=>num(r.mtd?.[b])*100),borderColor:["#2563EB","#F97316","#16A34A"][i%3],backgroundColor:"transparent",borderWidth:2.5,pointRadius:4,tension:.2}));
+        }else{
+            labels=(rows||[]).map(r=>r.kecamatan);
+            datasets=brands.map(b=>({label:b,data:rows.map(r=>num(r.mtd?.[b])*100),borderColor:palette[b],backgroundColor:palette[b],borderWidth:2,pointRadius:3,tension:.2}));
+        }
+        msCompareChart=new Chart(canvas.getContext("2d"),{type:"line",data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},plugins:{legend:{position:"bottom",labels:{usePointStyle:true,boxWidth:8,font:{size:10,weight:"700"}}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${Number(c.raw).toFixed(2)}%`}}},scales:{x:{grid:{display:false},ticks:{font:{size:9,weight:"700"}}},y:{beginAtZero:true,suggestedMax:60,ticks:{callback:v=>`${v}%`},grid:{color:"rgba(148,163,184,.15)"}}}}});
+    }
+
     async function renderMarketShareProfile(){
         const page=document.getElementById("market-share-profile");
         if(!page)return;
@@ -5316,8 +5367,11 @@ document.addEventListener(
             fillKecFilter();
 
             const ptVal=document.getElementById("msProfilePT")?.value||"ALL";
-            const kecVal=document.getElementById("msProfileKec")?.value||"ALL";
-            const brandVal=document.getElementById("msProfileBrand")?.value||"IM3";
+            const legacyKec=document.getElementById("msProfileKec")?.value||"ALL";
+            const selectedKec=getSelectedMarketShareKec();
+            const kecVal=selectedKec.length===0?"ALL":(selectedKec.length===1?selectedKec[0]:"MULTI");
+            const brandVal=document.getElementById("msProfileBrand")?.value||"ALL";
+            const mode=document.querySelector('input[name="msProfileMode"]:checked')?.value||"kecamatan";
 
             // PT + Kecamatan dipakai untuk DETAIL/RANKING KECAMATAN.
             // KPI 3 DI ATAS WAJIB memakai KAB MS MOM (MC-BENGKAYANG),
@@ -5326,9 +5380,18 @@ document.addEventListener(
                 ? kecRows
                 : kecRows.filter(r=>cleanText(r.pt)===ptVal);
 
+            // Samakan nama kecamatan tanpa membedakan huruf besar/kecil.
+            // Data Excel dapat berisi "BENGKAYANG|BENGKAYANG", sedangkan checkbox
+            // menampilkan "KEC. BENGKAYANG"; nama sudah dipotong di loadKEC(), tetapi
+            // pencocokan tetap harus case-insensitive.
+            const normalizeKec = v => cleanText(v).split("|")[0].trim()
+                .replace(/^KECAMATAN\s+/i, "")
+                .replace(/^KEC\.?\s*/i, "")
+                .replace(/\s+/g, " ")
+                .toLocaleLowerCase("id-ID");
             const selected=kecVal==="ALL"
                 ? ptRows
-                : ptRows.filter(r=>r.kecamatan===kecVal);
+                : ptRows.filter(r=>selectedKec.some(k=>normalizeKec(k)===normalizeKec(r.kecamatan)));
 
             const kab=getCurrentKab();
             if(kab)renderProfileKpi(kab,brandVal);
@@ -5352,13 +5415,14 @@ document.addEventListener(
                     </div>`;
             }
             renderProfileCharts();
+            renderMarketShareComparisonChart(selected.length?selected:ptRows, mode, brandVal);
             renderDetailTable(kecVal==="ALL" ? ptRows : selected);
             ensureMarketShareDetailSnapshotButton();
 
             const sub=document.querySelector(".ms-profile-sub");
             if(sub){
                 const scope=ptVal==="ALL"?"Semua PT":ptVal;
-                sub.textContent=`Analisis Market Share Kecamatan · IOH, 3ID, IM3, XLS, TSEL · ${scope} · Sumber KEC MS MOM + KAB MS MOM`;
+                sub.textContent=`Market Share MC Bengkayang · ${scope} · ${selectedKec.length?selectedKec.length+" kecamatan dipilih":"semua kecamatan"} · Sumber KEC MS MOM + KAB MS MOM`;
             }
         }catch(err){
             console.warn("Profil Market Share:",err);
@@ -5372,6 +5436,18 @@ document.addEventListener(
         const style=document.createElement("style");
         style.id="market-share-v2-style";
         style.textContent=`
+            .ms-v3-filters{display:grid;grid-template-columns:minmax(140px,1fr) minmax(320px,2.5fr) minmax(150px,1fr);gap:12px;align-items:start}
+            .ms-v3-actions{display:flex;gap:6px;margin:4px 0 8px;flex-wrap:wrap}
+            .ms-v3-actions button{border:1px solid #bfdbfe;background:#fff;color:#1d4ed8;border-radius:8px;padding:6px 10px;font-size:10px;font-weight:800;cursor:pointer}
+            .ms-v3-kec-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 8px;max-height:145px;overflow:auto;border:1px solid #e2e8f0;border-radius:10px;padding:8px;background:#fff}
+            .ms-v3-kec-option{display:flex;align-items:center;gap:6px;font-size:10px;font-weight:700;color:#334155;min-width:0}
+            .ms-v3-kec-option span{overflow-wrap:anywhere}
+            .ms-v3-mode-wrap{border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin:10px 0;background:#fff;color:#0f172a;font-size:12px}
+            .ms-v3-mode-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px}
+            .ms-v3-mode-options label{border:1px solid #dbe5f1;border-radius:10px;padding:10px;display:flex;align-items:center;gap:8px;font-weight:700;font-size:11px}
+            .ms-v3-weekly-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:12px 0}
+            .ms-v3-weekly-grid .ms-profile-chart-wrap,.ms-v3-analysis-panel .ms-profile-chart-wrap{height:245px;position:relative;padding:8px}
+            @media(max-width:850px){.ms-v3-filters{grid-template-columns:1fr}.ms-v3-kec-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ms-v3-mode-options,.ms-v3-weekly-grid{grid-template-columns:1fr}}
             .ms-v2-content{width:100%;}
             .ms-v2-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px;}
             .ms-v2-title{font-size:15px;font-weight:900;color:#172236;}
@@ -5474,11 +5550,124 @@ document.addEventListener(
         btn.addEventListener("click",()=>setTimeout(renderMarketShareProfile,0));
     }
 
+    // ================= MOCKUP REVISION: MARKET SHARE PROFILE =================
+    function renderProfileKpi(kab, brand){
+        const grid=document.getElementById("msProfileKpiGrid"); if(!grid||!kab)return;
+        const brands=["IOH","3ID","IM3","XLS","TSEL"];
+        grid.innerHTML=`<section class="ms-mock-kpi-section"><div class="ms-mock-section-title"><span>▥</span><div><b>KPI MARKET SHARE PER BRAND</b><small>Sumber: KAB MS MOM | Perbandingan MTD vs LMTD dan Growth (MoM)</small></div></div><div class="ms-mock-kpi-cards">${brands.map(b=>{const x=kab[b]||{mtd:0,lmtd:0,growth:0};const meta=BRAND_META[b]||{color:'#64748b'};const light={IOH:'#BFE3E0','3ID':'#FFF0BE',IM3:'#F8C5D2',XLS:'#E3D5FF',TSEL:'#BFEAF1'}[b]||'#E2E8F0';const up=num(x.growth)>=0;return `<article class="ms-mock-brand-card" style="--brand:${meta.color}"><div class="ms-mock-brand-name"><i></i><b>${b}</b></div><div class="ms-mock-brand-metrics"><strong>${pct(x.mtd)}</strong><span class="${up?'ms-positive':'ms-negative'}">${up?'▲':'▼'} ${pctSigned(x.growth)}<small>(${pctSigned(num(x.growth)*100)} pp)</small></span></div><div class="ms-mock-bars"><div><label>${pct(x.lmtd)}</label><span style="height:${Math.max(4,Math.min(100,num(x.lmtd)*220))}%;background:${light}"></span><small>LMTD</small></div><div><label>${pct(x.mtd)}</label><span style="height:${Math.max(4,Math.min(100,num(x.mtd)*220))}%;background:${meta.color}"></span><small>MTD</small></div></div></article>`}).join('')}</div></section>`;
+    }
+
+    function renderMockWeeklyCharts(rows){
+        if(typeof Chart==='undefined')return;
+        const labels=['Jun-26','Jul-26','Aug-26','Sep-26','Oct-26'];
+        const selected=(rows||[]).slice();
+        const colors=['#1677ff','#ffb400','#ff1744','#8b35ff','#08b9d8','#0f8b8d','#fb7185','#64748b','#22a06b','#e879f9'];
+        const make=(id,brand,color)=>{
+            const canvas=document.getElementById(id);if(!canvas)return;
+            const old=Chart.getChart(canvas);if(old)old.destroy();
+            const key=brand==='IM3'?'im3Monthly':'threeMonthly';
+            const datasets=selected.map((r,i)=>({label:r.kecamatan,data:((key==='im3Monthly'?r.im3Monthly?.values:r.threeMonthly?.values)||[]).map(v=>num(v)*100),borderColor:colors[i%colors.length],backgroundColor:colors[i%colors.length],borderWidth:2.5,pointRadius:3,pointHoverRadius:5,tension:.22,fill:false}));
+            if(!datasets.length)datasets.push({label:brand+' MC Bengkayang',data:[],borderColor:color});
+            new Chart(canvas.getContext('2d'),{type:'line',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{usePointStyle:true,boxWidth:8,font:{size:10,weight:'700'}}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${Number(c.raw||0).toFixed(2)}%`}}},scales:{x:{grid:{display:false},ticks:{font:{size:10,weight:'700'}}},y:{beginAtZero:true,suggestedMax:50,ticks:{callback:v=>v+'%'},grid:{color:'rgba(148,163,184,.15)'}}}}});
+        };
+        make('msProfileWeeklyChart','3ID','#ffb400'); make('msProfileKabChart','IM3','#e51b4b');
+    }
+
+    function renderMockInsight(rows, brand){
+        const get=(r)=>num(r.mtd?.[brand]);
+        const growth=(r)=>num(r.growth?.[brand]);
+        const top=[...rows].sort((a,b)=>get(b)-get(a)).slice(0,3), bottom=[...rows].sort((a,b)=>get(a)-get(b)).slice(0,3);
+        const positive=[...rows].sort((a,b)=>growth(b)-growth(a)).slice(0,3),negative=[...rows].sort((a,b)=>growth(a)-growth(b)).slice(0,3);
+        const fmt=(arr,isGrowth=false)=>arr.map((r,i)=>`<div class="ms-mock-rank-row"><span>${i+1}. ${escapeHtml(r.kecamatan)}</span><i><em style="width:${Math.max(3,Math.min(100,(isGrowth?Math.abs(growth(r)):get(r))*200))}%;background:${isGrowth?(growth(r)>=0?'#08a66a':'#e11d48'):(i===0?'#1677ff':'#8b5cf6')}"></em></i><b>${isGrowth?pctSigned(growth(r)):pct(get(r))}</b></div>`).join('')||'<small>Tidak ada data</small>';
+        const box=document.getElementById('msMockInsight');if(box)box.innerHTML=`<div class="ms-mock-insight-head">💡 <b>Insight Kecamatan</b></div><div class="ms-mock-insight-grid"><div><b>Top 3 Kecamatan - MTD (${brand})</b>${fmt(top)}</div><div><b>Bottom 3 Kecamatan - MTD (${brand})</b>${fmt(bottom)}</div><div><b>Top 3 Positive Growth</b>${fmt(positive,true)}</div><div><b>Top 3 Negative Growth</b>${fmt(negative,true)}</div></div>`;
+    }
+
+    renderMarketShareProfile = async function(){
+        const page=document.getElementById('market-share-profile');if(!page)return;page.style.display='block';
+        try{
+            await loadKEC();await loadKAB();bindProfileControls();fillPTFilter();fillKecFilter();
+            const ptVal=document.getElementById('msProfilePT')?.value||'ALL';
+            const selectedKec=getSelectedMarketShareKec();
+            const brandVal=document.getElementById('msProfileBrand')?.value||'ALL';
+            const mode=document.querySelector('input[name="msProfileMode"]:checked')?.value||'kecamatan';
+            const ptRows=ptVal==='ALL'?kecRows:kecRows.filter(r=>cleanText(r.pt)===ptVal);
+            const normalizeKecName = v => cleanText(v).split('|')[0].trim().replace(/^KECAMATAN\s+/i,'').replace(/^KEC\.?\s*/i,'').replace(/\s+/g,' ').toLocaleLowerCase('id-ID');
+            const selected=selectedKec.length?ptRows.filter(r=>selectedKec.some(k=>normalizeKecName(k)===normalizeKecName(r.kecamatan))):ptRows;
+            const kab=getCurrentKab();if(kab)renderProfileKpi(kab,brandVal);
+            // Build expected layout: brand cards, selected-kecamatan trends, analysis + insight; detail table stays hidden.
+            const wrapper=document.querySelector('#market-share-profile .ms-profile-wrapper');
+            const filter=document.querySelector('#market-share-profile .ms-profile-filters');
+            const modeWrap=document.querySelector('#market-share-profile .ms-v3-mode-wrap');
+            const weekly=document.querySelector('#market-share-profile .ms-v3-weekly-grid');
+            const analysis=document.querySelector('#market-share-profile .ms-v3-analysis-panel');
+            const kpi=document.getElementById('msProfileKpiGrid');
+            let analysisWrap=document.getElementById('msMockAnalysisWrap');
+            if(!analysisWrap){analysisWrap=document.createElement('div');analysisWrap.id='msMockAnalysisWrap';analysisWrap.className='ms-mock-analysis-layout';analysisWrap.innerHTML=`<section class="exec-card-panel border-top-cyan ms-v3-analysis-panel"><div class="exec-panel-header">📊 GRAFIK ANALISIS KECAMATAN</div><div class="ms-profile-chart-wrap"><canvas id="msProfileCompareChart"></canvas></div></section><aside class="ms-mock-side"><div class="ms-mock-brand-filter"><div class="ms-mock-section-title">▽ <div><b>Filter Brand</b><small>Untuk Grafik Analisis</small></div></div><select id="msMockAnalysisBrand"><option value="IM3">IM3</option><option value="IOH">IOH</option><option value="3ID">3ID</option><option value="XLS">XLS</option><option value="TSEL">TSEL</option><option value="ALL">Semua Brand</option></select><div class="ms-mock-brand-pills">${['IOH','3ID','IM3','XLS','TSEL','ALL'].map(b=>`<button type="button" data-brand="${b}">${b==='ALL'?'Semua':b}</button>`).join('')}</div></div><div id="msMockInsight"></div></aside>`;}
+            if(filter&&modeWrap&&weekly&&kpi){filter.after(kpi);kpi.after(weekly);weekly.after(modeWrap);modeWrap.after(analysisWrap);}
+            if(analysis)analysis.style.display='none';
+            const detail=document.querySelector('#market-share-profile .ms-profile-table-wrap');if(detail)detail.style.display='none';
+            const oldRank=document.querySelector('#market-share-profile .ms-profile-analysis-grid');if(oldRank)oldRank.style.display='none';
+            // Weekly panels show selected Kecamatan as separate lines, based on the available monthly history in KEC MS MOM.
+            renderMockWeeklyCharts(selected);
+            const modeRadio=document.querySelector('input[name="msProfileMode"]:checked');
+            renderMarketShareComparisonChart(selected,mode,brandVal);
+            renderMockInsight(selected,brandVal==='ALL'?'IM3':brandVal);
+            const brandSelect=document.getElementById('msMockAnalysisBrand');if(brandSelect){brandSelect.value=brandVal==='ALL'?'IM3':brandVal;brandSelect.onchange=()=>{const main=document.getElementById('msProfileBrand');if(main)main.value=brandSelect.value;renderMarketShareProfile();};}
+            analysisWrap.querySelectorAll('[data-brand]').forEach(btn=>{btn.classList.toggle('active',btn.dataset.brand===(brandVal==='ALL'?'ALL':brandVal));btn.onclick=()=>{const main=document.getElementById('msProfileBrand');if(main)main.value=btn.dataset.brand;renderMarketShareProfile();};});
+            const sub=document.querySelector('.ms-profile-sub');if(sub)sub.textContent=`Market Share MC Bengkayang · ${ptVal==='ALL'?'Semua PT':ptVal} · ${selectedKec.length?selectedKec.length+' kecamatan dipilih':'semua kecamatan'} · Sumber KEC MS MOM + KAB MS MOM`;
+        }catch(err){console.warn('Profil Market Share:',err);const body=document.querySelector('#market-share-profile .ms-profile-wrapper');if(body&&!body.querySelector('.ms-profile-error'))body.insertAdjacentHTML('beforeend',`<div class="ms-profile-error">Data Market Share gagal dimuat: ${escapeHtml(err.message)}</div>`);}
+    };
+
+    function injectMockupStyles(){if(document.getElementById('ms-mockup-style'))return;const st=document.createElement('style');st.id='ms-mockup-style';st.textContent=`
+      #market-share-profile .ms-profile-wrapper{padding:18px!important;background:#fff!important;border-radius:18px!important}
+      #market-share-profile .ms-profile-title{font-size:clamp(20px,2vw,30px)!important;color:#10264d!important;font-weight:900!important}
+      #market-share-profile .ms-profile-sub{font-size:12px!important;color:#526783!important}
+      #market-share-profile .ms-profile-head{align-items:center!important;border-bottom:0!important}
+      #market-share-profile .ms-profile-filters{background:#f7faff!important;border:1px solid #e3eaf5!important;border-radius:12px!important;padding:16px!important}
+      #market-share-profile .ms-profile-kpi-grid{display:block!important;margin:14px 0!important}
+      .ms-mock-kpi-section{border:1px solid #e5edf7;border-radius:14px;padding:14px;margin-bottom:14px;background:#fff}
+      .ms-mock-section-title{display:flex;gap:10px;align-items:center;color:#13264b;font-size:14px;margin-bottom:12px}.ms-mock-section-title>span{font-size:23px;color:#f5b800}.ms-mock-section-title small{display:block;font-size:10px;color:#64748b;font-weight:500;margin-top:3px}
+      .ms-mock-kpi-cards{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+      .ms-mock-brand-card{padding:12px;border-left:3px solid var(--brand);border-radius:8px;min-width:0;box-shadow:0 2px 8px #0f172a0b}
+      .ms-mock-brand-name{display:flex;gap:8px;align-items:center;color:#10264d}.ms-mock-brand-name i{width:13px;height:13px;border-radius:50%;background:var(--brand)}
+      .ms-mock-brand-metrics{display:flex;justify-content:space-between;gap:4px;align-items:flex-start;margin-top:12px}.ms-mock-brand-metrics strong{font-size:clamp(17px,1.7vw,28px);color:#10264d}.ms-mock-brand-metrics span{font-size:11px;font-weight:800;text-align:right}.ms-mock-brand-metrics small{display:block;color:#526783;font-size:9px}
+      .ms-mock-bars{height:78px;display:flex;gap:10px;justify-content:center;align-items:end;border-bottom:1px solid #d9e2ef;margin-top:8px}.ms-mock-bars>div{height:100%;width:36%;display:flex;flex-direction:column;align-items:center;justify-content:end;gap:3px}.ms-mock-bars label{font-size:10px;color:#526783;font-weight:700}.ms-mock-bars span{display:block;width:100%;max-width:72px;border-radius:4px 4px 0 0;min-height:4px}.ms-mock-bars small{font-size:10px;color:#526783;margin-bottom:-17px}
+      #market-share-profile .ms-v3-weekly-grid{margin:14px 0!important}.ms-v3-weekly-grid .exec-card-panel{border:1px solid #e4edf7!important;border-radius:14px!important;background:#fff!important;padding:14px!important}.ms-v3-weekly-grid .exec-panel-header{font-size:14px!important;font-weight:900!important;color:#10264d!important;margin-bottom:8px}
+      .ms-mock-analysis-layout{display:grid;grid-template-columns:minmax(0,2fr) minmax(270px,1fr);gap:14px;margin:14px 0}.ms-mock-analysis-layout>.exec-card-panel{min-width:0}.ms-mock-analysis-layout .ms-profile-chart-wrap{height:310px!important;position:relative}
+      .ms-mock-side{display:flex;flex-direction:column;gap:12px}.ms-mock-brand-filter,#msMockInsight{border:1px solid #e4edf7;border-radius:14px;padding:14px;background:#fff}.ms-mock-brand-filter select{width:100%;padding:10px;border:1px solid #d8e3f1;border-radius:9px;font-weight:800;color:#10264d}.ms-mock-brand-pills{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}.ms-mock-brand-pills button{border:1px solid #d8e3f1;background:#fff;border-radius:8px;padding:7px 9px;color:#10264d;font-weight:800;font-size:10px}.ms-mock-brand-pills button.active{border-color:#1677ff;background:#eef5ff;color:#1677ff}
+      .ms-mock-insight-head{font-size:14px;color:#10264d;margin-bottom:12px}.ms-mock-insight-grid{display:grid;grid-template-columns:1fr;gap:14px}.ms-mock-insight-grid>div>b{display:block;font-size:10px;color:#10264d;margin-bottom:8px}.ms-mock-rank-row{display:grid;grid-template-columns:minmax(85px,1fr) 60px auto;gap:7px;align-items:center;font-size:10px;color:#263a5a;margin:6px 0}.ms-mock-rank-row i{height:8px;background:#edf2f8;border-radius:8px;overflow:hidden}.ms-mock-rank-row em{display:block;height:100%;border-radius:8px}.ms-mock-rank-row>b{font-size:10px;white-space:nowrap}
+      #market-share-profile .ms-profile-table-wrap{display:none!important}#market-share-profile .ms-profile-analysis-grid{display:none!important}
+      /* REVISION 2026-10-23: use the full dashboard width for the 10 Kecamatan */
+      #market-share-profile .ms-profile-filters.ms-v3-filters{display:block!important;width:100%!important;box-sizing:border-box!important;padding:12px 14px!important}
+      #market-share-profile .ms-profile-filters > div:first-child,
+      #market-share-profile .ms-profile-filters > div:last-child{display:none!important}
+      #market-share-profile .ms-v3-kec-control{width:100%!important;min-width:0!important}
+      #market-share-profile .ms-v3-kec-control > label{display:block!important;font-size:12px!important;font-weight:900!important;color:#10264d!important;margin-bottom:5px!important}
+      #market-share-profile .ms-v3-actions{display:flex!important;justify-content:flex-start!important;gap:7px!important;margin:0 0 8px!important}
+      #market-share-profile .ms-v3-kec-grid{display:flex!important;flex-flow:row nowrap!important;align-items:center!important;gap:16px!important;max-height:none!important;overflow-x:auto!important;overflow-y:hidden!important;width:100%!important;box-sizing:border-box!important;padding:10px!important;scrollbar-width:thin!important}
+      #market-share-profile .ms-v3-kec-option{display:inline-flex!important;flex:0 0 auto!important;align-items:center!important;gap:6px!important;white-space:nowrap!important;font-size:10px!important;line-height:1.2!important;min-width:max-content!important}
+      #market-share-profile .ms-v3-kec-option input{flex:0 0 auto!important;margin:0!important}
+      #market-share-profile .ms-v3-kec-option span{display:inline-block!important;overflow:visible!important;overflow-wrap:normal!important;white-space:nowrap!important}
+      @media(max-width:650px){#market-share-profile .ms-v3-kec-grid{gap:12px!important}.ms-mock-kpi-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.ms-mock-analysis-layout{grid-template-columns:1fr}.ms-mock-analysis-layout .ms-profile-chart-wrap{height:260px!important}}
+      #market-share-profile .ms-profile-table-wrap,#market-share-profile .ms-profile-analysis-grid{display:none!important}
+      /* Hapus bagian analisis kecamatan yang tidak diperlukan */
+      #market-share-profile .ms-v3-mode-wrap,
+      #market-share-profile #msMockAnalysisWrap,
+      #market-share-profile .ms-mock-analysis-layout,
+      #market-share-profile .ms-mock-side,
+      #market-share-profile .ms-mock-brand-filter,
+      #market-share-profile #msMockInsight,
+      #market-share-profile .ms-mock-insight-head,
+      #market-share-profile .ms-mock-insight-grid{display:none!important;visibility:hidden!important;height:0!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;overflow:hidden!important}
+      @media(max-width:900px){.ms-mock-kpi-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.ms-mock-analysis-layout{grid-template-columns:1fr}.ms-mock-analysis-layout .ms-profile-chart-wrap{height:260px!important}}
+    `;document.head.appendChild(st);}
+
     // Expose renderer so the IM3 sidebar can open the native Profile tab.
     window.renderMarketShareProfile = renderMarketShareProfile;
 
     function boot(){
         injectStyles();
+        injectMockupStyles();
         injectProfileTab();
         injectProfileSection();
         bindProfileTab();
@@ -5488,7 +5677,7 @@ document.addEventListener(
 
     if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",boot,{once:true});
     else boot();
-    window.addEventListener("load",()=>{injectProfileTab();injectProfileSection();bindProfileTab();bindProfileControls();bootExecutiveMS();},{once:true});
+    window.addEventListener("load",()=>{injectMockupStyles();injectProfileTab();injectProfileSection();bindProfileTab();bindProfileControls();bootExecutiveMS();},{once:true});
 })();
 
 

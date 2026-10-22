@@ -263,18 +263,24 @@
 #dataTableDO thead th { font-weight:800 !important; }
 </style>
 
-<style>
-.top10-do-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:14px 0 20px;align-items:start;width:100%;box-sizing:border-box}
-.top10-do-card{min-width:0;max-width:100%;overflow:hidden;background:#fff;border:1px solid #dbe5f1;border-radius:10px;padding:8px;box-shadow:0 3px 10px rgba(15,23,42,.05);box-sizing:border-box}
-.top10-do-card h3{font-size:12px;font-weight:800;color:#14233b;margin:0 0 7px;padding-bottom:6px;border-bottom:2px solid #f5b400}
-.top10-do-table-wrap{overflow:hidden;max-height:none;width:100%;}
-.top10-do-table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:9px;line-height:1.2}
-.top10-do-table th{background:#1b2b45;color:#fff;padding:6px 4px;text-align:left;white-space:normal;overflow-wrap:anywhere}
-.top10-do-table td{padding:5px 4px;border-bottom:1px solid #e5edf5;color:#24334a;vertical-align:top;overflow-wrap:anywhere;word-break:normal}
-.top10-do-table tbody tr:nth-child(even){background:#f6f9fc}
-@media(max-width:1050px){.top10-do-grid{grid-template-columns:1fr}}
+<style id="market-share-remove-analysis-force">
+/* FORCE REMOVE obsolete Market Share analysis controls */
+#market-share-profile .ms-v3-mode-wrap,
+#market-share-profile #msMockAnalysisWrap,
+#market-share-profile .ms-mock-analysis-layout,
+#market-share-profile .ms-mock-side,
+#market-share-profile .ms-mock-brand-filter,
+#market-share-profile #msMockInsight,
+#market-share-profile .ms-mock-insight-head,
+#market-share-profile .ms-mock-insight-grid { display:none !important; visibility:hidden !important; height:0 !important; min-height:0 !important; margin:0 !important; padding:0 !important; border:0 !important; overflow:hidden !important; }
 </style>
-
+<style id="ms-kecamatan-layout-fix-v11">
+#msProfileKecMulti.ms-v3-kec-grid{display:grid!important;grid-template-columns:repeat(10,minmax(0,1fr))!important;gap:10px 14px!important;align-items:center!important}
+#msProfileKecMulti .ms-v3-kec-option{display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:7px!important;min-width:0!important;white-space:nowrap!important;position:relative!important;margin:0!important;padding:3px 2px!important;cursor:pointer!important}
+#msProfileKecMulti .ms-v3-kec-option input[type=checkbox]{position:static!important;display:inline-block!important;flex:0 0 15px!important;width:15px!important;height:15px!important;margin:0!important;transform:none!important}
+#msProfileKecMulti .ms-v3-kec-option span{display:inline-block!important;min-width:0!important;overflow:visible!important}
+@media(max-width:1100px){#msProfileKecMulti.ms-v3-kec-grid{grid-template-columns:repeat(5,minmax(0,1fr))!important}}
+</style>
 </head>
 
 <body>
@@ -847,7 +853,6 @@
     <!-- ================= TAB 4: DETAIL OUTLET ================= -->
     <div id="detail-outlet" class="report-content" style="display: none;">
         <div id="snapshotDoDashboard" style="margin-bottom: 20px;">
-        <div id="snapshotDoDashboardInner">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                 <h2 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0;"><i class="fa-solid fa-store color-cyan"></i> DETAIL OUTLET DASHBOARD SUMMARY</h2>
                 <button class="btn-snapshot-section" onclick="takeSectionSnapshot('snapshotDoDashboard')"><i class="fa-solid fa-camera"></i> Snapshot Dashboard Outlet</button>
@@ -912,8 +917,6 @@
                     </div>
                 </div>
             </div>
-        </div>
-        <section id="top10DetailOutlet" class="top10-do-grid" aria-label="Top 10 KPI Detail Outlet"></section>
         </div>
 
         <div class="toolbar">
@@ -1205,27 +1208,39 @@
                     <button class="btn-snapshot-section" onclick="takeSectionSnapshot('market-share-profile')"><i class="fa-solid fa-camera"></i> Snapshot</button>
                 </div>
 
-                <div class="ms-profile-filters">
-                    <div><label>PT</label><select id="msProfilePT"></select></div>
-                    <div><label>Kecamatan</label><select id="msProfileKec"></select></div>
-                    <div><label>Brand</label><select id="msProfileBrand">
-                        <option value="IOH">IOH</option><option value="3ID">3ID</option><option value="IM3">IM3</option><option value="XLS">XLS</option><option value="TSEL">TSEL</option>
-                    </select></div>
+                <div class="ms-profile-filters ms-v3-filters">
+                    <div><label>Partner / PT</label><select id="msProfilePT"></select></div>
+                    <div class="ms-v3-kec-control"><label>Kecamatan (Multi Select)</label>
+                        <div class="ms-v3-actions"><button type="button" id="msKecSelectAll">Pilih Semua</button><button type="button" id="msKecClearAll">Hapus Semua</button></div>
+                        <div id="msProfileKecMulti" class="ms-v3-kec-grid" aria-label="Pilih kecamatan"></div>
+                    </div>
+                    <div><label>Filter Brand</label><select id="msProfileBrand"><option value="ALL">Semua Brand</option><option value="IOH">IOH</option><option value="3ID">3ID</option><option value="IM3">IM3</option><option value="XLS">XLS</option><option value="TSEL">TSEL</option></select></div>
                 </div>
+                <div class="ms-v3-mode-wrap"><strong>Mode Analisis Kecamatan</strong><div class="ms-v3-mode-options"><label><input type="radio" name="msProfileMode" value="kecamatan" checked> A. Bandingkan Beberapa Kecamatan</label><label><input type="radio" name="msProfileMode" value="brand"> B. Bandingkan Brand dalam Kecamatan</label></div></div>
+                <div class="ms-v3-weekly-grid">
+                    <div class="exec-card-panel border-top-yellow"><div class="exec-panel-header">3ID WEEKLY PERFORMANCE</div><div class="ms-profile-chart-wrap"><canvas id="msProfileWeeklyChart"></canvas></div></div>
+                    <div class="exec-card-panel border-top-red"><div class="exec-panel-header">IM3 WEEKLY PERFORMANCE</div><div class="ms-profile-chart-wrap"><canvas id="msProfileKabChart"></canvas></div></div>
+                </div>
+                <div class="exec-card-panel border-top-cyan ms-v3-analysis-panel"><div class="exec-panel-header">GRAFIK ANALISIS KECAMATAN</div><div class="ms-profile-chart-wrap"><canvas id="msProfileCompareChart"></canvas></div></div>
 
                 <div class="ms-profile-kpi-grid" id="msProfileKpiGrid"></div>
 
-
-                <div class="exec-card-panel border-top-cyan ms-profile-chart-card">
-                    <div class="exec-panel-header-flex">
-                        <div>
-                            <div class="exec-panel-header"><i class="fa-solid fa-chart-line color-cyan"></i> MONTHLY PERFORMANCE</div>
-                            <div class="analysis-subtitle" id="msProfileChartSubtitle">MTD vs LMTD & Growth</div>
+                <div class="ms-profile-analysis-grid">
+                    <div class="exec-card-panel border-top-yellow">
+                        <div class="exec-panel-header">TOP & BOTTOM KECAMATAN — MTD</div>
+                        <div class="ms-topbottom-grid">
+                            <div class="ms-rank-card"><h4><i class="fa-solid fa-arrow-up"></i> TOP 3 MTD</h4><div id="msTopMtd"></div></div>
+                            <div class="ms-rank-card"><h4><i class="fa-solid fa-arrow-down"></i> BOTTOM 3 MTD</h4><div id="msBottomMtd"></div></div>
                         </div>
                     </div>
-                    <div class="ms-profile-chart-wrap"><canvas id="msProfileChart"></canvas></div>
+                    <div class="exec-card-panel border-top-red">
+                        <div class="exec-panel-header">TOP & BOTTOM KECAMATAN — GROWTH</div>
+                        <div class="ms-topbottom-grid">
+                            <div class="ms-rank-card"><h4><i class="fa-solid fa-arrow-trend-up"></i> TOP 3 POSITIVE</h4><div id="msTopGrowth"></div></div>
+                            <div class="ms-rank-card"><h4><i class="fa-solid fa-arrow-trend-down"></i> TOP 3 NEGATIVE</h4><div id="msBottomGrowth"></div></div>
+                        </div>
+                    </div>
                 </div>
-
                 <div class="ms-profile-table-wrap">
                     <div class="exec-panel-header">DETAIL KECAMATAN</div>
                     <div class="mini-table-wrapper"><table class="mini-exec-table" id="msProfileDetailTable"></table></div>
@@ -1256,8 +1271,8 @@
 </div>
 <div id="mobileApp"></div>
 
-<script src="script.js?v=20260913-profil-ms-native-v2"></script>
-<script src="addon-executive.js?v=20260913-profil-ms-native"></script>
+<script src="script.js?v=20261023-ms-v12"></script>
+<script src="addon-executive.js?v=20261023-ms-v12"></script>
 <script src="mobile.js"></script>
 </body>
 </html>
