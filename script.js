@@ -1683,16 +1683,33 @@ function renderTop10DetailOutlet(rows) {
     const n = Number(String(v ?? "").replace(/[^0-9,.-]/g, "").replace(/\.(?=\d{3}(?:\D|$))/g, "").replace(",", "."));
     return Number.isFinite(n) ? n : 0;
   };
-  const records = (rows || []).map(r => {
+  // Satu baris sumber = satu outlet. Tampilkan ID IM3 dan 3ID bersama-sama,
+  // sesuai format: Nama Outlet [IM3] ID / [3ID] ID. Pasangan mengikuti kolom ID
+  // dalam baris yang sama, bukan mencocokkan nama outlet yang bisa berbeda.
+  const records = [];
+  (rows || []).forEach(r => {
     const raw = r.__raw || r;
-    const code = String(raw[ixCodeIM3] || raw[ixCode3ID] || "").trim();
-    const name = String(raw[ixNameIM3] || raw[ixName3ID] || "Outlet tanpa nama").trim();
-    return { sales: String(raw[ixSales] || "-").trim(), code: code || "-", name, osa: number(raw[ixOSA]), sell: number(raw[ixSell]), rgu: number(raw[ixRGU]) };
+    const codeIM3 = String(raw[ixCodeIM3] ?? "").trim();
+    const nameIM3 = String(raw[ixNameIM3] ?? "").trim();
+    const code3ID = String(raw[ixCode3ID] ?? "").trim();
+    const name3ID = String(raw[ixName3ID] ?? "").trim();
+    const brandIds = [];
+    if (codeIM3) brandIds.push(`[IM3] ${codeIM3}`);
+    if (code3ID) brandIds.push(`[3ID] ${code3ID}`);
+    const name = nameIM3 || name3ID || "Outlet tanpa nama";
+    records.push({
+      sales: String(raw[ixSales] || "-").trim(),
+      osa: number(raw[ixOSA]),
+      sell: number(raw[ixSell]),
+      rgu: number(raw[ixRGU]),
+      name,
+      brandIds: brandIds.join(" / ") || "ID tidak tersedia"
+    });
   });
   const fmt = n => Math.round(n).toLocaleString("id-ID");
   const makeTable = (title, key, label, money=false) => {
     const sorted = [...records].sort((a,b) => b[key] - a[key]).slice(0,10);
-    return `<div class="top10-do-card"><h3>${title}</h3><div class="table-container top10-do-table-wrap"><table class="top10-do-table"><thead><tr><th>#</th><th>Nama Outlet</th><th>ID Outlet</th><th>Nama Sales</th><th>${label}</th></tr></thead><tbody>${sorted.length ? sorted.map((r,i)=>`<tr><td>${i+1}</td><td>${escapeHtmlDO(r.name)}</td><td>${escapeHtmlDO(r.code)}</td><td>${escapeHtmlDO(r.sales)}</td><td>${money ? "Rp " : ""}${fmt(r[key])}${key === "sell" ? " pcs" : ""}</td></tr>`).join("") : `<tr><td colspan="5">Tidak ada data</td></tr>`}</tbody></table></div></div>`;
+    return `<div class="top10-do-card"><h3>${title}</h3><div class="table-container top10-do-table-wrap"><table class="top10-do-table"><thead><tr><th>#</th><th>Nama Outlet / Brand ID</th><th>Nama Sales</th><th>${label}</th></tr></thead><tbody>${sorted.length ? sorted.map((r,i)=>`<tr><td>${i+1}</td><td><span class="top10-outlet-name">${escapeHtmlDO(r.name)}</span><span class="top10-outlet-brand">${escapeHtmlDO(r.brandIds)}</span></td><td>${escapeHtmlDO(r.sales)}</td><td>${money ? "Rp " : ""}${fmt(r[key])}${key === "sell" ? " pcs" : ""}</td></tr>`).join("") : `<tr><td colspan="4">Tidak ada data</td></tr>`}</tbody></table></div></div>`;
   };
   host.innerHTML = makeTable("TOP 10 OSA IOH", "osa", "OSA IOH", true) + makeTable("TOP 10 RGU GA IOH", "rgu", "RGU GA IOH") + makeTable("TOP 10 SELL IN SP", "sell", "Sell In SP");
 }

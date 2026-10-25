@@ -172,6 +172,19 @@ function renderTodayInstructionAddon() {
                                 ${criticalOutlets.map(r => {
                                     const idOut = r[0] || '-';
                                     const nameOut = r[1] || '-';
+                                    // Brand ID hanya ditampilkan di tab Today Instruction.
+                                    // Tabel Detail Outlet tidak diubah.
+                                    const raw = r.__raw || [];
+                                    const headers = Array.isArray(globalHeaderDORaw) ? globalHeaderDORaw : [];
+                                    const colIdx = (label) => headers.findIndex(h => String(h || '').trim().toUpperCase() === label);
+                                    const idIm3 = String(raw[colIdx('OUTLET CODE IM3')] ?? '').trim();
+                                    const id3id = String(raw[colIdx('OUTLET CODE 3ID')] ?? '').trim();
+                                    const brandIdParts = [];
+                                    if (idIm3 && idIm3 !== '-') brandIdParts.push(`[IM3] ${idIm3}`);
+                                    if (id3id && id3id !== '-') brandIdParts.push(`[3ID] ${id3id}`);
+                                    const brandIdHtml = brandIdParts.length
+                                        ? `<div style="font-size:10px; color:#92400e; font-weight:800; margin-top:3px; white-space:normal;">${brandIdParts.join(' / ')}</div>`
+                                        : '';
                                     const sellIn = parseNum(r[8]);
                                     const osa = parseNum(r[12]);
                                     const tagSp = parseNum(r[15]);
@@ -187,7 +200,7 @@ function renderTodayInstructionAddon() {
                                     return `
                                         <tr style="border-bottom:1px solid #e2e8f0; text-align:center;">
                                             <td style="padding:8px; text-align:left; font-weight:700;">${idOut}</td>
-                                            <td style="padding:8px; text-align:left; font-weight:700; color:#0f172a;">${nameOut}</td>
+                                            <td style="padding:8px; text-align:left; font-weight:700; color:#0f172a;"><div>${nameOut}</div>${brandIdHtml}</td>
                                             <td style="padding:8px;"><b style="color:${sellIn < 3 ? '#e11d48' : '#10b981'};">${sellIn} pcs</b></td>
                                             <td style="padding:8px;"><b style="color:${osa < 300000 ? '#e11d48' : '#10b981'};">Rp ${Math.round(osa).toLocaleString('id-ID')}</b></td>
                                             <td style="padding:8px;"><b style="color:${bio < 1 ? '#e11d48' : '#10b981'};">${bio}</b></td>
@@ -5601,19 +5614,12 @@ document.addEventListener(
             const weekly=document.querySelector('#market-share-profile .ms-v3-weekly-grid');
             const analysis=document.querySelector('#market-share-profile .ms-v3-analysis-panel');
             const kpi=document.getElementById('msProfileKpiGrid');
-            let analysisWrap=document.getElementById('msMockAnalysisWrap');
-            if(!analysisWrap){analysisWrap=document.createElement('div');analysisWrap.id='msMockAnalysisWrap';analysisWrap.className='ms-mock-analysis-layout';analysisWrap.innerHTML=`<section class="exec-card-panel border-top-cyan ms-v3-analysis-panel"><div class="exec-panel-header">📊 GRAFIK ANALISIS KECAMATAN</div><div class="ms-profile-chart-wrap"><canvas id="msProfileCompareChart"></canvas></div></section><aside class="ms-mock-side"><div class="ms-mock-brand-filter"><div class="ms-mock-section-title">▽ <div><b>Filter Brand</b><small>Untuk Grafik Analisis</small></div></div><select id="msMockAnalysisBrand"><option value="IM3">IM3</option><option value="IOH">IOH</option><option value="3ID">3ID</option><option value="XLS">XLS</option><option value="TSEL">TSEL</option><option value="ALL">Semua Brand</option></select><div class="ms-mock-brand-pills">${['IOH','3ID','IM3','XLS','TSEL','ALL'].map(b=>`<button type="button" data-brand="${b}">${b==='ALL'?'Semua':b}</button>`).join('')}</div></div><div id="msMockInsight"></div></aside>`;}
-            if(filter&&modeWrap&&weekly&&kpi){filter.after(kpi);kpi.after(weekly);weekly.after(modeWrap);modeWrap.after(analysisWrap);}
-            if(analysis)analysis.style.display='none';
-            const detail=document.querySelector('#market-share-profile .ms-profile-table-wrap');if(detail)detail.style.display='none';
-            const oldRank=document.querySelector('#market-share-profile .ms-profile-analysis-grid');if(oldRank)oldRank.style.display='none';
-            // Weekly panels show selected Kecamatan as separate lines, based on the available monthly history in KEC MS MOM.
+            // Hapus permanen panel analisis lama dan kontrol mode yang sudah tidak digunakan.
+            document.getElementById('msMockAnalysisWrap')?.remove();
+            document.querySelectorAll('#market-share-profile .ms-v3-mode-wrap, #market-share-profile .ms-v3-analysis-panel, #market-share-profile .ms-profile-analysis-grid, #market-share-profile .ms-profile-table-wrap').forEach(el=>el.remove());
+            if(filter&&weekly&&kpi){filter.after(kpi);kpi.after(weekly);}
+            // Grafik mingguan tetap dipertahankan; panel analisis kecamatan tidak dibuat lagi.
             renderMockWeeklyCharts(selected);
-            const modeRadio=document.querySelector('input[name="msProfileMode"]:checked');
-            renderMarketShareComparisonChart(selected,mode,brandVal);
-            renderMockInsight(selected,brandVal==='ALL'?'IM3':brandVal);
-            const brandSelect=document.getElementById('msMockAnalysisBrand');if(brandSelect){brandSelect.value=brandVal==='ALL'?'IM3':brandVal;brandSelect.onchange=()=>{const main=document.getElementById('msProfileBrand');if(main)main.value=brandSelect.value;renderMarketShareProfile();};}
-            analysisWrap.querySelectorAll('[data-brand]').forEach(btn=>{btn.classList.toggle('active',btn.dataset.brand===(brandVal==='ALL'?'ALL':brandVal));btn.onclick=()=>{const main=document.getElementById('msProfileBrand');if(main)main.value=btn.dataset.brand;renderMarketShareProfile();};});
             const sub=document.querySelector('.ms-profile-sub');if(sub)sub.textContent=`Market Share MC Bengkayang · ${ptVal==='ALL'?'Semua PT':ptVal} · ${selectedKec.length?selectedKec.length+' kecamatan dipilih':'semua kecamatan'} · Sumber KEC MS MOM + KAB MS MOM`;
         }catch(err){console.warn('Profil Market Share:',err);const body=document.querySelector('#market-share-profile .ms-profile-wrapper');if(body&&!body.querySelector('.ms-profile-error'))body.insertAdjacentHTML('beforeend',`<div class="ms-profile-error">Data Market Share gagal dimuat: ${escapeHtml(err.message)}</div>`);}
     };
